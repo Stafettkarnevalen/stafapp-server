@@ -1,0 +1,13 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+    <h1>{{ module.title }}</h1>
+    <div class="alert alert-info"><em>{{ module.introduction }}</em></div>
+    <div class="">{{ module.text|raw }}</div>
+{% endblock %}

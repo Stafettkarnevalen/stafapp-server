@@ -1,0 +1,26 @@
+{# app/Resources/views/manager/verification/verify.html.twig #}
+{% extends 'manager/index.html.twig' %}
+{% block body %}
+    {% if app.session.get('_school') %}
+        <a name="school_panel"></a>
+        <div id="school_panel" class="side-padding">
+            {% if view == 'name' %}
+                {% include 'manager/school/change_school_name_dialog.html.twig' %}
+            {% elseif view == 'edit' %}
+                {% include 'manager/school/edit_school_dialog.html.twig' %}
+            {% elseif view == 'history' %}
+                {% include 'manager/school/prev_names.html.twig' %}
+            {% else %}
+                {% include 'manager/school/form.html.twig' %}
+            {% endif %}
+        </div>
+        <a name="manager_panel"></a>
+        <div id="manager_panel" class="side-padding">
+            {% include 'manager/school/managers.html.twig' %}
+        </div>
+        <a name="unit_panel"></a>
+        <div id="unit_panel" class="side-padding">
+            {% include 'manager/school/units.html.twig' %}
+        </div>
+    {% endif %}
+{% endblock %}

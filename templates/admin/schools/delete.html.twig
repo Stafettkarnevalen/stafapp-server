@@ -1,0 +1,25 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'confirm.html.twig' %}
+{% endif %}
+{% extends extends %}
+{% block body %}
+    <h1 class="text-center">{{ school.name }}</h1>
+    <h2 class="text-center">{{ 'label.confirm_delete'|trans({}, 'school') }}</h2>
+    {{ form_start(form) }}
+        <div class="form-nav form-nav-warning">
+            <div class="btn-group btn-group-justified" role="group">
+                {% if modal is defined and modal == true %}
+                    <a class="btn btn-success" data-dismiss="modal" aria-label="Close"><i class="fa fa-chevron-left"></i> {% trans %}action.no{% endtrans %} <i class="fa fa-close"></i></a>
+                {% else %}
+                    <a class="btn btn-success" href="{{ path('nav.admin_list_schools') }}"><i class="fa fa-chevron-left"></i> {% trans %}action.no{% endtrans %} <i class="fa fa-close"></i></a>
+                {% endif %}
+                <div class="btn-group" role="group">
+                    {{ form_widget(form.yes) }}
+                </div>
+            </div>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

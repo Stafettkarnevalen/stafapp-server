@@ -1,0 +1,25 @@
+        <div class="container-fluid">
+            <div class="well">
+                <div class="row">
+                    {% for i in 1..6 %}
+                    <div class="col-xs-6 col-sm-4">
+                        <label class="pull-left right-padding">{{ i }}:</label>
+                        <div class="left-padding">{{ user.randomString() }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {{ form_start(form) }}
+            {{ form_row(form.current) }}
+            {{ form_row(form.plainPassword.first) }}
+            {{ form_row(form.plainPassword.second) }}
+            <div class="form-nav">
+                <div class="btn-group btn-group-justified" role="group">
+                    <div class="btn-group" role="group">
+                        {{ form_widget(form.submit) }}
+                    </div>
+                </div>
+            </div>
+            {{ form_end(form) }}
+        </div>

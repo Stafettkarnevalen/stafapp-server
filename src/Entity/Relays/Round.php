@@ -1,0 +1,325 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 2.48
+ */
+
+namespace App\Entity\Relays;
+
+use App\Entity\Interfaces\OrderedEntityInterface;
+use App\Entity\Schedule\ScheduledEntity;
+use App\Entity\Traits\ApplyDateIntervalTrait;
+use App\Entity\Traits\CloneableTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Traits\NameTrait;
+use App\Entity\Traits\OrderedEntityTrait;
+
+/**
+ * @ORM\Table(name="round_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @UniqueEntity(fields="race,order", message="round.exists")
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Relays
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class Round extends ScheduledEntity implements OrderedEntityInterface
+{
+    /** use date interval trait */
+    use ApplyDateIntervalTrait;
+
+    /** Use name trait */
+    use NameTrait;
+
+    /** Use ordered entity trait */
+    use OrderedEntityTrait;
+
+    /** Use cloneable trait */
+    use CloneableTrait;
+
+    /**
+     * @const NAME_TRIAL The round is for trials
+     */
+    const NAME_TRIAL = 'TRIAL';
+
+    /**
+     * @const NAME_SEMI_FINAL The round is for semi finals
+     */
+    const NAME_SEMI_FINAL = 'SEMI_FINAL';
+
+    /**
+     * @const NAME_FINAL The round is for finals
+     */
+    const NAME_FINAL = 'FINAL';
+
+    /**
+     * @const ROUNDS The rounds represented in an array
+     */
+    const ROUNDS = [self::NAME_TRIAL => 0, self::NAME_SEMI_FINAL => 1, self::NAME_FINAL => 2];
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="changes_fld", type="datetime", nullable=true)
+     * @var \DateTime $changes The time when the changes to the teams have to be submitted
+     */
+    protected $changes;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="calling_fld", type="datetime", nullable=true)
+     * @var \DateTime $calling The time when the teams of the first heat need to be att the calling place
+     */
+    protected $calling;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="ceremnony_fld", type="datetime", nullable=true)
+     * @var \DateTime The time of the ceremony after the final round
+     */
+    protected $ceremony;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Race", inversedBy="rounds")
+     * @ORM\JoinColumn(name="race_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var Race $race The race owning this Round
+     */
+    protected $race;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Heat", mappedBy="round", cascade={"persist", "merge", "remove"})
+     * @ORM\OrderBy({"order" = "ASC"})
+     * @var ArrayCollection $heats The Heats of this Round
+     */
+    protected $heats;
+
+    /**
+     * Gets the changes.
+     *
+     * @return \DateTime
+     */
+    public function getChanges()
+    {
+        return $this->changes;
+    }
+
+    /**
+     * Sets the changes.
+     *
+     * @param integer|string|\DateTime $changes
+     * @return $this
+     */
+    public function setChanges($changes)
+    {
+        if (is_numeric($changes)) {
+            $this->changes = new \DateTime();
+            $this->changes = $this->changes->setTimestamp($changes);
+        } else if ($changes instanceof \DateTime)
+            $this->changes = $changes;
+        else if (is_string($changes))
+            $this->changes = new \DateTime($changes);
+        return $this;
+    }
+
+    /**
+     * Gets the calling.
+     *
+     * @return \DateTime
+     */
+    public function getCalling()
+    {
+        return $this->calling;
+    }
+
+    /**
+     * Sets the calling.
+     *
+     * @param integer|string|\DateTime $calling
+     * @return $this
+     */
+    public function setCalling($calling)
+    {
+        if (is_numeric($calling)) {
+            $this->calling = new \DateTime();
+            $this->calling = $this->calling->setTimestamp($calling);
+        } else if ($calling instanceof \DateTime)
+            $this->calling = $calling;
+        else if (is_string($calling))
+            $this->calling = new \DateTime($calling);
+        return $this;
+    }
+
+    /**
+     * Gets the ceremony.
+     *
+     * @return \DateTime
+     */
+    public function getCeremony()
+    {
+        return $this->ceremony;
+    }
+
+    /**
+     * Sets the ceremony.
+     *
+     * @param integer|string|\DateTime $ceremony
+     * @return $this
+     */
+    public function setCeremony($ceremony)
+    {
+        if (is_numeric($ceremony)) {
+            $this->ceremony = new \DateTime();
+            $this->ceremony = $this->ceremony->setTimestamp($ceremony);
+        } else if ($ceremony instanceof \DateTime)
+            $this->calling = $ceremony;
+        else if (is_string($ceremony))
+            $this->ceremony = new \DateTime($ceremony);
+        return $this;
+    }
+
+    /**
+     * Gets the Race.
+     *
+     * @return Race
+     */
+    public function getRace()
+    {
+        return $this->race;
+    }
+
+    /**
+     * Sets the Race.
+     *
+     * @param Race $race
+     * @return $this
+     */
+    public function setRace($race)
+    {
+        $this->race = $race;
+
+        return $this;
+    }
+
+    /**
+     * Gets the Relay.
+     *
+     * @return Relay
+     */
+    public function getRelay() {
+        return $this->getRace()->getRelay();
+    }
+
+    /**
+     * Gets the Heats.
+     *
+     * @return ArrayCollection
+     */
+    public function getHeats()
+    {
+        return $this->heats;
+    }
+
+    /**
+     * Sets the Heats.
+     *
+     * @param ArrayCollection $heats
+     * @return $this
+     */
+    public function setHeats($heats)
+    {
+        $this->heats = $heats;
+
+        return $this;
+    }
+
+    /**
+     * Gets a string representation of this object.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->getRelay()->__toString() . ", " . $this->getName();
+    }
+
+    /**
+     * Gets the fields that can be modified with a \DateInterval.
+     *
+     * @return array
+     */
+    public function getDateIntervalApplicableFields()
+    {
+        return [$this->getChanges(), $this->getCalling(), $this->getStarts(), $this->getCeremony()];
+    }
+
+    /**
+     * Gets all ScheduledEvents of this entity.
+     *
+     * @return ArrayCollection
+     */
+    public function getSchedule()
+    {
+        return null;
+    }
+
+    public function getTeams()
+    {
+        $teams = new ArrayCollection();
+        /** @var Heat $heat */
+        foreach ($this->getHeats() as $heat) {
+            /** @var RaceResult $result */
+            foreach ($heat->getResults() as $result) {
+                $teams->add($result->getTeam());
+            }
+        }
+        return $teams;
+    }
+
+    public function getEventName()
+    {
+        return [
+            'id' => $this->getRace()->getRelay()->getFullname(false, false, true),
+            'params' => [
+                '%gender%' => $this->getRace()->getRelay()->getGender(),
+                '%class_of%' => 'label.class_of'
+            ]
+        ];
+    }
+
+    public function getRoundName()
+    {
+        return $this->getName();
+    }
+
+    public function getNumHeats()
+    {
+        return $this->getHeats()->count();
+    }
+
+    public function getNumTeams()
+    {
+        return $this->getTeams()->count();
+    }
+
+    /**
+     * Gets the siblings of this ordered entity.
+     *
+     * @param ObjectManager $em
+     * @return ArrayCollection
+     */
+    public function getSiblings(ObjectManager $em = null)
+    {
+        $rounds = $this->getRace()->getRounds();
+        $criteria = Criteria::create()->where(Criteria::expr()->neq('id', $this->getId()))->orderBy(['order' => 'ASC']);
+        return $rounds->matching($criteria);
+    }
+}

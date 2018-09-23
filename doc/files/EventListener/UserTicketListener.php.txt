@@ -1,0 +1,110 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 01/01/2018
+ * Time: 3.20
+ */
+
+namespace App\EventListener;
+
+use App\Entity\Schools\School;
+use App\Entity\Security\PrincipalUser;
+use App\Entity\Security\Group;
+use App\Entity\Security\SchoolAdministrator;
+use App\Entity\Security\UserTicket;
+use Doctrine\ORM\OptimisticLockException;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Doctrine\ORM\Event\LifecycleEventArgs;
+
+/**
+ * Class UserTicketListener
+ * @package AppBundle\EventListener
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class UserTicketListener
+{
+    /** @var ContainerInterface $container */
+    protected $container;
+
+    public function __construct(ContainerInterface $container)
+    {
+        $this->container = $container;
+    }
+
+    /**
+     * Performs operations on tickets before they are stored for the first time.
+     *
+     * @param LifecycleEventArgs $event
+     */
+    public function prePersist(LifecycleEventArgs $event)
+    {
+        $entity = $event->getEntity();
+        $encoder = $this->container->get('security.password_encoder');
+        $em = $event->getEntityManager();
+        $usermod = false;
+
+        if ($entity instanceof UserTicket && $entity->getTicket() === null && $entity->getPlaintextTicket()) {
+
+            print_r('ticketpre');
+
+            $user = $entity->getUser();
+            $entity->setTicket($encoder->encodePassword($entity, $entity->getPlaintextTicket()));
+
+            print_r($entity->getTicket());
+
+            if ($user->getPassword() === null && $user->getPlainPassword()) {
+                $user->setPassword($encoder->encodePassword($user, $user->getPlainPassword()));
+                $usermod = true;
+            } else if ($user->getPassword() === null) {
+                $user->setPassword($encoder->encodePassword($user, uniqid()));
+                $usermod = true;
+            }
+            if ($user instanceof SchoolAdministrator) {
+                /** @var Group $principals */
+                $principals = $em->getRepository(Group::class)->find(4);
+                $user->addRole($principals);
+                $usermod = true;
+            }
+            if ($usermod && $user->getId())
+                $em->merge($user);
+            else if ($usermod)
+                $em->persist($user);
+
+            // $em->persist($entity);
+        }
+    }
+
+    /**
+     * Performs operations on tickets after they are updated.
+     *
+     * @param LifecycleEventArgs $event
+     * @throws OptimisticLockException
+     */
+    public function postUpdate(LifecycleEventArgs $event)
+    {
+        $entity = $event->getEntity();
+        $encoder = $this->container->get('security.password_encoder');
+        $em = $event->getEntityManager();
+
+        if ($entity instanceof School && $entity->getPrincipalTicket()->getTicket() === null &&
+            $entity->getPrincipalTicket()->getPlaintextTicket()) {
+
+            print_r('schoolpost');
+
+            $ticket = $entity->getPrincipalTicket();
+            $user = $ticket->getUser();
+
+            $ticket->setTicket($encoder->encodePassword($ticket, $ticket->getPlaintextTicket()));
+
+            print_r($ticket->getTicket());
+
+            if ($user->getPassword() === null && $user->getPlainPassword()) {
+                $user->setPassword($encoder->encodePassword($user, $user->getPlainPassword()));
+                $em->merge($user);
+            }
+            $em->merge($ticket);
+        }
+    }
+}

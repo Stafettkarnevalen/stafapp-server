@@ -1,0 +1,42 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+    <div class="side-padding">
+        <h1>{% if rule.id != 0 %}{{ rule.title }}{% else %}{% trans from "cheerleading" %}label.create_rule{% endtrans %}{% endif %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="form bg-default all-padding">
+            {{ form_row(form.title) }}
+            {{ form_row(form.text) }}
+            {{ form_row(form.from) }}
+            {{ form_row(form.until) }}
+            {{ form_row(form.isActive) }}
+            {% if modal is not defined or modal == false %}
+                <div class="form-nav">
+                    <div class="btn-group btn-group-justified" role="group">
+                        <a class="btn btn-default" href="{{ path('nav.admin_cheerleading_rules', {'event': event}) }}"><i class="fa fa-chevron-left"></i> {% trans from 'cheerleading' %}label.cancel{% endtrans %} <i class="fa fa-undo"></i></a>
+                        {% if event.id %}
+                            <a class="btn btn-danger{% if event.competitions.count() %} disabled{% endif %}" href="{{ path('nav.admin_cheerleading_rule_delete', {'id': rule.id}) }}"><i class="fa fa-trash"></i> {% trans from 'cheerleading' %}label.delete{% endtrans %} <i class="fa fa-minus"></i></a>
+                        {% endif %}
+                        <div class="btn-group" role="group">
+                            {{ form_widget(form.submit) }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

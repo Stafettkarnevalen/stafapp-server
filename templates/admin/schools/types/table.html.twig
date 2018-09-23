@@ -1,0 +1,129 @@
+{% macro render_sorted_table(schoolTypes, orders, order, sort, group) %}
+    {{ table(schoolTypes, {
+        'trans_domain': 'school',
+        'class': 'table table-bordered table-responsive table-condensed table-striped table-scrollable table-searchable table-sortable table-school-types-' ~ (group ? group.id : '0'),
+        'body': {
+            'attrs': {
+                'data-sortable': {
+                    'type': 'value',
+                    'value': (sort == 'order' and order == 'ASC') ? 1 : 0
+                },
+                'data-handle': {
+                    'type': 'value',
+                    'value': 'td'
+                },
+                'data-ajaxroute': {
+                    'type': 'value',
+                    'value': 'nav.admin_list_school_types'
+                },
+                'data-ajaxparams' : {
+                    'type': 'value',
+                    'value': {
+                        '_locale': {
+                            'type': 'value',
+                            'value': app.request.locale
+                        }
+                    }
+                },
+                'data-target': {
+                    'type': 'value',
+                    'value': 'type'
+                }
+            },
+            'row_attrs': {
+                'data-id':  {
+                    'type': 'twig',
+                    'path': 'id'
+                },
+                'data-index': {
+                    'type': 'twig',
+                    'path': 'order'
+                }
+            },
+            'link': {
+                'url': 'nav.admin_edit_school_type',
+                'params': {
+                    'id': {
+                        'type': 'twig',
+                        'path': 'id'
+                    }
+                },
+                'attrs': {
+                    'data-reload': 'true',
+                    'data-title': 'nav.admin_list_school_types'|trans({}, 'nav'),
+                    'data-toggle': 'modal'
+                }
+            },
+            'cols': {
+                'name': {
+                    'type': 'twig',
+                    'path': 'name'
+                },
+                'order': {
+                    'type': 'twig',
+                    'path': 'order|add(1)',
+                },
+                'minClassOf': {
+                    'type': 'twig',
+                    'path': 'minClassOf',
+                },
+                'maxClassOf': {
+                    'type': 'twig',
+                    'path': 'maxClassOf',
+                },
+                'isActive text-center hidden-xs': {
+                    'type': 'twig',
+                    'path': 'isActive',
+                    'conditions': {
+                        '0': '<i class="fa fa-lg text-danger fa-toggle-off"></i>',
+                        '1': '<i class="fa fa-lg text-success fa-toggle-on"></i>'
+                    }
+                },
+                'abbreviation': {
+                    'type': 'twig',
+                    'path': 'abbreviation',
+                    'hidden': 1
+                }
+            }
+        },
+        'head': {
+            'sortable': {
+                'orders': orders,
+                'order': order,
+                'sort': sort,
+                'icons': {
+                    'ASC': 'fa-chevron-up',
+                    'DESC': 'fa-chevron-down'
+                },
+                'link': {
+                    'url': 'nav.admin_list_school_types'
+                }
+            },
+            'cols': {
+                'name': {
+                    'label': 'field.name',
+                    'sort': 'name'
+                },
+                'order': {
+                    'label': 'field.order',
+                    'sort': 'order'
+                },
+                'minClassOf': {
+                    'label': 'field.min_class_of',
+                    'sort': 'minClassOf'
+                },
+                'maxClassOf': {
+                    'label': 'field.max_class_of',
+                    'sort': 'maxClassOf'
+                },
+                'isActive hidden-xs': {
+                    'label': 'field.isActive',
+                    'sort': 'isActive'
+                },
+                'abbreviation': {
+                    'hidden': 1
+                }
+            }
+        }
+    }) }}
+{% endmacro %}

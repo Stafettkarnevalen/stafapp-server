@@ -1,0 +1,23 @@
+{% block body %}
+{% trans from "messages" %}register.manager_heading{% endtrans %}
+
+
+{% if field == 'email' %}
+{% set step = 2 %}
+{% set title = 'verify.manager_email_step' %}
+{% set text = 'verify.manager_email_body_txt' %}
+{% elseif field == 'phone' %}
+{% set step = 3 %}
+{% set title = 'verify.manager_phone_step' %}
+{% set text = 'verify.manager_phone_body_txt' %}
+{% endif %}
+{% include 'step/step.txt.twig' with { 'step':step, 'steps':3, 'title':title } %}
+
+
+{% autoescape false %}{{ text|trans }}{% endautoescape %}
+
+
+{% include 'email/verification/user.txt.twig' %}
+
+{% include 'email/verification/action.txt.twig' %}
+{% endblock %}

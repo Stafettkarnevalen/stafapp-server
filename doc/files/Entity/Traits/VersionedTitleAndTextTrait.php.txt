@@ -1,0 +1,56 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 14.20
+ */
+
+namespace App\Entity\Traits;
+
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
+
+/**
+ * Trait VersionedTitleAndTextTrait
+ * @package App\Entity\Traits
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+trait VersionedTitleAndTextTrait
+{
+    /** use title trait*/
+    use VersionedTitleTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="text_fld", type="string", length=65535, nullable=false)
+     * @Assert\NotBlank()
+     * @var string $text The versioned text
+     */
+    protected $text;
+
+    /**
+     * Gets the text.
+     *
+     * @return string
+     */
+    public function getText()
+    {
+        return $this->text;
+    }
+
+    /**
+     * Sets the text.
+     *
+     * @param string $text
+     * @return $this
+     */
+    public function setText($text)
+    {
+        $this->text = $text;
+
+        return $this;
+    }
+}

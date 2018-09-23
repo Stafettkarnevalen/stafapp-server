@@ -1,0 +1,41 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 01/11/2017
+ * Time: 1.53
+ */
+
+namespace App\Validator\Constraints;
+
+
+use Symfony\Component\Validator\Constraint;
+/**
+ * @Annotation
+ * @Target({"PROPERTY", "METHOD", "ANNOTATION"})
+ */
+class IsValidName  extends Constraint
+{
+    public $messageAllLower = 'is.all.lower';
+    public $messageAllUpper = 'is.all.upper';
+    public $messageIllegalCharacters = 'contains.illegal.characters';
+
+    private $name = null;
+
+    public function __construct($name = null)
+    {
+        parent::__construct();
+
+        $this->name = $name;
+    }
+
+    /**
+     * Gets the name.
+     *
+     * @return null
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+}

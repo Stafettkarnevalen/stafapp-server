@@ -1,0 +1,31 @@
+<div class="panel panel-primary">
+    <div class="panel-heading">{% trans from "school" %}school.contact_info{% endtrans %}</div>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-xs-12 col-sm-6">
+                <div><strong>{{ school.name }}</strong></div>
+                {% if school.name.abbreviation %}<div>({{ school.name.abbreviation }})</div>{% endif %}
+                <br/>
+                <div>{{ school.name.streetAddress }}</div>
+                <div>{{ school.name.zipcode }} {{ school.name.city }}</div>
+                {% if school.name.pobox %}<div>{{ school.name.pobox }}</div>{% endif %}
+                <div>{{ school.name.country }}</div>
+                <br/>
+            </div>
+            <div class="col-xs-12 col-sm-6">
+                <div><i class="fa fa-phone"></i> {{ school.name.phone }}</div>
+                <div><i class="fa fa-envelope-o"></i> {{ school.name.email }}</div>
+                <hr/>
+                <div><i class="fa fa-hashtag"></i> {{ "%05d"|format(school.number) }}</div>
+                <div><i class="fa fa-key"></i> {{ "%08d"|format(school.password) }}</div>
+                {{ school.name.emailSlug }}
+                {{ school.name.roleSlug }}
+            </div>
+        </div>
+    </div>
+    <div class="panel-footer text-right">
+        {% if school.names|length > 1 %}<a onclick="$('#school_panel').load('{{ path('nav.prev_names') }}'); return false;" class="btn btn-default"><i class="fa fa-history"></i> {% trans from "school" %}school.prev_names{% endtrans %} <i class="fa fa-angle-right"></i></a>{% endif %}
+        <a onclick="$('#school_panel').load('{{ path('nav.edit_school') }}'); return false;" class="btn btn-default"><i class="fa fa-edit"></i> {% trans from "school" %}school.edit_contact{% endtrans %} <i class="fa fa-angle-right"></i></a>
+        <a onclick="$('#school_panel').load('{{ path('nav.change_school_name') }}'); return false;" class="btn btn-default"><i class="fa fa-address-card-o"></i> {% trans from "school" %}school.change_name{% endtrans %} <i class="fa fa-angle-right"></i></a>
+    </div>
+</div>

@@ -1,0 +1,18 @@
+parameters:
+    sms_transport: ftp
+    sms_host: mail.stafettkarnevalen.fi
+    sms_port: 990
+    sms_user: smsd
+    sms_password: C1fpassw
+    sms_outdir: outgoing
+
+services:
+    sms:
+        class: App\Util\SMS
+        calls:
+            - [setTransport, ["%sms_transport%"]]
+            - [setHost, ["%sms_host%"]]
+            - [setPort, ["%sms_port%"]]
+            - [setUser, ["%sms_user%"]]
+            - [setPassword, ["%sms_password%"]]
+            - [setOutdir, ["%sms_outdir%"]]

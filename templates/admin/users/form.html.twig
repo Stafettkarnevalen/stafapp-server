@@ -1,0 +1,86 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+{% set nonDel = [1, 2] %}
+{% if user.id == 1 or user.id is null %}
+    {% set no_toolbar = true %}
+{% endif %}
+{% block body %}
+    <div class="side-padding">
+        <h1>{% if user.id != 0 %}{{ user.fullname }}{% else %}{% trans from "user" %}action.create{% endtrans %}{% endif %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        {% if user.id and not user.hasRole(1) %}
+        <nav class="navbar navbar-default toolbar">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    {% if user.phone is not null %}
+                        <a class="navbar-brand" data-reload="true" data-title="{% trans from 'nav' %}nav.message{% endtrans %}" data-toggle="modal" href="{{ path('nav.message', {'action': 'compose', 'id': 0, 'rcptType': 'User', 'rcptId': user.id, 'msgTypes': 'SMS,INTERNAL'}) }}"><i class="fa fa-commenting-o"></i> {% trans from 'user' %}action.send_sms{% endtrans %}</a>
+                    {% endif %}
+                    <a class="navbar-brand" data-reload="true" data-title="{% trans from 'nav' %}nav.message{% endtrans %}" data-toggle="modal" href="{{ path('nav.message', {'action': 'compose', 'id': 0, 'rcptType': 'User', 'rcptId': user.id, 'msgTypes': 'EMAIL,INTERNAL'}) }}"><i class="fa fa-envelope"></i> {% trans from 'user' %}action.send_email{% endtrans %}</a>
+                    {% if not user.hasRole(2) %}
+                        <a class="navbar-brand" href="{{ path(Routes.nav_admin_simulate_user, {'id': user.id}) }}"><i class="fa fa-sign-in"></i> {% trans from 'user' %}action.login_as{% endtrans %}</a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+        {% endif %}
+        <div class="form bg-default all-padding">
+            {{ form_row(form.username) }}
+            {{ form_row(form.email) }}
+            {{ form_row(form.firstname) }}
+            {{ form_row(form.lastname) }}
+            {{ form_row(form.phone) }}
+            {{ form_row(form.locale) }}
+            {{ form_row(form.isActive) }}
+            <hr/>
+            {{ form_row(form.plainPassword.first) }}
+            {{ form_row(form.plainPassword.second) }}
+            <hr/>
+            {{ form_label(form.roles) }}
+            <div class="well well-sm">
+                {{ form_widget(form.roles) }}
+            </div>
+            {{ form_row(form.groups) }}
+        </div>
+
+        <h1 class="top-bottom-padding">{% trans from 'user' %}message.title{% endtrans %}</h1>
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="alert alert-info">{% trans from 'user' %}message.text{% endtrans %}</div>
+        <div class="form bg-default all-padding">
+
+            {{ form_row(form.message) }}
+
+            {% if modal is not defined or modal == false %}
+                <div class="form-nav">
+                    <div class="btn-group btn-group-justified" role="group">
+                        <a class="btn btn-default" href="{{ path(Routes.nav_admin_list_users) }}"><i class="fa fa-chevron-left"></i> {% trans %}action.close{% endtrans %} <i class="fa fa-undo"></i></a>
+                        {% if user.id %}
+                            <a class="btn btn-danger{% if user.id in nonDel %} disabled{% endif %}" href="{{ path(Routes.nav_admin_delete_user, {'id': user.id}) }}"><i class="fa fa-trash"></i> {% trans %}action.delete{% endtrans %} <i class="fa fa-minus"></i></a>
+                        {% endif %}
+                        <div class="btn-group" role="group">
+                            {{ form_widget(form.submit) }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

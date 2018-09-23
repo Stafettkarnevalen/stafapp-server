@@ -1,0 +1,38 @@
+<div class="panel panel-default">
+    <div class="panel-heading"><strong>{{ type|lower|trans({ }, 'school') }}</strong></div>
+    <div class="panel-body">
+        {% if addressType == 'SCHOOL' %}
+            <div class="alert">
+                <div><strong>{{ address }}</strong></div>
+                <div>{{ address ? address.streetAddress : 'null' }}</div>
+                <div>{{ address ? address.zipcode : 'null'}} {{ address ? address.city : 'null'}}</div>
+                {% if address and address.pobox %}<div>{{ address.pobox }}</div>{% endif %}
+                <div>{{ address? address.country : 'null'}}</div>
+            </div>
+            {% if type == 'VISITING' and addressType == 'SCHOOL' %}
+                <div class="alert alert-info">
+                    {% trans from "school" %}billing_address.using_school{% endtrans %}
+                </div>
+            {% elseif type != 'VISITING' and (addressType == 'SCHOOL' or addressType == 'VISITING') %}
+                <div class="alert alert-warning">
+                    {% trans from "school" %}billing_address.not_applicable{% endtrans %}
+                </div>
+            {% endif %}
+        {% else %}
+
+        {% endif %}
+    </div>
+    <div class="panel-footer text-right">
+        {% if addressType == 'SCHOOL' %}
+            <button onclick="$('#address_{{ unit.id }}').load('{{ path('nav.create_billing_address', {'unit':unit.id, 'type':type}) }}'); return false;" class="btn btn-default"><i class="fa fa-plus"></i> {% trans from "school" %}create.billing_address{% endtrans %} <i class="fa fa-angle-right"></i></button>
+        {% elseif addressType == 'VISITING'%}
+            <button onclick="$('#address_{{ unit.id }}').load('{{ path('nav.create_billing_address', {'unit':unit.id, 'type':type}) }}'); return false;" class="btn btn-default"><i class="fa fa-plus"></i> {% trans from "school" %}create.billing_address{% endtrans %} <i class="fa fa-angle-right"></i></button>
+        {% else %}
+            {% if not addressConfirmed %}
+                <button onclick="$('#address_{{ unit.id }}').load('{{ path('nav.confirm_billing_address', {'address':address.id}) }}'); return false;" class="btn btn-success"><i class="fa fa-check"></i> {% trans from "school" %}confirm.billing_address{% endtrans %} <i class="fa fa-angle-right"></i></button>
+            {% endif %}
+            <button onclick="$('#address_{{ unit.id }}').load('{{ path('nav.remove_billing_address', {'address':address.id}) }}'); return false;" class="btn btn-danger"><i class="fa fa-delete"></i> {% trans from "school" %}remove.billing_address{% endtrans %} <i class="fa fa-angle-right"></i></button>
+            <button onclick="$('#address_{{ unit.id }}').load('{{ path('nav.edit_billing_address', {'address':address.id}) }}'); return false;" class="btn btn-default"><i class="fa fa-edit"></i> {% trans from "school" %}edit.billing_address{% endtrans %} <i class="fa fa-angle-right"></i></button>
+        {% endif %}
+    </div>
+</div>

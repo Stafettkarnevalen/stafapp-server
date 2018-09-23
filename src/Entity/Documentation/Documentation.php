@@ -1,0 +1,300 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 21/10/2017
+ * Time: 11.53
+ */
+
+namespace App\Entity\Documentation;
+
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Interfaces\AccessControlledEntityInterface;
+use App\Entity\Interfaces\OrderedEntityInterface;
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Security\SimpleACE;
+use App\Entity\Security\User;
+use App\Entity\Traits\AccessControlledTrait;
+use App\Entity\Traits\CloneableTrait;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\LoggableTrait;
+use App\Entity\Traits\VersionedLifespanTrait;
+use App\Entity\Traits\VersionedOrderedEntityTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use App\Entity\Traits\VersionedTitleAndTextTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Acl\Permission\MaskBuilder;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Symfony\Component\Serializer\Annotation as Serialize;
+use JMS\Serializer\Annotation as Jms;
+
+/**
+ * @ORM\Table(name="documentation_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity(repositoryClass="App\Repository\DocumentationRepository")
+ * @ORM\InheritanceType("SINGLE_TABLE")
+ * @ORM\DiscriminatorColumn(name="discriminator_fld", type="string")
+ * @ORM\DiscriminatorMap({
+ *     "documentation" = "Documentation",
+ *     "relayRule" = "App\Entity\Relays\RelayRule",
+ *     "cheerleadingRule" = "App\Entity\Cheerleading\CheerleadingRule",
+ *     "eventRule" = "App\Entity\Events\EventRule",
+ *     "sportRule" = "App\Entity\Cups\SportRule",
+ *     "faq" = "FAQ"
+ * })
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Event
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class Documentation implements Serializable, CreatedByUserInterface,
+    AccessControlledEntityInterface, OrderedEntityInterface, LoggableEntity
+{
+    /** use acls */
+    use AccessControlledTrait;
+
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use clonable trait */
+    use CloneableTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use lifespan fields */
+    use VersionedLifespanTrait;
+
+    /** Use ordered entity trait */
+    use VersionedOrderedEntityTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /** Use title and text fields */
+    use VersionedTitleAndTextTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="locale_fld", type="string", length=2, nullable=false)
+     * @var string $locale The language used in this document
+     */
+    protected $locale = 'sv';
+
+    /**
+     * @ORM\OneToMany(targetEntity="Documentation", mappedBy="parent", cascade={"persist", "remove"})
+     * @var Documentation $children The children of this Documentation
+     */
+    protected $children;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Documentation", inversedBy="children")
+     * @ORM\JoinColumn(name="parent_fld", referencedColumnName="id_fld", nullable=true)
+     * @var Documentation $parent The parent of this Documentation
+     */
+    protected $parent;
+
+    /**
+     * Documentation constructor.
+     */
+    public function __construct()
+    {
+        $this->children = new ArrayCollection([]);
+        $this->order = 0;
+        $this->initObjectAces();
+        $this->setFrom(new \DateTime('now'));
+    }
+
+    /**
+     * Gets the children.
+     *
+     * @return ArrayCollection
+     */
+    public function getChildren()
+    {
+        $criteria = Criteria::create()->orderBy(['order' => 'ASC']);
+        return $this->children->matching($criteria);
+    }
+
+    /**
+     * Sets the children.
+     *
+     * @param ArrayCollection $children
+     * @return $this
+     */
+    public function setChildren($children)
+    {
+        $this->children = $children;
+
+        return $this;
+    }
+
+    /**
+     * Gets the parent.
+     *
+     * @return Documentation|null
+     */
+    public function getParent()
+    {
+        return $this->parent;
+    }
+
+    /**
+     * Sets the parent.
+     *
+     * @param Documentation|null $parent
+     * @return $this
+     */
+    public function setParent($parent)
+    {
+        $this->parent = $parent;
+
+        return $this;
+    }
+
+    /**
+     * Initiates the ACL for this Documentation.
+     *
+     * @return $this
+     */
+    public function initObjectAces()
+    {
+        $this->objectAces = [
+            new SimpleACE('ROLE_ADMIN', MaskBuilder::MASK_MASTER, 0, null),
+            new SimpleACE('IS_AUTHENTICATED_ANONYMOUSLY', MaskBuilder::MASK_VIEW, 1, null),
+            new SimpleACE('ROLE_MANAGER',MaskBuilder::MASK_VIEW, 2, null),
+            new SimpleACE('IS_AUTHENTICATED_FULLY',MaskBuilder::MASK_VIEW, 3, null),
+        ];
+        return $this;
+    }
+
+    /**
+     * Gets the locale.
+     *
+     * @return string
+     */
+    public function getLocale()
+    {
+        return $this->locale;
+    }
+
+    /**
+     * Sets the locale.
+     *
+     * @param string $locale
+     * @return $this
+     */
+    public function setLocale($locale)
+    {
+        $this->locale = $locale;
+
+        return $this;
+    }
+
+    /**
+     * Gets the title numbering of this Documentation.
+     *
+     * @return null|string
+     */
+    public function getTitleNumbering()
+    {
+        if ($this->getParent() && $this->getParent()->getTitleNumbering())
+            return $this->getParent()->getTitleNumbering()  . ($this->getOrder() + 1) . ".";
+        else if ($this->getParent())
+            return ($this->getOrder() + 1) . ".";
+        return null;
+    }
+
+    /**
+     * Gets the title level of this Documentation.
+     *
+     * @return int
+     */
+    public function getTitleLevel()
+    {
+        $level = 0;
+        $parent = $this;
+        while ($parent = $parent->parent)
+            $level++;
+        return $level ? $level : 1;
+    }
+
+    /**
+     * Gets the siblings of this OrderedEntity.
+     *
+     * @param ObjectManager $em
+     * @return ArrayCollection
+     */
+    public function getSiblings(ObjectManager $em = null)
+    {
+        /** @var Documentation $parent */
+        if ($parent = $this->getParent()) {
+            $siblings = $parent->getChildren();
+        } else {
+            $siblings = new ArrayCollection($em->getRepository(Documentation::class)->findBy([
+                'parent' => null,
+            ]));
+        }
+        $criteria = Criteria::create()->where(Criteria::expr()->neq('id', $this->getId()))->orderBy(['order' => 'ASC']);
+        return $siblings->matching($criteria);
+    }
+
+    /**
+     * Returns a CSV representation of this Documentation.
+     *
+     * @param string $delim
+     * @param bool $headers
+     * @return string
+     */
+    public function __toCSV($delim = "\t", $headers = true)
+    {
+        if ($headers)
+            $csv = implode($delim, array_keys($this->getFields())) . "\n";
+        else
+            $csv = "";
+
+        $fields = array_map(function ($fld) {
+            if ($fld instanceof ArrayCollection)
+                return '';
+            if ($fld instanceof \DateTime)
+                return $fld->format('c');
+            if ($fld instanceof Documentation || $fld instanceof User)
+                return $fld->getId();
+            if (is_object($fld))
+                return '';
+            if (is_array($fld))
+                return '';
+            return $fld;
+        }, $this->getFields());
+        $csv .= implode($delim, $fields) . "\n";
+        /** @var Documentation $child */
+        foreach ($this->getChildren() as $child)
+            $csv .= $child->__toCSV($delim, false);
+        return $csv;
+    }
+
+    /**
+     * Gets the text as minified html.
+     *
+     * @return string
+     */
+    public function getMinifiedHTML()
+    {
+        return str_replace(["\n", "\r", "\t"],'', $this->getText());
+    }
+
+    /**
+     * Sets the text to minified html.
+     *
+     * @param string $html
+     * @return $this
+     */
+    public function setMinifiedHTML($html)
+    {
+        return $this->setText(str_replace(["\n", "\r", "\t"],'', $html));
+    }
+}

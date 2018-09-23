@@ -1,0 +1,185 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 13/10/2017
+ * Time: 14.19
+ */
+
+namespace App\Entity\Modules;
+
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Traits\LoggableTrait;
+use App\Form\Module\NewsArticleType;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
+
+/**
+ * @ORM\Table(name="news_article_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Modules
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class NewsArticle extends BaseModule implements LoggableEntity
+{
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="from_fld", type="datetime")
+     * @Assert\NotBlank()
+     * @var \DateTime $from The time when the entity's lifesan begins
+     */
+    protected $from;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="until_fld", type="datetime", nullable=true)
+     * @var \DateTime $until The time when the entity's lifespan ends
+     */
+    protected $until;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="text_fld", type="string", length=65535, nullable=false)
+     * @Assert\NotBlank()
+     * @var string $text The contents of this article
+     */
+    protected $text;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="introduction_fld", type="string", length=256, nullable=true)
+     * @var string $introduction The introduction of this article
+     */
+    protected $introduction;
+
+    /**
+     * Gets the from.
+     *
+     * @return \DateTime
+     */
+    public function getFrom()
+    {
+        return $this->from;
+    }
+
+    /**
+     * Sets the from.
+     *
+     * @param \DateTime $from
+     * @return $this
+     */
+    public function setFrom($from)
+    {
+        $this->from = $from;
+
+        return $this;
+    }
+
+    /**
+     * Gets the until.
+     *
+     * @return \DateTime
+     */
+    public function getUntil()
+    {
+        return $this->until;
+    }
+
+    /**
+     * Sets the until.
+     *
+     * @param \DateTime $until
+     * @return $this
+     */
+    public function setUntil($until)
+    {
+        $this->until = $until;
+
+        return $this;
+    }
+
+
+
+    /**
+     * Gets the text.
+     *
+     * @return string
+     */
+    public function getText()
+    {
+        return $this->text;
+    }
+
+    /**
+     * Sets the text.
+     *
+     * @param string $text
+     * @return $this
+     */
+    public function setText($text)
+    {
+        $this->text = $text;
+
+        return $this;
+    }
+
+    /**
+     * Gets the introduction.
+     *
+     * @return string|null
+     */
+    public function getIntroduction()
+    {
+        return $this->introduction;
+    }
+
+    /**
+     * Sets the introduction.
+     *
+     * @param string|null $introduction
+     * @return $this
+     */
+    public function setIntroduction($introduction)
+    {
+        $this->introduction = $introduction;
+
+        return $this;
+    }
+
+    /**
+     * Gets the Symfony FormType class.
+     *
+     * @return string
+     */
+    public function getFormClass()
+    {
+        return NewsArticleType::class;
+    }
+
+    /**
+     * Gets the TWIG form view.
+     *
+     * @return string
+     */
+    public function getFormView()
+    {
+        return 'admin/modules/forms/news-article.html.twig';
+    }
+
+    /**
+     * Gets the TWIG view.
+     *
+     * @return string
+     */
+    public function getView()
+    {
+        return 'modules/news-article.html.twig';
+    }
+}

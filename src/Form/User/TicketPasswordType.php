@@ -1,0 +1,86 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 22/11/2016
+ * Time: 21.45
+ */
+namespace App\Form\User;
+
+use App\Form\PhoneNumber\PhoneNumberType;
+use Symfony\Component\Form\AbstractType;
+
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\PasswordType;
+
+class TicketPasswordType extends AbstractType
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $type = $options['type'] == 'username' ? EmailType::class : PhoneNumberType::class;
+        $getter = 'get' . $options['type'];
+
+        $builder
+            ->add($options['type'], $type, [
+                'label' => 'login.' . $options['type'],
+                'mapped' => false,
+                'data' => $builder->getData()->getUser()->$getter(),
+                'attr' => [
+                    'readonly' => true,
+                ],
+            ])
+            ->add('phase', HiddenType::class, ['data' => $options['phase'], 'mapped' => false]);
+        if ($options['phase'] == 'login') {
+            $builder
+                ->add('password', PasswordType::class,
+                    ['label' => 'passwd.code', 'attr' => ['autofocus' => true], 'mapped' => false])
+                ->add('plainPassword', RepeatedType::class, [
+                        'type' => PasswordType::class,
+                        'first_options'  => ['block_name' => 'first', 'attr' => ['pattern' => '.{4,64}'], 'label' => 'label.new_password1', 'error_bubbling' => false],
+                        'second_options' => ['block_name' => 'second', 'attr' => ['pattern' => '.{4,64}'], 'label' => 'label.new_password2', 'error_bubbling' => false],
+                        'invalid_message' => 'password.missmatch',
+                        'error_bubbling' => true,
+                        'error_mapping' => ['.' => 'second'],
+                        'label' => false,
+                    ]
+                )
+                ->add('resend', SubmitType::class, [
+                    'left_icon' => 'fa-envelope',
+                    'right_icon' => 'fa-repeat',
+                    'label' => 'passwd.resend_code',
+                    'validation_groups' => false,
+                    'attr' =>['formnovalidate' => 'formnovalidate']])
+                ->add('submit', SubmitType::class, [
+                    'left_icon' => 'fa-check',
+                    'right_icon' => 'fa-chevron-right',
+                    'attr' => ['class' => 'btn-success'],
+                    'label' => 'passwd.submit']);
+        } else {
+            $builder
+                ->add('submit', SubmitType::class, ['left_icon' => 'fa-check',
+                    'right_icon' => 'fa-chevron-right', 'attr' => ['class' => 'btn-success'], 'label' => 'passwd.send_code']);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults([
+            'data_class' => 'App\Entity\Security\UserTicket',
+            'translation_domain' => 'security',
+            'phase' => 'ticket',
+            'type' => 'username',
+            'tries' => 3,
+        ]);
+    }
+}

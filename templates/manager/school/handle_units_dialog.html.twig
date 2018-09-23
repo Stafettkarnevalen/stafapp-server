@@ -1,0 +1,11 @@
+<div class="panel panel-primary">
+    <div class="panel-heading">{% trans from "school" %}school.handle_units{% endtrans %}</div>
+    <div class="panel-body">
+
+    </div>
+
+    <div class="panel-footer text-right">
+        <a onclick="$('#unit_panel').load('{{ path('nav.view_units') }}'); scrollToAnchor('unit_panel'); return false;" class="btn btn-default"><i class="fa fa-undo"></i> {% trans from "messages" %}cancel{% endtrans %}</a>
+        <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> {% trans from "messages" %}save{% endtrans %}</button>
+    </div>
+</div>

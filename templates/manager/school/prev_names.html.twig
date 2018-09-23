@@ -1,0 +1,20 @@
+
+<div class="panel panel-primary">
+    <div class="panel-heading">{% trans from "school" %}school.prev_names{% endtrans %}</div>
+    <div class="panel-body no-padding">
+        <table class="table table-striped">
+            <tbody>
+            {% for name in school.names %}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td class="text-nowrap">{{ name.from|date('d.m.Y') }} - {{ name.until ? name.until|date('d.m.Y') : 'current'|trans }}</td>
+                    <td width="1%" class="text-right"><a href="{{ path('nav.revert_to_name', {'name': name.id}) }}" class="btn btn-xs btn-default"><i class="fa fa-history"></i> {% trans from "messages" %}revert{% endtrans %}</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="panel-footer text-right">
+        <a onclick="$('#school_panel').load('{{ path('nav.view_school') }}'); scrollToAnchor('school_panel'); return false;" class="btn btn-default"><i class="fa fa-undo"></i> {% trans from "messages" %}cancel{% endtrans %}</a>
+    </div>
+</div>

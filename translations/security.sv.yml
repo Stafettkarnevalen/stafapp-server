@@ -1,0 +1,108 @@
+Success: 'Användaren loggades in.'
+log:
+    info_logins: 'Nedan hittar du en lista på inloggningar samt försök till inloggningar med ditt användarnamn.'
+    info_password: 'Nedan hittar du en lista på utförda lösenordsbyten eller misllyckade försök därtill..'
+    logins: 'Inloggningar'
+    password: 'Lösenord'
+login:
+    choices: 'Övriga inloggningssätt'
+    code: '{0} Kod|[1,Inf[ Kod (%count% försök kvar)|'
+    email: 'E-postadress'
+    forgot_password: 'Glömt ditt lösenord'
+    forgot_password_sub: 'Beställ ett nytt lösenord till din e-post'
+    heading: 'Logga in'
+    info_email: 'Ange din e-postadress nedan så skickar vi dig en engångskod med vilken du kan logga in. Koden är i kraft i 10 minuter och för högst 3 försök.'
+    info_forgot_password: "Om du har glömt bort ditt lösenord och både din e-postadress samt mobilnummer har ändrats,\n                        kan du ännu nollställa ditt lösenord på egen hand ifall du har sparat en <strong>sekundär e-postadress</strong> i din användarprofil. Den sekundära e-postadressen är alltså inte den som du använder för att logga in.</p>\n                        <p class=\"all-padding\">Processen går till så att du fyller i din sekundära e-postadress i formuläret nedan.\n                        Ifall e-postadressen hittas, skickas du en kod med vilken du kan byta ditt bortglömda lösenord till ett nytt."
+    info_phone: 'Ange din mobilnummer nedan så skickar vi dig en engångskod med vilken du kan logga in. Koden är i kraft i 10 minuter och för högst 3 försök.'
+    info_userpass: 'Var god och logga in med din e-postadress och ditt personliga lösenord.'
+    info_usb: "Du kan även logga in med en hemlig kod sparad på en USB-nyckel ifall du äger en sådan. USB-nyckeln för skolornas huvudanvändare har skickats ut till skolorna. En personlig USB-nyckel för ditt användarkonto kan du beställa från dina användarinställningar efter att du loggat in."
+    info_mobile_app: "Logga in med hjälp av en app som du installerat på din mobiltelefon. Appen heter StafApp och finns för iOS och Android. Ange ditt användarnamn nedan och vänta på att appen i din telefon ber om bekräftelse."
+    password: 'Lösenord'
+    phone: 'Mobilnummer'
+    recovery_info: 'Användarkonto %name% hittades med angiven e-postadress. Ett meddelande som innehåller en kod för att återställa kontots lösenord har postats till e-postadressen. Var god ange koden samt ett nytt lösenord nedan.'
+    remember_me: 'Håll mig inloggad'
+    resend_code: 'Skicka en ny kod'
+    send_code: 'Sänd mig koden'
+    send_support: 'Skicka meddelande'
+    submit: 'Logga in'
+    successful: 'Användaren loggades in'
+    username: 'Användarnamn (e-postadress)'
+    w_email: 'Kod via e-post'
+    w_email_sub: 'Logga in med din e-postadress'
+    w_phone: 'Kod via SMS'
+    w_phone_sub: 'Logga in med din mobiltelefon'
+    w_userpass: 'E-post och lösenord'
+    w_userpass_sub: 'Traditionell inloggning'
+    w_facebook: 'Använd Facebook'
+    w_facebook_sub: 'Registrera dig / logga in med ditt Facebookkonto'
+    w_google: 'Använd Google'
+    w_google_sub: 'Registrera dig / logga in med ditt Googlekonto'
+    w_twitter: 'Använd Twitter'
+    w_twitter_sub: 'Registrera dig / logga in med ditt Twitterkonto'
+    w_instagram: 'Använd Instagram'
+    w_instagram_sub: 'Registrera dig / logga in med ditt Instagramkonto'
+    w_usb: 'Använd en USB-nyckel'
+    w_usb_sub: 'Logga in med en hemlig kod på en USB-nyckel'
+    w_mobile_app: 'Använd en app'
+    w_mobile_app_sub: 'Logga in med en app på din mobiltelefon'
+    mobile_app.waiting_for_stamp: 'Väntar på appen...'
+    mobile_app.waiting_for_stamp_text: 'Vänligen godkänn inloggningen med appen på din mobila enhet innan tiden går ut. Du kan nollställa tiden till 1 minut ifall du behöver mera tid.'
+    loging_in: 'loggar in...'
+    out_of_time: 'tiden tog slut...'
+
+field:
+    school_number: "Skolans nummer"
+    school_password: "Skolans lösenord"
+    message: "Meddelande"
+    usb_key_invalid: '<i class="fa fa-fw fa-lg fa-exclamation-circle"></i> Uppgifterna på din USB-nyckel kunde inte kopplas till ett aktivt konto. Var god och meddela vår support om detta med nedanstående formulär så utreder vi ärendet.'
+    usb_key_tutorial: '<i class="fa fa-fw fa-lg fa-info-circle"></i> Lägg in USB-nyckeln i datorn och starta programmet <strong>StafApp</strong>. Klicka sedan på <strong>I love Staf1</strong>-ikonen för att logga in.'
+label:
+    new_password1: "Nytt lösenord (minst 4 tecken)"
+    new_password2: "Bekräfta nytt lösenord"
+    search: "Sök"
+    email: "Sekundär e-postadress"
+    some_connection: '-koppling'
+logs:
+    date: 'Datum'
+    hostname: '<span class="hidden-xs">Värddatorns namn</span><span class="hidden-sm hidden-md hidden-lg">Namn</span>'
+    ip: '<span class="hidden-xs">Värddatorns IP</span><span class="hidden-sm hidden-md hidden-lg">IP</span>'
+    result: 'Resultat'
+nav:
+    logout: 'Logga ut'
+passwd:
+    info_userpass: 'Byt ditt lösenord genom att först ange det nuvarande lösenordet och sedan det nya två gånger. Det nya lösenordet bör vara minst 4 bokstäver långt. Nedan hittar du några exempel på slumpmässigt skapade lösenord som du kan använda.'
+    choices: "Övriga sätt"
+    w_userpass: "Byt lösenordet på vanligt vis"
+    w_email: "Byt lösenordet med e-post"
+    w_phone: "Byt lösenordet med SMS"
+    info_phone: "Vi skickar dig en engångskod till din mobiltelefon. Med koden du kan byta ditt lösenord. Koden är i kraft i 10 minuter och för högst 3 försök."
+    send_code: "Sänd mig koden"
+    code: '{0} Kod|[1,Inf[ Kod (%count% försök kvar)|'
+    submit: "Byt lösenord"
+    resend_code: "Skicka en ny kod"
+    suggestions: "Nedan hittar du några exempel på slumpmässigt skapade lösenord som du kan använda."
+password:
+    missmatch: 'Lösenorden stämde inte överens'
+    changed: "Lösenordet byttes"
+ticket:
+    login_html_message: "<h3>Bästa %firstname%, välkommen tillbaka!</h3><p>Du har begärt om ett  engångslösenord för att logga in på Stafettkarnevalens anmälningstjänst. Du bör använda följande kod: <strong>%password%</strong>. Koden är i kraft till och med klockan <strong>%valid%</strong> och du har 3 försök innan koden makuleras.</p><p>Du kan även använda denna <a href=\"%link%\">direkta länk</a> för att logga in på denna apparat.</p>"
+    passwd_html_message: "<h3>Bästa %firstname%</h3><p>Du har begärt om ett  engångslösenord för att byta ditt riktiga lösenord på Stafettkarnevalens anmälningstjänst. Du bör använda följande kod: <strong>%password%</strong>. Koden är i kraft till och med klockan <strong>%valid%</strong> och du har 3 försök innan koden makuleras.</p>"
+    login_with_key: 'Bästa %name%, du bör använda följande kod för att logga in: %key%'
+    password_with_key: 'Bästa %name%, du bör använda följande kod för att byta ditt lösenord: %key%'
+    invalid_username: 'Ingen användare med den angivna e-postadressen är registrerad i vår databas. Var god och kontrollera att du angivit e-postadressen rätt.'
+    invalid_phone: 'Ingen användare med det angivna mobilnumret är registrerad i vår databas. Var god och kontrollera att du angivit numret rätt.'
+    mobile_app_missing: 'Användaren har inte registrerat en mobil app'
+    user_not_found: 'Användaren kunde inte hittas'
+
+user:
+    invalid_email: 'Ingen användare med den angivna e-postadressen hittades i vår databas. Var god och kontrollera att du angivit e-postadressen rätt.'
+info:
+    gdpr: 'Jag:<ul><li>är över 16 år gammal</li><li>har läst <a href="/gdpr/dataprotection-sv.pdf" target="_blank">dataskyddsbeskrivningen</a> och</li><li>godkänner <a href="/gdpr/terms-sv.pdf" target="_blank">användarvillkoren</a></li></ul>'
+    oauth_register: "Ett användarkonto för ifrågavarande sociala mediatjänst har inte ännu registrerats. Du kan registrera ett nu och sedan enkelt logga in i fortsättningen. Var god och komplettera det eventuella bristfälliga uppgifterna för att registrera dig."
+    oauth_connect: "Ett användarkonto med ifrågavarande användarnamn eller mobilnummer finns redan. Du kan koppla detta konto till ifrågavarande sociala mediatjänst nu och sedan enkelt logga in i fortsättningen. Var god och komplettera det eventuella bristfälliga uppgifterna för att koppla kontot till tjänsten."
+    oauth_password_required: "Eftersom ett registrerat konto redan finns behöver vi dess lösenord för att kunna koppla det till denna sociala mediatjänst."
+    blocked: 'Användarkontot har spärrats och ett mail har skickats till administratörerna av Finlands Svenska Idrotts motionskampanjer om ett eventuellt missbruk av dina personuppgifter. Vi kommer att radera dina personuppgifter efter att vi rett ut vad som inträffat.'
+    blocked_email: 'Ett användarkonto med nedanstående uppgifter har spärrats på begäran av e-postadressens ägare. Ett möjligt missbruk av personuppgifter kan ha inträffat då kontot registrerades.'
+    blocked_source: 'Personuppgift med anledning till spärrandet av kontot'
+    blocked_source_emailhash: 'e-postadress'
+    blocked_source_phonehash: 'mobilnummer'

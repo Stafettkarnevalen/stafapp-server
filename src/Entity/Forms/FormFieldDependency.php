@@ -1,0 +1,246 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 08/09/2017
+ * Time: 23.02
+ */
+
+namespace App\Entity\Forms;
+
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Traits\LoggableTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\CloneableTrait;
+
+/**
+ * @ORM\Table(name="form_field_dependency_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Forms
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class FormFieldDependency implements Serializable, CreatedByUserInterface, LoggableEntity
+{
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use cloning functions */
+    use CloneableTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\ManyToOne(targetEntity="FormField", inversedBy="dependsOnMe")
+     * @ORM\JoinColumn(name="source_fld", referencedColumnName="id_fld", nullable=false)
+     * @var FormField $source The source of this dependency, the field imposing conditions
+     */
+    protected $source;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="FormField", inversedBy="dependsOn")
+     * @ORM\JoinColumn(name="target_fld", referencedColumnName="id_fld", nullable=false)
+     * @var FormField $target The target of this dependency, the field affected by the conditions
+     */
+    protected $target;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="logic_fld", type="array", nullable=false)
+     * @Assert\NotBlank()
+     * @var array $logic The logical expressions for the dependency
+     */
+    protected $logic;
+
+    /**
+     * Gets the source.
+     *
+     * @return FormField
+     */
+    public function getSource()
+    {
+        return $this->source;
+    }
+
+    /**
+     * Sets the source.
+     *
+     * @param FormField $source
+     * @return $this
+     */
+    public function setSource($source)
+    {
+        $this->source = $source;
+
+        return $this;
+    }
+
+    /**
+     * Gets the source.
+     *
+     * @return string
+     */
+    public function getSourceType()
+    {
+        return $this->source->getType();
+    }
+
+    /**
+     * Sets the source type.
+     *
+     * @param string $sourceType
+     * @return $this
+     */
+    public function setSourceType($sourceType)
+    {
+        $this->source->setType($sourceType);
+
+        return $this;
+    }
+
+    /**
+     * Gets the target.
+     *
+     * @return FormField
+     */
+    public function getTarget()
+    {
+        return $this->target;
+    }
+
+    /**
+     * Sets the target.
+     *
+     * @param FormField $target
+     * @return $this
+     */
+    public function setTarget($target)
+    {
+        $this->target = $target;
+
+        return $this;
+    }
+
+    /**
+     * Gets the logic.
+     *
+     * @return array
+     */
+    public function getLogic()
+    {
+        return $this->logic;
+    }
+
+    /**
+     * Sets the logic.
+     *
+     * @param array $logic
+     * @return $this
+     */
+    public function setLogic($logic)
+    {
+        $this->logic = $logic;
+
+        return $this;
+    }
+
+    /**
+     * Gets the logic.
+     *
+     * @return string
+     */
+    public function getLogicAsString()
+    {
+        return json_encode($this->logic);
+    }
+
+    /**
+     * Sets the logic.
+     *
+     * @param string $logic
+     * @return $this
+     */
+    public function setLogicAsString($logic)
+    {
+        $this->logic = json_decode($logic, true);
+
+        return $this;
+    }
+
+    /**
+     * Returns the operator for the logic.
+     *
+     * @return string|null
+     */
+    public function getOperator()
+    {
+        $logic = $this->getLogic();
+        if (!$logic)
+            return null;
+        return array_key_exists('operator', $logic) ? $logic['operator'] : null;
+    }
+
+    /**
+     * Sets the operator for the logic.
+     *
+     * @param string|null $operator
+     * @return $this
+     */
+    public function setOperator($operator)
+    {
+        $logic = $this->getLogic();
+        if ($logic) {
+            $logic['operator'] = $operator;
+        } else {
+            $logic = ['operator' => $operator];
+        }
+        return $this->setLogic($logic);
+    }
+
+    /**
+     * Returns the value for the logic.
+     *
+     * @param boolean $quoted if true then the value is quoted if necessary
+     * @return string|null
+     */
+    public function getValue($quoted = false)
+    {
+        $logic = $this->getLogic();
+        if (!$logic)
+            return null;
+        $val =  array_key_exists('value', $logic) ? $logic['value'] : null;
+        if ($val !== null && !is_numeric($val) && !is_bool($val) && $quoted)
+            $val = "'{$val}'";
+        return $val;
+    }
+
+    /**
+     * Sets the value for the logic.
+     *
+     * @param string|null $value
+     * @return $this
+     */
+    public function setValue($value)
+    {
+        $logic = $this->getLogic();
+        if ($logic) {
+            $logic['value'] = $value;
+        } else {
+            $logic = ['value' => $value];
+        }
+        return $this->setLogic($logic);
+    }
+}

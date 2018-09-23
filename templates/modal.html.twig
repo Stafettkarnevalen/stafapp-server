@@ -1,0 +1,109 @@
+{%- if form is defined -%}
+{{ form_start(form) }}
+{%- endif -%}
+<div class="form-nav-top">
+    <span class="form-title"></span>
+    <a role="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-close"></span></a>
+</div>
+
+<div div class="modal-content-body{% if no_toolbar is defined and no_toolbar == true %} no-toolbar{% endif %}" style="background: #fff url({{ asset('build/images/juoksurata.jpg') }}) bottom center;">
+    <div id="{{ request_id()|html_id }}" class="body{% if body_class is defined %} {{ body_class }}{% endif %}">
+
+        {% if app.session.flashBag.has('error') %}
+            <div class="all-padding">
+                <div class="alert alert-danger">
+                    <h3><i class="fa fa-exclamation-circle"></i>
+                        {% for msg in app.session.flashBag.get('error') %}
+                            {% if msg is iterable %}
+                                {{ msg.id|trans(msg.parameters|default({}), msg.domain|default(null), msg.locale|default(null))|raw }}
+                            {% else %}
+                                {{ msg|trans|raw }}
+                            {% endif %}
+                        {% endfor %}
+                    </h3>
+                </div>
+            </div>
+        {% endif %}
+        {% if app.session.flashBag.has('success') %}
+            <div class="top-margin alert alert-dismissible alert-success">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true"><i class="fa text-success fa-close"></i></button>
+                <span class="fa fa-lg fa-check"></span> <strong>{% trans %}message.success{% endtrans %}</strong>
+                <hr class="message-inner-separator">
+                <p>
+                    {% set msgs = [] %}
+                    {% for msg in app.session.flashBag.get('success') %}
+                        {% if msg is iterable and msg not in msgs %}
+                            {{ msg.id|trans(msg.parameters|default({}), msg.domain|default(null), msg.locale|default(null))|raw }}
+                        {% elseif msg not in msgs %}
+                            {{ msg|trans|raw }}
+                        {% endif %}
+                        {% set msgs = msgs|merge([msg]) %}
+                    {% endfor %}
+                </p>
+            </div>
+        {% endif %}
+        {% if app.session.flashBag.has('info') %}
+            <div class="all-padding">
+                <div class="alert alert-info">
+                    <h3><i class="fa fa-info-circle"></i>
+                        {% for msg in app.session.flashBag.get('info') %}
+                            {% if msg is iterable %}
+                                {{ msg.id|trans(msg.parameters|default({}), msg.domain|default(null), msg.locale|default(null))|raw }}
+                            {% else %}
+                                {{ msg|trans|raw }}
+                            {% endif %}
+                        {% endfor %}
+                    </h3>
+                </div>
+            </div>
+        {% endif %}
+        {% if app.session.flashBag.has('warning') %}
+            <div class="all-padding">
+                <div class="alert alert-warning">
+                    <h3><i class="fa fa-exclamation-triangle"></i>
+                        {% for msg in app.session.flashBag.get('warning') %}
+                            {% if msg is iterable %}
+                                {{ msg.id|trans(msg.parameters|default({}), msg.domain|default(null), msg.locale|default(null))|raw }}
+                            {% else %}
+                                {{ msg|trans|raw }}
+                            {% endif %}
+                        {% endfor %}
+                    </h3>
+                </div>
+            </div>
+        {% endif %}
+
+        {% block body %}
+        {% endblock %}
+    </div>
+</div>
+<div class="form-nav">
+    <div class="btn-group btn-group-justified" role="group">
+        {% if btns is defined and form is defined %}
+            {% for btn in btns %}
+                <div class="btn-group" role="group">
+                    {{ form_widget(btn) }}
+                </div>
+            {% endfor %}
+        {% elseif btns is defined %}
+            {% for btn in btns %}
+                <div class="btn-group" role="group">
+                    {{ form_widget(btn) }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+{%- if form is defined -%}
+{{ form_end(form) }}
+{%- endif -%}
+<script type="text/javascript">
+    $(document).ready(function() {
+        /**
+         * Automatically close alert messages after 5 seconds.
+         */
+        $(".alert-dismissible").fadeTo(5000, 500).slideUp(500, function () {
+            $(this).alert('close');
+        });
+    });
+</script>

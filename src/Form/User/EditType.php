@@ -1,0 +1,169 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 22/11/2016
+ * Time: 21.45
+ */
+namespace App\Form\User;
+
+use App\Form\Message\MessageType;
+use App\Form\PhoneNumber\PhoneNumberType;
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ButtonType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
+use Symfony\Component\Form\Extension\Core\Type\PasswordType;
+use Symfony\Component\Validator\Constraints\NotBlank;
+
+class EditType extends AbstractType
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $uid = $builder->getData()->getId();
+        $guestOrAdmin = ($uid === 1 || $uid === 2);
+
+        $builder
+            ->add('username', EmailType::class, [
+                'label' => 'field.uname'
+            ])
+            ->add('email', EmailType::class, [
+                'label' => 'field.email',
+                'required' => false
+            ])
+            ->add('firstname', TextType::class, [
+                'label' => 'field.firstname'
+            ])
+            ->add('lastname', TextType::class, [
+                'label' => 'field.lastname'
+            ])
+            ->add('phone', PhoneNumberType::class, [
+                'label' => 'field.phone',
+                'defaultArea' => '+358',
+                'constraints' => new NotBlank(),
+            ])
+            ->add('locale', ChoiceType::class, [
+                'label' => 'field.locale',
+                'choice_translation_domain' => 'messages',
+                'choices' => ['label.sv' => 'sv', 'label.fi' => 'fi', 'label.en' => 'en'],
+            ])
+            ->add('isActive', ChoiceType::class, [
+                'label' => 'field.status',
+                'expanded' => true,
+                'choice_attr' => function () { return ['class' => 'inline']; },
+                'label_attr' => ['class' => 'radio-inline'],
+                'choice_translation_domain' => 'messages',
+                'choices' => ['label.inactive' => 0, 'label.active' => 1],
+                'disabled' => $guestOrAdmin,
+            ])
+            // ->add('current',PasswordType::class, ['label' => 'label.current_password', 'attr' => ['autofocus' => true], 'mapped' => false])
+            ->add('plainPassword', RepeatedType::class, [
+                'type' => PasswordType::class,
+                    'first_options'  => ['block_name' => 'first', 'attr' => ['pattern' => '.{4,64}'], 'label' => 'field.new_password1', 'error_bubbling' => false],
+                    'second_options' => ['block_name' => 'second', 'attr' => ['pattern' => '.{4,64}'], 'label' => 'field.new_password2', 'error_bubbling' => false],
+                    'invalid_message' => 'password.missmatch',
+                    'error_bubbling' => true,
+                    'error_mapping' => ['.' => 'second'],
+                    'required' => ($uid === 0 || $uid === null),
+                ]
+            )
+            ->add('groups', ChoiceType::class, [
+                'choices' => $options['available_groups'],
+                'expanded' => true,
+                'multiple' => true,
+                'choice_label' => function($group) { return $group; },
+                'choice_attr' => function () { return ['class' => 'inline']; },
+                'label_attr' => ['class' => 'checkbox-inline'],
+                'label' => 'field.groups',
+                'choice_translation_domain' => false,
+            ])
+            ->add('roles', ChoiceType::class, [
+                'choices' => $options['available_roles'],
+                'expanded' => true,
+                'multiple' => true,
+                'choice_label' => function($role) { return $role; },
+                'choice_attr' => function () { return ['class' => 'inline']; },
+                'label_attr' => ['class' => 'checkbox-inline'],
+                'label' => 'field.groups',
+                'choice_translation_domain' => false,
+            ])
+        ;
+
+        if ($options['show_message_part']) {
+            $builder
+                ->add('message', MessageType::class, [
+                    'independent' => false,
+                    // 'mapped' => false,
+                    'label' => 'field.message',
+                    'translation_domain' => 'user',
+                    'required' => false,
+                ]);
+        }
+
+        if ($options['show_actions_part']) {
+            $builder
+                ->add('submit', SubmitType::class, [
+                    'translation_domain' => 'messages',
+                    'left_icon' => 'fa-save',
+                    'right_icon' => 'fa-check',
+                    'attr' => ['class' => 'btn-success form-submit'],
+                    'label' => 'action.save',
+                ])
+                ->add('close', ButtonType::class, [
+                    'translation_domain' => 'messages',
+                    'left_icon' => 'fa-chevron-left',
+                    'right_icon' => 'fa-close',
+                    'attr' => [
+                        'class' => 'btn-default',
+                        'data-dismiss' => 'modal',
+                    ],
+                    'label' => 'action.close',
+                ])
+            ;
+
+            if ($uid) {
+                $builder
+                    ->add('delete', ButtonType::class, [
+                        'translation_domain' => 'messages',
+                        'left_icon' => 'fa-trash',
+                        'right_icon' => 'fa-minus',
+                        'attr' => [
+                            'class' => 'btn-danger',
+                            'data-toggle' => 'confirm',
+                            'data-reload' => 'true',
+                            'data-title' => $options['delete_title'],
+                            'value' => $options['delete_path'],
+                        ],
+                        'label' => 'action.delete',
+                        'disabled' => $guestOrAdmin
+                    ])
+                ;
+            }
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults([
+            'data_class' => 'App\Entity\Security\User',
+            'translation_domain' => 'user',
+            'available_groups' => [],
+            'available_roles' => [],
+            'delete_title' => '',
+            'delete_path' => '',
+            'show_message_part' => true,
+            'show_actions_part' => true,
+        ]);
+    }
+}

@@ -1,0 +1,23 @@
+{# app/Resources/views/manager/verification/verify.html.twig #}
+{% extends 'email/base.html.twig' %}
+
+{% block body %}
+<div class="alert">
+        <h1 class="">{% trans from "messages" %}register.manager_heading{% endtrans %}</h1>
+        {% if field == 'email' %}
+            {% set step = 2 %}
+            {% set title = 'verify.manager_email_step' %}
+            {% set text = 'verify.manager_email_body_html' %}
+        {% elseif field == 'phone' %}
+            {% set step = 3 %}
+            {% set title = 'verify.manager_phone_step' %}
+            {% set text = 'verify.manager_phone_body_html' %}
+        {% endif %}
+        {% include 'step/step.html.twig' with { 'step':step, 'steps':3, 'title':title } %}
+        <div class="form bg-default">
+            <div class="alert">{% autoescape false %}{{ text|trans }}{% endautoescape %}</div>
+            {% include 'email/verification/form.html.twig' %}
+            {% include 'email/verification/action.html.twig' %}
+        </div>
+    </div>
+{% endblock %}

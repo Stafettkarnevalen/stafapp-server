@@ -1,0 +1,17 @@
+action:
+    subtypes: "Underkategorier"
+field:
+    title: "Namn"
+    sub_categories: "Underkategorier"
+help:
+    action:
+        create:
+            category: "<u>Skapa</u> en ny kategori."
+        list:
+            subcategories: "<u>Visa</u> kategorins <em class='text-primary'>underkategorier</em>."
+        edit:
+            category: "<u>Redigera</u> den valda kategorin."
+        delete:
+            category: "<span class='text-danger'><u>Radera</u></span> den valda kategorin."
+        unselect:
+            category: "<u>Avmarkera</u> den valda kategorin, inga åtgärder görs."

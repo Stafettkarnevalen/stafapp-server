@@ -1,0 +1,82 @@
+{% macro render_sorted_table(users, orders, order, sort) %}
+    {{ table(users, {
+        'trans_domain': 'user',
+        'class': 'table table-bordered table-responsive table-condensed table-striped table-scrollable table-searchable table-sortable table-users',
+        'body': {
+            'row_attrs': {
+                'data-id':  {
+                    'type': 'twig',
+                    'path': 'id'
+                }
+            },
+            'link': {
+                'url': Routes.nav_admin_edit_user,
+                'params': {
+                    'id': {
+                        'type': 'twig',
+                        'path': 'id'
+                    }
+                },
+                'attrs': {
+                    'data-reload': 'true',
+                    'data-title': Routes.nav_admin_list_users|trans({}, 'nav'),
+                    'data-toggle': 'modal'
+                }
+            },
+            'cols': {
+                'name': {
+                    'type': 'twig',
+                    'path': 'fullname'
+                },
+                'uname hidden-xs': {
+                    'type': 'twig',
+                    'path': 'username',
+                },
+                'phone hidden-xs': {
+                    'type': 'twig',
+                    'path': 'phone',
+                },
+                'isActive hidden-xs': {
+                    'type': 'twig',
+                    'path': 'isActive',
+                    'conditions': {
+                        '0': '<i class="text-danger fa fa-times-circle"></i>',
+                        '1': '<i class="text-success fa fa-check-circle"></i>'
+                    }
+                }
+            }
+        },
+        'head': {
+            'sortable': {
+                'orders': orders,
+                'order': order,
+                'sort': sort,
+                'icons': {
+                    'ASC': 'fa-chevron-up',
+                    'DESC': 'fa-chevron-down'
+                },
+                'link': {
+                    'url': Routes.nav_admin_list_users
+                }
+            },
+            'cols': {
+                'name': {
+                    'label': 'field.name',
+                    'sort': 'name'
+                },
+                'uname hidden-xs': {
+                    'label': 'field.uname',
+                    'sort': 'username'
+                },
+                'phone hidden-xs': {
+                    'label': 'field.phone',
+                    'sort': 'phone'
+                },
+                'isActive hidden-xs': {
+                    'label': 'field.isActive',
+                    'sort': 'isActive'
+                }
+            }
+        }
+    }) }}
+{% endmacro %}

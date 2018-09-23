@@ -1,0 +1,40 @@
+{% macro render_toolbar_button(config) %}
+    {% import _self as toolBar %}
+    {% if config.separator is defined and config.separator %}
+        <span class="divider-vertical"></span>
+    {% elseif config.group is defined and config.group %}
+        <div class="btn-group" role="group">
+            {% for btn in config.buttons %}
+                {{ toolBar.render_toolbar_button(btn) }}
+            {% endfor %}
+        </div>
+    {% else %}
+        {% set domain = config.domain is defined ? config.domain : 'messages' %}
+        <a
+                {% if config.target is defined %}
+                    data-target="{{ config.target }}"
+                {% endif %}
+                {% if config.helpmode is defined %}
+                    data-helpmode{% if config.helpmode.value is defined %}="{{ config.helpmode.value }}"{% endif %}
+                    data-content="{{ config.helpmode.content.key|trans({}, config.helpmode.content.domain is defined ? config.helpmode.content.domain : 'messages') }}"
+                {% endif -%}
+                title="{{ config.title.key|trans({}, config.title.domain is defined ? config.title.domain : 'messages') }}"
+                {% if config.modal is defined %}
+                    data-title="{{ config.modal.title.key|trans({}, config.modal.title.domain is defined ? config.modal.title.domain : 'nav') }}"
+                    data-reload="{{ config.modal.reload is defined ? config.modal.reload : 'false' }}"
+                    data-toggle="{{ config.modal.type is defined ? config.modal.type : 'modal' }}"
+                {% endif %}
+                href="{{ config.href is defined ? config.href : '' }}"
+                class="tool navbar-btn btn btn-default {{ config.class }}"><i class="fa fa-fw fa-{{ config.icon }}"></i>
+        </a>
+    {% endif %}
+{% endmacro %}
+
+
+{% macro render_toolbar_buttons(btns) %}
+    {% import _self as macro %}
+    {% for btn in btns %}
+        {{ macro.render_toolbar_button(btn) }}
+    {% endfor %}
+{% endmacro %}
+

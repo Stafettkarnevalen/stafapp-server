@@ -1,0 +1,71 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% macro render_nav(formEntity, affix) %}
+    <nav class="navbar navbar-default toolbar"{% if affix %} data-spy="affix" data-offset-top="251"{% endif %}>
+        <div class="container-fluid">
+            <div class="navbar-header">
+                {% if formEntity.id %}
+                    <a class="navbar-brand" data-reload="false" data-title="{% trans from 'nav' %}nav.admin_form_fields{% endtrans %}" data-toggle="modal" href="{{ path('nav.admin_form_fields', {'form': formEntity.id }) }}"><i class="fa fa-cog"></i> {% trans from 'form' %}label.config_fields{% endtrans %}</a>
+                    <a class="navbar-brand" data-reload="false" data-title="{% trans from 'nav' %}nav.admin_form_submissions{% endtrans %}" data-toggle="modal" href="{{ path('nav.admin_form_submissions', {'form': formEntity.id }) }}"><i class="fa fa-eye"></i> {% trans from 'form' %}label.view_answers{% endtrans %}</a>
+                {% else %}
+                    <a class="navbar-brand disabled"><i class="fa fa-cog"></i> {% trans from 'form' %}label.config_fields{% endtrans %}</a>
+                    <a class="navbar-brand disabled"><i class="fa fa-eye"></i> {% trans from 'form' %}label.view_answers{% endtrans %}</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+{% endmacro %}
+
+{% import _self as macro %}
+
+{% block body %}
+    {% if modal is defined and modal == true %}
+        {{ macro.render_nav(formEntity, false) }}
+    {% endif %}
+    <div class="side-padding page-heading">
+        <h1>{% if formEntity.id != 0 %}{{ formEntity.title }}{% else %}{% trans from "form" %}label.create{% endtrans %}{% endif %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        {% if modal is not defined or modal != true %}
+            {{ macro.render_nav(formEntity, true) }}
+        {% endif %}
+        <div class="workspace">
+            <div class="form bg-default all-padding">
+                {{ form_row(form.title) }}
+                {{ form_row(form.text) }}
+                {{ form_row(form.context) }}
+                {{ form_row(form.from) }}
+                {{ form_row(form.until) }}
+                {{ form_row(form.isMandatory) }}
+                {{ form_row(form.isActive) }}
+
+                {% if modal is not defined or modal == false %}
+                    <div class="form-nav">
+                        <div class="btn-group btn-group-justified" role="group">
+                            <a class="btn btn-default" href="{{ path('nav.admin_forms') }}"><i class="fa fa-chevron-left"></i> {% trans from 'form' %}label.close{% endtrans %} <i class="fa fa-undo"></i></a>
+                            {% if formEntity.id %}
+                                <a class="btn btn-danger" href="{{ path('nav.admin_form_delete', {'id': formEntity.id}) }}"><i class="fa fa-trash"></i> {% trans from 'form' %}label.delete{% endtrans %} <i class="fa fa-minus"></i></a>
+                            {% endif %}
+                            <div class="btn-group" role="group">
+                                {{ form_widget(form.submit) }}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,273 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 02/12/2016
+ * Time: 10.23
+ */
+
+namespace App\Util;
+
+class SMS
+{
+    /** @var string $to The recipient number of the SMS message  */
+    private $to = null;
+    /** @var string $message The SMS message to send */
+    private $message = null;
+
+    /** @var string $transport The transport with which the message file is transferred to the SMS gateway (ftp) */
+    private $transport = 'ftp';
+    /** @var string $host The SMS gateway host name for the transport */
+    private $host = 'localhost';
+    /** @var integer $port The SMS gateway port number for the transport */
+    private $port = 990;
+    /** @var string $user The SMS gateway user name for the transport */
+    private $user = 'smsd';
+    /** @var string $password The SMS gateway user password for the transport */
+    private $password = 'secret';
+    /** @var string $outdir The SMS gateway outgoing directory for the transport */
+    private $outdir = 'outgoing';
+
+    /**
+     * Get an instance.
+     *
+     * @return SMS
+     */
+    public static function newInstance()
+    {
+        return new SMS();
+    }
+
+    /**
+     * SMS constructor.
+     *
+     * @param null $options
+     */
+    public function __construct($options = null)
+    {
+        // print_r($options);
+    }
+
+    /**
+     * Sets the recipient's number.
+     *
+     * @param $to
+     * @return $this
+     */
+    public function setTo($to)
+    {
+        $this->to = $to;
+
+        return $this;
+    }
+
+    /**
+     * Sets the message.
+     *
+     * @param $message
+     * @return $this
+     */
+    public function setMessage($message)
+    {
+        $this->message = $message;
+
+        return $this;
+    }
+
+    /**
+     * Sets the transport method.
+     *
+     * @param $transport
+     * @return $this
+     */
+    public function setTransport($transport)
+    {
+        $this->transport = $transport;
+
+        return $this;
+    }
+
+    /**
+     * Sets the transport host.
+     *
+     * @param $host
+     * @return $this
+     */
+    public function setHost($host)
+    {
+        $this->host = $host;
+
+        return $this;
+    }
+
+
+    /**
+     * Sets the transport port.
+     *
+     * @param $port
+     * @return $this
+     */
+    public function setPort($port)
+    {
+        $this->port = $port;
+
+        return $this;
+    }
+
+    /**
+     * Sets the transport username.
+     *
+     * @param $user
+     * @return $this
+     */
+    public function setUser($user)
+    {
+        $this->user = $user;
+
+        return $this;
+    }
+
+    /**
+     * Sets the transport password.
+     *
+     * @param $password
+     * @return $this
+     */
+    public function setPassword($password)
+    {
+        $this->password = $password;
+
+        return $this;
+    }
+
+    /**
+     * Sets the transport outgoing dir.
+     *
+     * @param $outdir
+     * @return $this
+     */
+    public function setOutdir($outdir)
+    {
+        $this->outdir = $outdir;
+
+        return $this;
+    }
+
+    /**
+     * Gets the recipient's number.
+     *
+     * @return string
+     */
+    public function getTo()
+    {
+        return $this->to;
+    }
+
+    /**
+     * Gets the message.
+     *
+     * @return string
+     */
+    public function getMessage()
+    {
+        return $this->message;
+    }
+
+    /**
+     * Gets the transport method.
+     *
+     * @return string
+     */
+    public function getTransport()
+    {
+        return $this->transport;
+    }
+
+    /**
+     * Gets the transport host.
+     *
+     * @return string
+     */
+    public function getHost()
+    {
+        return $this->host;
+    }
+
+    /**
+     * Gets the transport port.
+     *
+     * @return integer
+     */
+    public function getPort()
+    {
+        return $this->port;
+    }
+
+    /**
+     * Gets the transport username.
+     *
+     * @return string
+     */
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    /**
+     * Gets the transport password.
+     *
+     * @return string
+     */
+    public function getPassword()
+    {
+        return $this->password;
+    }
+
+    /**
+     * Gets the transport outgoing directory.
+     *
+     * @return string
+     */
+    public function getOutdir()
+    {
+        return $this->outdir;
+    }
+
+    /**
+     * Sends the SMS message through the transport.
+     *
+     * @return bool
+     */
+    public function send() {
+        switch ($this->getTransport()) {
+            case 'ftp':
+                // strip possible '+' from phone number
+                $to = str_replace('+', '', $this->getTo());
+                // format SMS message for the gateway
+                $sms = "To: {$to}\n\n{$this->getMessage()}";
+                // make a temp file for the message
+                $file = tempnam('/tmp', "sms_{$to}_" . time());
+                file_put_contents($file, $sms);
+                // ftp the message to the outgoing directory of the server
+                $conn = ftp_ssl_connect($this->getHost(), $this->getPort());
+                if ($conn && ftp_login($conn, $this->getUser(), $this->getPassword())) {
+                    ftp_pasv($conn, true);
+                    ftp_chdir($conn, $this->getOutdir());
+                    ftp_put($conn, basename($file), $file, FTP_ASCII);
+                    ftp_close($conn);
+                    @unlink($file);
+                    return true;
+                } else if ($conn) {
+                    ftp_close($conn);
+                    @unlink($file);
+                    return false;
+                }
+                break;
+
+            default:
+                return false;
+                break;
+        }
+        return false;
+    }
+}

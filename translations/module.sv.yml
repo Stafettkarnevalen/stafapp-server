@@ -1,0 +1,56 @@
+label:
+    config: "Konfigurera"
+    a_school: 'en skola'
+    modules: 'Moduler'
+    module:
+        acl: 'Rättigheter'
+        title: 'Namn'
+        type: 'Typ'
+        status: 'Modulen är'
+        active: 'aktiv'
+        inactive: 'inaktiv'
+        cssClass: 'CSS-klass'
+        news_module:
+            read_more: "Läs mera"
+            create_article: "Skapa artikel"
+            show_title: "Visa rubriken"
+            view: "Visningsalternativ"
+            view_type_list: "Listvy"
+            view_type_carousel: "Karusellvy"
+            listLimit: "Antal artiklar som visas i listvy"
+            show_list_pager: "Visa listvyns sidnavigering"
+            yes: "Ja"
+            no: "Nej"
+            show_more: "Visa Läs mera »"
+            show_carousel_indicators: "Visa karusellens sidnavigering"
+            show_carousel_navigation: "Visa karusellens pilar"
+        text_module:
+            text: "Text"
+            no_content: "Saknar innehåll"
+        news_article:
+            title: "Rubrik"
+            introduction: "Ingress"
+            text: "Brödtext"
+            cssClass: "CSS-klass"
+            status: "Status"
+            unpublished: "Opublicerad"
+            published: "Publicerad"
+            from: "Giltig fr.o.m."
+            until: "Giltig t.o.m."
+
+        create_child: "Skapa..."
+
+    close: 'Stäng'
+    create: 'Skapa ny'
+    edit: 'Redigera'
+    save: 'Spara'
+    create_module: 'Skapa ny modul'
+    delete: "Radera"
+    confirm_delete: "Är du säker att du vill radera modulen och dess innehåll?"
+    yes: "Ja"
+    no: "Nej"
+
+module:
+    type:
+        text: 'Textmodul'
+        'news': 'Nyhetsmodul'

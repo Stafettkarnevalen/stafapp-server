@@ -1,0 +1,90 @@
+{% macro render_sorted_table(addresses, orders, order, sort) %}
+    {{ table(addresses, {
+        'trans_domain': 'invoice',
+        'class': 'table table-bordered table-responsive table-condensed table-striped table-scrollable table-searchable table-sortable table-invoice-recipients',
+        'body': {
+            'row_attrs': {
+                'data-id':  {
+                    'type': 'twig',
+                    'path': 'id'
+                },
+            },
+            'link': {
+                'url': 'nav.admin_invoice_recipient',
+                'params': {
+                    'id': {
+                        'type': 'twig',
+                        'path': 'id'
+                    }
+                },
+                'attrs': {
+                    'data-reload': 'true',
+                    'data-title': 'nav.admin_invoice_recipients'|trans({}, 'nav'),
+                    'data-toggle': 'modal'
+                }
+            },
+            'cols': {
+                'name': {
+                    'type': 'twig',
+                    'path': 'name'
+                },
+                'address': {
+                    'type': 'twig',
+                    'path': 'addressAsString'
+                },
+                'phone hidden-xs': {
+                    'type': 'twig',
+                    'path': 'phone'
+                },
+                'email hidden-xs': {
+                    'type': 'twig',
+                    'path': 'email'
+                },
+                'isActive': {
+                    'type': 'twig',
+                    'path': 'isActive ? "1" : "0"',
+                    'conditions': {
+                        '0': '<i class="fa fa-lg fa-toggle-off"></i>',
+                        '1': '<i class="fa fa-lg text-success fa-toggle-on"></i>'
+                    }
+                }
+            }
+        },
+        'head': {
+            'sortable': {
+                'orders': orders,
+                'order': order,
+                'sort': sort,
+                'icons': {
+                    'ASC': 'fa-chevron-up',
+                    'DESC': 'fa-chevron-down'
+                },
+                'link': {
+                    'url': 'nav.admin_invoice_recipients'
+                }
+            },
+            'cols': {
+                'name': {
+                    'label': 'field.name',
+                    'sort': 'name'
+                },
+                'address': {
+                    'label': 'field.address',
+                    'sort': 'streetAddress'
+                },
+                'phone hidden-xs': {
+                    'label': 'field.phone',
+                    'sort': 'phone'
+                },
+                'email hidden-xs': {
+                    'label': 'field.email',
+                    'sort': 'email'
+                },
+                'isActive': {
+                    'label': 'field.isActive',
+                    'sort': 'isActive'
+                }
+            }
+        }
+    }) }}
+{% endmacro %}

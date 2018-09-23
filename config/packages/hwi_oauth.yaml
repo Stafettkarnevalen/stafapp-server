@@ -1,0 +1,39 @@
+hwi_oauth:
+    # Define which firewalls will be used for oauth
+    # Usually, its only the main, but you can add it if you have a custom one
+    firewall_names: ["main"]
+    fosub:
+        username_iterations: 30
+        # Define in which columns of the fos_user table will be stored
+        # the access token of every resource_owner
+        properties:
+            facebook: facebookId
+            googleplus: googleplusId
+            instagram: instagramId
+            twitter: twitterId
+    # Define the resource_owners that your user can use to login into your app
+    # Note that the client_id and client_secret and key values are symfony parameters
+    # stored too in the config.yml from the previous step !
+    resource_owners:
+        facebook:
+            type:           facebook
+            client_id:      "%facebook_client_id%"
+            client_secret:  "%facebook_secret%"
+            infos_url:     "https://graph.facebook.com/me?fields=id,first_name,last_name,email"
+        googleplus:
+            type:           google
+            client_id:      "%googleplus_client_id%"
+            client_secret:  "%googleplus_secret%"
+            scope:          "email profile"
+        instagram:
+            type:           instagram
+            client_id:      "%instagram_client_id%"
+            client_secret:  "%instagram_secret%"
+            scope:          "basic"
+        twitter:
+            type:           twitter
+            client_id:      "%twitter_client_id%"
+            client_secret:  "%twitter_secret%"
+            infos_url:      "https://api.twitter.com/1.1/account/verify_credentials.json?include_email=true"
+
+

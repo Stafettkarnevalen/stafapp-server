@@ -1,0 +1,11 @@
+{
+  "name": "Google Push Notifications",
+  "short_name": "Notifications",
+  "icons": [{
+    "src": "images/icon-192x192.png",
+    "sizes": "192x192"
+  }],
+  "start_url": "/sv/?homescreen=1",
+  "display": "standalone",
+  "gcm_sender_id": "81482094261"
+}

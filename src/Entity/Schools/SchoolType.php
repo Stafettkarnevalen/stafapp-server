@@ -1,0 +1,550 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * manager: rjurgens
+ * Date: 13/12/2016
+ * Time: 9.36
+ */
+
+namespace App\Entity\Schools;
+
+use App\Entity\Cheerleading\CheerleadingEvent;
+use App\Entity\Events\Event;
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Interfaces\OrderedEntityInterface;
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Relays\Relay;
+use App\Entity\Security\User;
+use App\Entity\Traits\CloneableTrait;
+use App\Entity\Traits\ContainsMessageTrait;
+use App\Entity\Traits\LoggableTrait;
+use App\Entity\Traits\VersionedLifespanTrait;
+use App\Entity\Traits\VersionedNameTrait;
+use App\Entity\Traits\VersionedOrderedEntityTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Traits\VersionedAbbreviationTrait;
+use App\Entity\Traits\VersionedDescriptionTrait;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\NotesTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use App\Entity\Traits\VersionedSchoolClassSpanTrait;
+use Symfony\Component\Serializer\Annotation as Serialize;
+use JMS\Serializer\Annotation as Jms;
+
+/**
+ * @ORM\Table(name="school_type_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity(repositoryClass="App\Repository\SchoolTypeRepository")
+ * @UniqueEntity(fields={"name", "group"}, message="name.reserved")
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Schools
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class SchoolType implements Serializable, CreatedByUserInterface, LoggableEntity, OrderedEntityInterface
+{
+    /** Use abbreviation field */
+    use VersionedAbbreviationTrait;
+
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use description field */
+    use VersionedDescriptionTrait;
+
+    /** Use cloneable trait */
+    use CloneableTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use notes field */
+    use NotesTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /** Use ordered entity trait */
+    use VersionedOrderedEntityTrait;
+
+    /** Use school's min and max class of fields */
+    use VersionedSchoolClassSpanTrait;
+
+    /** Use unique name field */
+    use VersionedNameTrait;
+
+    /** Can contain a message */
+    use ContainsMessageTrait;
+
+    /** Has a lifespan */
+    use VersionedLifespanTrait;
+
+    /**
+     * @ORM\OneToMany(targetEntity="SchoolUnitHasType", mappedBy="schoolType", cascade={"persist", "merge", "remove"})
+     * @ORM\OrderBy({"season" = "DESC"})
+     * @var ArrayCollection $hasSchoolUnits The school units that this type has at a specified season
+     */
+    protected $hasSchoolUnits;
+
+    /**
+     * @ORM\ManyToMany(targetEntity="App\Entity\Relays\Relay", inversedBy="schoolTypes", cascade={"persist", "merge"})
+     * @ORM\JoinTable(name="school_type_competes_in_relay_table",
+     *     joinColumns={@ORM\JoinColumn(name="school_type_fld", referencedColumnName="id_fld")},
+     *     inverseJoinColumns={@ORM\JoinColumn(name="relay_fld", referencedColumnName="id_fld")}
+     *     )
+     */
+    protected $relays;
+
+    /**
+     * @ORM\ManyToMany(targetEntity="App\Entity\Cheerleading\CheerleadingEvent", inversedBy="schoolTypes", cascade={"persist", "merge"})
+     * @ORM\JoinTable(name="school_type_competes_in_cheerleading_event_table",
+     *     joinColumns={@ORM\JoinColumn(name="school_type_fld", referencedColumnName="id_fld")},
+     *     inverseJoinColumns={@ORM\JoinColumn(name="event_fld", referencedColumnName="id_fld")}
+     *     )
+     */
+    protected $cheerleadingEvents;
+
+    /**
+     * @ORM\ManyToMany(targetEntity="App\Entity\Events\Event", inversedBy="schoolTypes", cascade={"persist", "merge"})
+     * @ORM\JoinTable(name="school_type_competes_in_event_table",
+     *     joinColumns={@ORM\JoinColumn(name="school_type_fld", referencedColumnName="id_fld")},
+     *     inverseJoinColumns={@ORM\JoinColumn(name="event_fld", referencedColumnName="id_fld")}
+     *     )
+     */
+    protected $events;
+
+    /**
+     * @ORM\OneToMany(targetEntity="SchoolType", mappedBy="group")
+     * @var ArrayCollection $variants Variants of this type
+     */
+    protected $variants;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="SchoolType", inversedBy="variants")
+     * @ORM\JoinColumn(name="group_fld", referencedColumnName="id_fld", nullable=true)
+     * @var SchoolType $group The parent group of this type
+     */
+    protected $group;
+
+    /**
+     * An array of Schools for this SchoolType.
+     * @var ArrayCollection
+     */
+    protected $schools;
+
+    /**
+     * SchoolType constructor.
+     */
+    public function __construct()
+    {
+        $this->schools = new ArrayCollection([]);
+        $this->hasSchoolUnits = new ArrayCollection([]);
+        $this->relays = new ArrayCollection([]);
+        $this->cheerleadingEvents = new ArrayCollection([]);
+        $this->events = new ArrayCollection([]);
+        $this->variants  = new ArrayCollection([]);
+        $this->isActive = true;
+        $this->from = new \DateTime();
+    }
+
+    /**
+     * Gets the hasSchoolUnits
+     *
+     * @return ArrayCollection
+     */
+    public function getHasSchoolUnits()
+    {
+        return $this->hasSchoolUnits;
+    }
+
+    /**
+     * @param ArrayCollection $hasSchoolUnits
+     * @return $this
+     */
+    public function setHasSchoolUnits(ArrayCollection $hasSchoolUnits)
+    {
+        $this->hasSchoolUnits = $hasSchoolUnits;
+
+        return $this;
+    }
+
+    /**
+     * Gets the variants.
+     *
+     * @return ArrayCollection
+     */
+    public function getVariants()
+    {
+        return $this->variants;
+    }
+
+    /**
+     * Sets the variants.
+     *
+     * @param ArrayCollection $variants
+     * @return $this
+     */
+    public function setVariants(ArrayCollection $variants)
+    {
+        $this->variants = $variants;
+
+        return $this;
+    }
+
+    /**
+     * Gets the group for this SchoolType
+     *
+     * @return mixed
+     */
+    public function getGroup()
+    {
+        return $this->group;
+    }
+
+    /**
+     * Sets the group for this SchoolType
+     *
+     * @param mixed $group
+     * @return $this
+     */
+    public function setGroup($group)
+    {
+        $this->group = $group;
+
+        return $this;
+    }
+
+    /**
+     * Gets the school in this SchoolType
+     * @return mixed
+     */
+    public function getSchools()
+    {
+        if ($this->schools->count() == 0) {
+            foreach($this->getSchoolUnits() as $unit) {
+                $this->schools->add($unit->getSchool());
+            }
+        }
+        return $this->schools;
+    }
+
+    /**
+     * Gets the SchoolUnits in this SchoolType
+     *
+     * @param integer|null $season
+     * @return ArrayCollection
+     */
+    public function getSchoolUnits($season = null)
+    {
+        if ($season === null)
+            $season = strftime('Y');
+
+        $criteria = Criteria::create()->where(Criteria::expr()->eq("season", $season));
+
+        $hasSchoolUnits = $this->hasSchoolUnits->matching($criteria);
+
+        return new ArrayCollection(array_map(function (SchoolUnitHasType $sut) { return $sut->getSchoolUnit(); }, $hasSchoolUnits->toArray()));
+    }
+
+    /**
+     * Gets the Relays.
+     *
+     * @return ArrayCollection
+     */
+    public function getRelays()
+    {
+        return $this->relays;
+    }
+
+    /**
+     * Sets the Relays.
+     *
+     * @param mixed $relays
+     * @return $this
+     */
+    public function setRelays($relays)
+    {
+        $this->relays = $relays;
+
+        return $this;
+    }
+
+    /**
+     * Gets the CheerleadingEvents.
+     *
+     * @return ArrayCollection
+     */
+    public function getCheerleadingEvents()
+    {
+        return $this->cheerleadingEvents;
+    }
+
+    /**
+     * Sets the CheerleadingEvents.
+     *
+     * @param mixed $cheerleadingEvents
+     * @return $this
+     */
+    public function setCheerleadingEvents($cheerleadingEvents)
+    {
+        $this->cheerleadingEvents = $cheerleadingEvents;
+        return $this;
+    }
+
+    /**
+     * Gets the Events.
+     *
+     * @return ArrayCollection
+     */
+    public function getEvents()
+    {
+        return $this->events;
+    }
+
+    /**
+     * Sets the Events
+     *
+     * @param mixed $events
+     * @return $this
+     */
+    public function setEvents($events)
+    {
+        $this->events = $events;
+        return $this;
+    }
+
+    /**
+     * Adds a Relay.
+     *
+     * @param Relay $relay The Relay to be added
+     * @param bool $cascade If true, add this SchoolType to the Relay as well
+     *
+     * @return $this
+     */
+    public function addRelay(Relay $relay, $cascade = true)
+    {
+        if ($this->relays->contains($relay)) {
+            return $this;
+        }
+        $this->relays->add($relay);
+        if ($cascade) $relay->addSchoolType($this, false);
+        return $this;
+    }
+
+    /**
+     * Removes a Relay.
+     *
+     * @param Relay $relay The Relay to be removed
+     * @param bool $cascade If true, remove this SchoolType from the Relay as well
+     *
+     * @return $this
+     */
+    public function removeRelay(Relay $relay, $cascade = true)
+    {
+        if (!$this->relays->contains($relay)) {
+            return $this;
+        }
+        $this->relays->removeElement($relay);
+        if ($cascade) $relay->removeSchoolType($this, false);
+        return $this;
+    }
+
+    /**
+     * Checks if this SchoolType competes in a Relay
+     *
+     * @param Relay|integer $relay The Relay to check for
+     *
+     * @return bool
+     */
+    public function hasRelay($relay)
+    {
+        if (is_integer($relay)) {
+            foreach ($this->relays as $r)
+                if ($r->getId() == $relay)
+                    return true;
+            return false;
+        } else if (!$relay instanceof Relay) {
+            return false;
+        }
+        return $this->relays->contains($relay);
+    }
+
+    /**
+     * Adds a CheerleadingEvent.
+     *
+     * @param CheerleadingEvent $cheerleadingEvent The CheerleadingEvent to be added
+     * @param bool $cascade If true, add this SchoolType to the CheerleadingEvent as well
+     *
+     * @return $this
+     */
+    public function addCheerleadingEvent(CheerleadingEvent $cheerleadingEvent, $cascade = true)
+    {
+        if ($this->cheerleadingEvents->contains($cheerleadingEvent)) {
+            return $this;
+        }
+        $this->cheerleadingEvents->add($cheerleadingEvent);
+        if ($cascade) $cheerleadingEvent->addSchoolType($this, false);
+        return $this;
+    }
+
+    /**
+     * Removes a CheerleadingEvent.
+     *
+     * @param CheerleadingEvent $cheerleadingEvent The CheerleadingEvent to be removed
+     * @param bool $cascade If true, remove this SchoolType from the CheerleadingEvent as well
+     *
+     * @return $this
+     */
+    public function removeCheerleadingEvent(CheerleadingEvent $cheerleadingEvent, $cascade = true)
+    {
+        if (!$this->cheerleadingEvents->contains($cheerleadingEvent)) {
+            return $this;
+        }
+        $this->cheerleadingEvents->removeElement($cheerleadingEvent);
+        if ($cascade) $cheerleadingEvent->removeSchoolType($this, false);
+        return $this;
+    }
+
+    /**
+     * Checks if this SchoolType competes in a CheerleadingEvent
+     *
+     * @param CheerleadingEvent|integer $cheerleadingEvent The CheerleadingEvent to check for
+     *
+     * @return bool
+     */
+    public function hasCheerleadingEvent($cheerleadingEvent)
+    {
+        if (is_integer($cheerleadingEvent)) {
+            foreach ($this->cheerleadingEvents as $r)
+                if ($r->getId() == $cheerleadingEvent)
+                    return true;
+            return false;
+        } else if (!$cheerleadingEvent instanceof CheerleadingEvent) {
+            return false;
+        }
+        return $this->cheerleadingEvents->contains($cheerleadingEvent);
+    }
+
+    /**
+     * Adds an Event.
+     *
+     * @param Event $event The Event to be added
+     * @param bool $cascade If true, add this SchoolType to the Event as well
+     *
+     * @return $this
+     */
+    public function addEvent(Event $event, $cascade = true)
+    {
+        if ($this->events->contains($event)) {
+            return $this;
+        }
+        $this->events->add($event);
+        if ($cascade) $event->addSchoolType($this, false);
+        return $this;
+    }
+
+    /**
+     * Removes an Event.
+     *
+     * @param Event $event The Event to be removed
+     * @param bool $cascade If true, remove this SchoolType from the Event as well
+     *
+     * @return $this
+     */
+    public function removeEvent(Event $event, $cascade = true)
+    {
+        if (!$this->events->contains($event)) {
+            return $this;
+        }
+        $this->events->removeElement($event);
+        if ($cascade) $event->removeSchoolType($this, false);
+        return $this;
+    }
+
+    /**
+     * Checks if this SchoolType competes in an Event
+     *
+     * @param Event|integer $event The Event to check for
+     *
+     * @return bool
+     */
+    public function hasEvent($event)
+    {
+        if (is_integer($event)) {
+            foreach ($this->events as $r)
+                if ($r->getId() == $event)
+                    return true;
+            return false;
+        } else if (!$event instanceof Event) {
+            return false;
+        }
+        return $this->events->contains($event);
+    }
+
+    /**
+     * Gets the siblings of this ordered entity.
+     *
+     * @param ObjectManager $em
+     * @return ArrayCollection
+     */
+    public function getSiblings(ObjectManager $em = null)
+    {
+        /** @var SchoolType $group */
+        if ($group = $this->getGroup()) {
+            $siblings = $group->getVariants();
+        } else {
+            $siblings = new ArrayCollection($em->getRepository(SchoolType::class)->findBy([
+                'group' => $this->getGroup()
+            ]));
+        }
+        $criteria = Criteria::create()->where(Criteria::expr()->neq('id', $this->getId()))->orderBy(['order' => 'ASC']);
+        return $siblings->matching($criteria);
+    }
+
+    /**
+     * Gets all active managers in all active units.
+     *
+     * @return ArrayCollection
+     */
+    public function getManagers()
+    {
+        $managers = new ArrayCollection();
+        /** @var School $school */
+        foreach ($this->getSchools() as $school) {
+            if ($school->getIsActive()) {
+                /** @var User $manager */
+                foreach ($school->getManagers() as $manager) {
+                    if ($manager->getIsActive()) {
+                        $managers->add($manager);
+                    }
+                }
+            }
+        }
+        return $managers;
+    }
+
+    /**
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->getName();
+    }
+
+    /**
+     * Reset the schools for lazy loading after any sort of db action.
+     * @ORM\PostPersist()
+     * @ORM\PostUpdate()
+     */
+    public function onPostMergeUpdate()
+    {
+        $this->schools = new ArrayCollection();
+    }
+
+}

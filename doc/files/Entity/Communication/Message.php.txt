@@ -1,0 +1,283 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 05/06/2017
+ * Time: 11.30
+ */
+
+namespace App\Entity\Communication;
+
+use App\Entity\Interfaces\MessageDistributionInterface;
+use App\Entity\Interfaces\Serializable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\FieldsTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use App\Entity\Traits\TitleAndTextTrait;
+
+/**
+ * @ORM\Table(name="message_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @package App\Entity\Communication
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class Message implements Serializable, CreatedByUserInterface
+{
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** use fields trait */
+    use FieldsTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /** Use title and text fields */
+    use TitleAndTextTrait;
+
+    /**
+     * @const TYPE_EMAIL The message is sent by email
+     */
+    const TYPE_EMAIL    = "EMAIL";
+
+    /**
+     * @const TYPE_SMS The message is sent by SMS
+     */
+    const TYPE_SMS      = "SMS";
+
+    /**
+     * @const TYPE_INTERNAL The message is sent internally in the application
+     */
+    const TYPE_INTERNAL = "INTERNAL";
+
+    /**
+     * @ORM\Column(name="type_fld", type="string", columnDefinition="SET('EMAIL', 'SMS', 'INTERNAL')", options={"default" : "INTERNAL"}, nullable=false)
+     * @Assert\NotBlank()
+     */
+    protected $type = self::TYPE_INTERNAL;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Message", mappedBy="parent")
+     * @var ArrayCollection $children The children of this message, more simply a thread spanning from this message
+     */
+    protected $children;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Message", inversedBy="children")
+     * @ORM\JoinColumn(name="parent_fld", referencedColumnName="id_fld", nullable=true)
+     * @var Message $parent The parent of this message, the parent in the thread
+     */
+    protected $parent;
+
+    /**
+     * @ORM\OneToMany(targetEntity="MessageRecipient", mappedBy="message", cascade={"persist", "merge", "remove"})
+     * @var ArrayCollection $recipients The recipients of this message
+     */
+    protected $recipients;
+
+    /**
+     * @ORM\OneToMany(targetEntity="MessageAttachment", mappedBy="message", cascade={"persist", "merge", "remove"})
+     * @var ArrayCollection $attachments Optional attachments to this message
+     */
+    protected $attachments;
+
+    /**
+     * Message constructor.
+     */
+    public function __construct()
+    {
+        $this->recipients = new ArrayCollection();
+        $this->children = new ArrayCollection();
+        $this->attachments = new ArrayCollection();
+    }
+
+    /**
+     * Gets the children.
+     *
+     * @return ArrayCollection
+     */
+    public function getChildren()
+    {
+        return $this->children;
+    }
+
+    /**
+     * Sets the children.
+     *
+     * @param ArrayCollection $children
+     * @return $this
+     */
+    public function setChildren($children)
+    {
+        $this->children = $children;
+
+        return $this;
+    }
+
+    /**
+     * Gets the parent.
+     *
+     * @return Message|null
+     */
+    public function getParent()
+    {
+        return $this->parent;
+    }
+
+    /**
+     * Sets the parent.
+     *
+     * @param Message|null $parent
+     * @return $this
+     */
+    public function setParent($parent)
+    {
+        $this->parent = $parent;
+
+        if (!$this->getTitle())
+            $this->setTitle('Re: ' . $parent->getTitle());
+
+        return $this;
+    }
+
+    /**
+     * Gets the recipients
+     *
+     * @return ArrayCollection
+     */
+    public function getRecipients()
+    {
+        return $this->recipients;
+    }
+
+    /**
+     * Sets the recipients.
+     *
+     * @param ArrayCollection $recipients
+     * @return $this;
+     */
+    public function setRecipients($recipients)
+    {
+        $this->recipients = $recipients;
+
+        return $this;
+    }
+
+    /**
+     * Gets the attachments of the message.
+     *
+     * @return ArrayCollection
+     */
+    public function getAttachments()
+    {
+        return $this->attachments;
+    }
+
+    /**
+     * Sets the attachments of the message.
+     *
+     * @param ArrayCollection $attachments
+     * @return $this
+     */
+    public function setAttachments($attachments)
+    {
+        $this->attachments = $attachments;
+
+        /** @var MessageAttachment $attachment */
+        foreach ($this->attachments as $attachment)
+            $attachment->setMessage($this);
+
+        return $this;
+    }
+
+    /**
+     * Gets the type.
+     *
+     * @return array
+     */
+    public function getType()
+    {
+        if (!empty($this->type))
+            return explode(',', $this->type);
+        return [];
+    }
+
+    /**
+     * Sets the type.
+     *
+     * @param array $type
+     * @return $this
+     */
+    public function setType(array $type)
+    {
+        $this->type = implode(',', $type);
+
+        return $this;
+    }
+
+    /**
+     * Gets a string representation of this object.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return print_r($this->getFields(), true);
+    }
+
+    /**
+     * Adds a recipient.
+     *
+     * @param MessageRecipient $rcpt
+     * @return $this
+     */
+    public function addRecipient(MessageRecipient $rcpt)
+    {
+        $this->recipients->add($rcpt);
+
+        return $this;
+    }
+
+    /**
+     * @var MessageDistributionInterface $distribution The distribution of this message, that is the recipients
+     */
+    protected $distribution;
+
+    /**
+     * Sets the distribution of this message, another way of setting the recipients.
+     *
+     * @param MessageDistributionInterface $dist
+     * @return $this
+     */
+    public function setDistribution(MessageDistributionInterface $dist)
+    {
+        $this->distribution = $dist;
+        $this->setRecipients(new ArrayCollection([]));
+
+        foreach ($dist->getUsers() as $user) {
+            $rcpt = new MessageRecipient();
+            $rcpt->setUser($user)->setMessage($this);
+            $this->addRecipient($rcpt);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Gets the distribution of this message.
+     *
+     * @return MessageDistributionInterface
+     */
+    public function getDistribution()
+    {
+        return $this->distribution;
+    }
+
+}

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+<html lang="{{ app.request.locale }}">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta charset="UTF-8" />
+    <title>{% block title %}{% trans from "messages" %}title.manager{% endtrans %}{% endblock %}</title>
+
+    {% block stylesheets %}
+        <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"/>
+        <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous"/>
+        <link href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet" integrity="sha256-rDWX6XrmRttWyVBePhmrpHnnZ1EPmM6WQRQl6h0h7J8=" crossorigin="anonymous" />
+        <link href="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.0.3/cookieconsent.min.css" rel="stylesheet" />
+        <link href="{{ asset('build/css/app.css') }}" rel="stylesheet"/>
+
+    {% endblock %}
+
+    <!-- Add favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('build/images/favicon.ico') }}" />
+    <script src="{{ asset('build/manifest.js') }}"></script>
+    <script src="{{ asset('build/js/vendor.js') }}"></script>
+    <script src="{{ asset('build/js/app.js') }}"></script>
+</head>
+<body style="background: url({{ asset('build/images/juoksurata.jpg') }}) bottom center; background-size: cover; background-repeat: no-repeat; background-attachment: fixed;">
+<div class="offcanvas">
+    <div class="offcanvas__container">
+        <a class="offcanvas__exit-overlay" href="#" data-toggle="offcanvas" data-target="exit"></a>
+        <div class="bg-primary" style="background: url({{ asset('build/images/bg-primary4.jpg') }}) center center; background-size:cover; "></div>
+
+        <nav class="navbar navbar-inverse navbar-fixed-top" data-spy="affix" data-offset-top="162">
+            <div class="container-fluid">
+                <div class="navbar-header navbar-header--double-btn">
+                    <a class="pull-left navbar-brand navbar-brand--center" href="/{{ app.request.locale }}/">
+                        <img class="img img-responsive" src="{{ asset('build/images/i<3staf1-nav.png') }}" alt=""/>
+                    </a>
+                    <button class="navbar-toggle navbar-toggle--right" type="button" data-toggle="offcanvas" data-target="right" aria-expanded="false">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+
+            </div>
+        </nav>
+
+        <div id="{{ request_id()|html_id }}" class="body{% if body_class is defined %} {{ body_class }}{% endif %}">
+
+            {% if app.session.flashBag.has('error') %}
+                <div class="all-padding">
+                    <div class="alert alert-danger">
+                        <h3><i class="fa fa-exclamation-circle"></i>
+                            {% for msg in app.session.flashBag.get('error') %}
+                                {% if msg is iterable %}
+                                    {{ msg.id|trans(msg.parameters|default({}), msg.domain|default(null), msg.locale|default(null))|raw }}
+                                {% else %}
+                                    {{ msg|trans|raw }}
+                                {% endif %}
+                            {% endfor %}
+                        </h3>
+                    </div>
+                </div>
+            {% endif %}
+            {% if app.session.flashBag.has('success') %}
+                <div class="all-padding">
+                    <div class="alert alert-success">
+                        <h3><i class="fa fa-check-circle"></i>
+                            {% set msgs = [] %}
+                            {% for msg in app.session.flashBag.get('success') %}
+                                {% if msg is iterable and msg not in msgs %}
+                                    {{ msg.id|trans(msg.parameters|default({}), msg.domain|default(null), msg.locale|default(null))|raw }}
+                                {% elseif msg not in msgs %}
+                                    {{ msg|trans|raw }}
+                                {% endif %}
+                                {% set msgs = msgs|merge([msg]) %}
+                            {% endfor %}
+                        </h3>
+                    </div>
+                </div>
+            {% endif %}
+            {% if app.session.flashBag.has('info') %}
+                <div class="all-padding">
+                    <div class="alert alert-info">
+                        <h3><i class="fa fa-info-circle"></i>
+                            {% for msg in app.session.flashBag.get('info') %}
+                                {% if msg is iterable %}
+                                    {{ msg.id|trans(msg.parameters|default({}), msg.domain|default(null), msg.locale|default(null))|raw }}
+                                {% else %}
+                                    {{ msg|trans|raw }}
+                                {% endif %}
+                            {% endfor %}
+                        </h3>
+                    </div>
+                </div>
+            {% endif %}
+            {% if app.session.flashBag.has('warning') %}
+                <div class="all-padding">
+                    <div class="alert alert-warning">
+                        <h3><i class="fa fa-exclamation-triangle"></i>
+                            {% for msg in app.session.flashBag.get('warning') %}
+                                {% if msg is iterable %}
+                                    {{ msg.id|trans(msg.parameters|default({}), msg.domain|default(null), msg.locale|default(null))|raw }}
+                                {% else %}
+                                    {{ msg|trans|raw }}
+                                {% endif %}
+                            {% endfor %}
+                        </h3>
+                    </div>
+                </div>
+            {% endif %}
+            {% if (use_heading is defined and use_heading == true) or school_form is defined %}
+                <div class="side-padding">
+                    {% if use_heading is defined and use_heading == true %}
+                        {% if route_trans_vars is not defined %}
+                            {% set route_trans_vars = {} %}
+                        {% endif %}
+                        <h1>{{ app.request.attributes.get('_route')|trans(route_trans_vars, 'nav') }}</h1>
+                    {% endif %}
+                </div>
+            {% endif %}
+            {% block body %}
+            {% endblock %}
+        </div>
+
+        <div class="bg-footer">
+            <div class="container-fluid">
+                <p class="small text-center"><strong>{% trans from "messages" %}footer.powered_by{% endtrans %}</strong></p>
+                <div class="all-padding row">
+                    <div class="col-xs-6 col-xs-offset-3 col-sm-2 col-sm-offset-5 text-center">
+                        <img class="img img-responsive center-block" src="{{ asset('build/images/gubbar-gs.png') }}" alt=""/>
+                    </div>
+                </div>
+                <div class="all-padding row">
+                    <div class="col-xs-6 col-xs-offset-3 col-sm-2 col-sm-offset-5 text-center">
+                        <img class="img img-responsive center-block" src="{{ asset('build/images/fma-jurgens-gs.png') }}" alt=""/>
+                    </div>
+                </div>
+                <address class="small side-padding text-center">
+                    <strong>&copy; {{ "now"|date("Y") }} Skolornas Stafettkarneval</strong><br/>
+                    <a href="http://www.stafettkarnevalen.fi/">http://www.stafettkarnevalen.fi/</a>
+                </address>
+            </div>
+        </div>
+    </div>
+</div>
+{% block javascripts %}
+
+    <!--
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+    -->
+    <!--
+            <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js" integrity="sha256-eZNgBgutLI47rKzpfUji/dD9t6LRs2gI3YqXKdoDOmo=" crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-contextmenu/0.3.4/bootstrap-contextmenu.min.js"></script>
+    -->
+
+
+        <script src="{{ asset('bundles/fosjsrouting/js/router.js') }}"></script>
+        <script src="{{ path('fos_js_routing_js', { callback: 'fos.Router.setData' }) }}"></script>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.0.3/cookieconsent.min.js"></script>
+
+    <script>
+        $("body").contextMenu({
+            menuSelector: "",
+            menuSelected: function (invokedOn, selectedMenu) {
+                var msg = "You selected the menu item '" + selectedMenu.text() +
+                    "' on the value '" + invokedOn.text() + "'";
+                alert(msg);
+            }
+        });
+        window.addEventListener("load", function(){
+            window.cookieconsent.initialise({
+                "palette": {
+                    "popup": {
+                        "background": "#eb6c44",
+                        "text": "#ffffff"
+                    },
+                    "button": {
+                        "background": "#f5d948"
+                    }
+                },
+                "theme": "edgeless",
+                "content": {
+                    "message": '{{ "cookie.compiance"|trans }}',
+                    "dismiss": '{{ "cookie.got_it"|trans }}',
+                    "link": '{{ "cookie.learn_more"|trans }}'
+                }
+            })});
+    </script>
+{% endblock %}
+
+</body>
+</html>

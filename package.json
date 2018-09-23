@@ -1,0 +1,38 @@
+{
+    "devDependencies": {
+        "@symfony/webpack-encore": "^0.17.0",
+        "bootstrap-contextmenu": "^1.0.0",
+        "bootstrap-datepicker": "^1.8.0",
+        "bootstrap-datetimepicker": "^0.0.7",
+        "bootstrap-sass": "^3.3.7",
+        "bootstrap-toggle": "^2.2.2",
+        "bootstrap3": "^3.3.5",
+        "datetimepicker": "^0.1.38",
+        "expose-loader": "^0.7.5",
+        "font-awesome": "^4.7.0",
+        "jquery": "^3.3.1",
+        "jquery-ui": "^1.12.1",
+        "jquery-ui-dist": "^1.12.1",
+        "jquery.cookie": "^1.4.1",
+        "less": "^3.0.4",
+        "less-loader": "^4.1.0",
+        "node": "^10.3.0",
+        "node-sass": "^4.7.2",
+        "proper": "^0.5.1",
+        "routing": "^0.0.2",
+        "sass-loader": "^6.0.7",
+        "variables": "^1.0.1",
+        "webpack-notifier": "^1.6.0"
+    },
+    "license": "UNLICENSED",
+    "private": true,
+    "scripts": {
+        "dev-server": "encore dev-server",
+        "dev": "encore dev",
+        "watch": "encore dev --watch",
+        "build": "encore production"
+    },
+    "dependencies": {
+        "eonasdan-bootstrap-datetimepicker": "^4.17.47"
+    }
+}

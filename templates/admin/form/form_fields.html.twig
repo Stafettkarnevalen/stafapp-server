@@ -1,0 +1,343 @@
+{% set extends = 'base.html.twig' %}
+{% if extend is defined %}
+    {% set extends = extend %}
+{% elseif modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends app.request.get('sort') is null ? extends : 'sortable-table.html.twig' %}
+
+{% macro render_sorted_table(fields, orders, order, sort, formEntity) %}
+    {{ table(fields, {
+        'trans_domain': 'form',
+        'class': 'table table-bordered table-responsive table-condensed table-striped table-scrollable table-searchable table-sortable table-form-fields',
+        'body': {
+            'attrs': {
+                'data-sortable': {
+                    'type': 'value',
+                    'value': (sort == 'order' and order == 'ASC') ? 1 : 0
+                },
+                'data-handle': {
+                    'type': 'value',
+                    'value': 'td'
+                },
+                'data-ajaxroute': {
+                    'type': 'value',
+                    'value': 'nav.admin_form_fields'
+                },
+                'data-ajaxparams' : {
+                    'type': 'value',
+                    'value': {
+                        '_locale': {
+                            'type': 'value',
+                            'value': app.request.locale
+                        },
+                        'form': {
+                            'type': 'value',
+                            'value': formEntity.id
+                        }
+                    }
+                },
+                'data-target': {
+                    'type': 'value',
+                    'value': 'field'
+                }
+            },
+            'row_attrs': {
+                'data-id':  {
+                    'type': 'method',
+                    'name': 'getId'
+                },
+                'data-index': {
+                    'type': 'method',
+                    'name': 'getOrder'
+                }
+            },
+            'link': {
+                'url': 'nav.admin_form_field',
+                'params': {
+                    'id': {
+                        'type': 'method',
+                        'name': 'getId'
+                    },
+                    'form': {
+                        'type': 'value',
+                        'value': formEntity.id
+                    }
+                },
+                'attrs': {
+                    'data-reload': 'true',
+                    'data-title': 'nav.admin_form_field'|trans({}, 'nav'),
+                    'data-toggle': 'modal'
+                }
+            },
+            'cols': {
+                'order': {
+                    'method': 'getOrder',
+                    'filter': ['add', 1]
+                },
+                'title': {
+                    'method': 'getTitle',
+                },
+                'type': {
+                    'method': 'getType',
+                }
+            }
+        },
+        'head': {
+            'sortable': {
+                'orders': orders,
+                'order': order,
+                'sort': sort,
+                'icons': {
+                    'ASC': 'fa-chevron-up',
+                    'DESC': 'fa-chevron-down'
+                },
+                'link': {
+                    'url': 'nav.admin_form_fields',
+                    'params': {
+                        'form': {
+                            'type': 'value',
+                            'value': formEntity.id
+                        }
+                    }
+                }
+            },
+            'cols': {
+                'order': {
+                    'label': 'label.order',
+                    'sort': 'order'
+                },
+                'title': {
+                    'label': 'label.title',
+                    'sort': 'title'
+                },
+                'type': {
+                    'label': 'label.type',
+                    'sort': 'type'
+                }
+            }
+        }
+    }) }}
+{% endmacro %}
+
+{% macro render_nav(formEntity, affix) %}
+    <nav class="navbar navbar-default toolbar"{% if affix %} data-spy="affix" data-offset-top="251"{% endif %}>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="hidden-xs navbar-header col-xs-6 col-sm-4 col-md-4 col-lg-3">
+                    <a class="navbar-brand" data-title="{% trans from 'form' %}label.add_field{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_form_field', {'form': formEntity.id}) }}"><i class="fa fa-plus"></i> &nbsp;{% trans from 'form' %}label.add_field{% endtrans %}</a>
+                </div>
+                <div class="top-padding-sm col-xs-12 col-sm-8 col-md-8 col-lg-9">
+                    <a title="{% trans from 'form' %}label.add_field{% endtrans %}" data-title="{% trans from 'form' %}label.add_field{% endtrans %}" data-reload="true" data-toggle="modal" class="hidden-sm hidden-md hidden-lg btn btn-default" href="{{ path('nav.admin_form_field', {'form': formEntity.id}) }}"><i class="fa fa-plus"></i></a>
+                    <a title="{% trans from "form" %}label.edit{% endtrans %}" data-title="{% trans from 'nav' %}nav.admin_form_field{% endtrans %}" data-reload="true" data-toggle="modal" href="" class="tool btn btn-default btn-open disabled"><i class="fa fa-edit"></i></a>
+                    <a title="{% trans from "form" %}label.copy{% endtrans %}" data-title="{% trans from 'nav' %}nav.admin_form_field{% endtrans %}" data-reload="true" data-toggle="modal" href="" class="tool btn btn-default btn-copy disabled"><i class="fa fa-clone"></i></a>
+                    <a title="{% trans from "form" %}label.delete{% endtrans %}" data-title="{% trans from 'form' %}label.delete{% endtrans %}" data-reload="true" data-toggle="confirm" href="" class="tool btn btn-default btn-delete disabled"><i class="fa fa-trash-o"></i></a>
+                    <a title="{% trans from "form" %}label.unselect{% endtrans %}" href="" class="tool btn btn-default btn-unselect disabled"><i class="fa fa-times-circle-o"></i></a>
+                    &nbsp;
+                    <div class="btn-group" role="group">
+                        <a title="{% trans from "form" %}label.up{% endtrans %}" data-target=".table-form-fields" href="" class="ajax-sort tool btn btn-default btn-up disabled"><i class="fa fa-caret-up"></i></a>
+                        <a title="{% trans from "form" %}label.down{% endtrans %}" data-target=".table-form-fields" href="" class="ajax-sort tool btn btn-default btn-down disabled"><i class="fa fa-caret-down"></i></a>
+                    </div>
+
+                    <button title="{% trans from "form" %}label.toggle_search{% endtrans %}" class="pull-right btn btn-default btn-search" data-toggle="button" aria-pressed="false"><i class="fa fa-search"></i> <span class="caret"></span></button>
+                </div>
+            </div>
+        </div>
+        <div class="searchbar collapse">
+            <hr class="no-padding no-margin"/>
+            <div class="input-group toolbar-padding" data-target=".table-form-fields">
+                <span class="input-group-addon">{% trans from "form" %}label.search{% endtrans %}</span>
+                <input class="search input-md form-control" type="text"/>
+                <a class="clear_search disabled input-group-addon btn"><i class="fa fa-times-circle-o"></i></a>
+            </div>
+        </div>
+    </nav>
+{% endmacro %}
+
+
+{% import _self as macro %}
+
+{% if app.request.get('sort') is null %}
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+
+{% block body %}
+    {% if modal is defined and modal == true %}
+        {{ macro.render_nav(formEntity, false) }}
+    {% endif %}
+    <div class="side-padding page-heading">
+        <h1>{% if formEntity.id != 0 %}{{ formEntity.title }}{% else %}{% trans from "form" %}label.create{% endtrans %}{% endif %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        {{ macro.render_nav(formEntity, true) }}
+        <div class="workspace">
+            <div class="dropdown" style="position:absolute!important; top:0!important; left:0!important;">
+                <ul id="form_fields_context_menu" class="dropdown-menu" role="menu">
+                    <li><a tabindex="-1" data-trigger=".btn-open" href="#"><i class="fa fa-edit"></i> {% trans from 'form' %}label.edit{% endtrans %}</a></li>
+                    <li><a tabindex="-1" data-trigger=".btn-copy" href="#"><i class="fa fa-copy"></i> {% trans from 'form' %}label.copy{% endtrans %}</a></li>
+                    <li class="divider"></li>
+                    <li><a tabindex="-1" data-trigger=".btn-up" href="#"><i class="fa fa-arrow-up"></i> {% trans from 'form' %}label.up{% endtrans %}</a></li>
+                    <li><a tabindex="-1" data-trigger=".btn-down" href="#"><i class="fa fa-arrow-down"></i> {% trans from 'form' %}label.down{% endtrans %}</a></li>
+                    <li class="divider"></li>
+                    <li><a tabindex="-1" data-trigger=".btn-delete" href="#"><i class="fa fa-trash-o"></i> {% trans from 'form' %}label.delete{% endtrans %}</a></li>
+                </ul>
+            </div>
+            {{ macro.render_sorted_table(formFields, orders, order, sort, formEntity) }}
+        </div>
+    </div>
+    <script type="text/javascript">
+        <!--
+        $(document).ready(function() {
+
+            $('#{{ request_id()|html_id }} .table-form-fields')
+                .on('change', function(e) {
+                    console.log('table changed');
+                    $(this).find('td').contextMenu({
+                        menuSelector: "#form_fields_context_menu",
+                        menuActivated: function(e) {
+                            // select row on context menu
+                            if (!$(e.target).closest('td').parent().hasClass('selected'))
+                                $(e.target).closest('td').trigger('click');
+
+                            if ($(e.target).closest('td').parent().data('index') > 0) {
+                                $(e.target).closest('.workspace').find('[data-trigger=".btn-up"]').parent().removeClass('disabled');
+                            } else {
+                                $(e.target).closest('.workspace').find('[data-trigger=".btn-up"]').parent().addClass('disabled');
+                            }
+
+                            if ($(e.target).closest('td').parent().data('index') !== {{ formFields|length }} - 1) {
+                                $(e.target).closest('.workspace').find('[data-trigger=".btn-down"]').parent().removeClass('disabled');
+                            } else {
+                                $(e.target).closest('.workspace').find('[data-trigger=".btn-down"]').parent().addClass('disabled');
+                            }
+                        },
+                        menuSelected: function (source, e) {
+                            // simulate toolbar button click on selected row
+                            $($(e.target).data('trigger')).trigger('click');
+                        }
+                    });
+
+                    // XXX
+                    $selected = $(this).find('tr.selected');
+
+                    if ($selected.length && $selected.data('index') === 0) {
+                        console.log('dis first');
+                        $('.btn-up').addClass('disabled');
+                    } else if ($selected.length && $selected.data('index') === {{ formFields|length }} - 1) {
+                        console.log('dis last');
+                        $('.btn-down').addClass('disabled');
+                    } else if ($selected.length){
+                        console.log('ena');
+                        $('.btn-up').removeClass('disabled');
+                        $('.btn-down').removeClass('disabled');
+                    }
+                })
+                .trigger('change')
+            ;
+
+            $('#{{ request_id()|html_id }}')
+                .on('click', function(e) {
+                    var $this = $(this);
+
+                    // if clicking the search toggle
+                    var $search = $(e.target).closest('.btn-search');
+                    if ($search.length) {
+                        {% if modal is defined and modal == true %}
+                        $this.find('.searchbar').collapse('toggle');
+                        $this.parent().toggleClass('affix-search');
+                        {% else %}
+                        $this.find('.searchbar').collapse('toggle').parent().toggleClass('affix-search');
+                        {% endif %}
+                    }
+
+
+                    // if clicking a table row
+                    var $td = $(e.target);
+                    if ($td.closest('.table-form-fields tbody').length > 0) {
+                        console.log('select/unselect table row');
+
+                        if (!$td.parent().hasClass('selected')) {
+                            console.log('select');
+
+                            // unselect all other rows
+                            $this.find('.selected').removeClass('selected');
+
+                            // select this row
+                            $td.parent().addClass('selected');
+
+                            // enabl tool buttons
+                            $this.find('.navbar.toolbar').find('.tool.disabled').removeClass('disabled');
+
+                            // assign correct urls to buttons
+                            $this.find('.btn-open').attr('href', $td.parent().find('a:first').attr('href'));
+
+                            var $route = Routing.generate('nav.admin_form_field_delete', {
+                                '_locale': '{{ app.request.locale }}',
+                                'id': $td.parent().data('id')
+                            });
+                            $this.find('.btn-delete').attr('href', $route);
+
+                            $route = Routing.generate('nav.admin_form_field', {
+                                '_locale': '{{ app.request.locale }}',
+                                'form':{{ formEntity.id }},
+                                'source': $td.parent().data('id')
+                            });
+                            $this.find('.btn-copy').attr('href', $route);
+
+                            if ($td.parent().data('index') > 0) {
+                                console.log('enable up');
+                                $route = Routing.generate('nav.admin_form_fields', {
+                                    '_locale': '{{ app.request.locale }}',
+                                    'form': {{ formEntity.id}},
+                                    'field': $td.parent().data('id'),
+                                    'move': -1
+                                });
+                                $this.find('.btn-up').attr('href', $route).removeClass('disabled');
+                            } else {
+                                console.log('disable up');
+                                $this.find('.btn-up').attr('href', '').addClass('disabled');
+                            }
+                            if ($td.parent().data('index') < {{ formEntity.formFields|length - 1 }}) {
+                                console.log('enable down');
+                                $route = Routing.generate('nav.admin_form_fields', {
+                                    '_locale': '{{ app.request.locale }}',
+                                    'form': {{ formEntity.id}},
+                                    'field': $td.parent().data('id'),
+                                    'move': 1
+                                });
+                                $this.find('.btn-down').attr('href', $route).removeClass('disabled');
+                            } else {
+                                console.log('disable down');
+                                $this.find('.btn-down').attr('href', '').addClass('disabled');
+                            }
+
+                            $this.find('.btn-unselect').off().click(function() {
+                                $this.find('.table-form-fields tr').removeClass('selected');
+                                $this.find('.navbar.toolbar').find('.tool').addClass('disabled');
+                                return false;
+                            });
+                        }
+                    }
+                })
+                .on('dblclick', '.table-form-fields td', function(e) {
+                    $(this).find('a').click();
+                    $(this).parent().addClass('selected');
+                })
+            ;
+
+        });
+        //-->
+    </script>
+{% endblock %}
+{% else %}
+    {% block table %}
+        {{ macro.render_sorted_table(formFields, orders, order, sort, formEntity) }}
+    {% endblock %}
+{% endif %}

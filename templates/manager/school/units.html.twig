@@ -1,0 +1,45 @@
+    <div class="panel panel-primary">
+        <div class="panel-heading">{% trans from "school" %}school.units_and_invoicing{% endtrans %}</div>
+        <div class="panel-body no-padding">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>{% trans from "school" %}unit.name{% endtrans %}</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for unit in school.schoolUnits %}
+                    <tr>
+                        <td>
+                            <a class="toggle" data-toggle="collapse" href="#collapse_{{ unit.id }}" aria-expanded="false"
+                               aria-controls="collapse_{{ unit.id }}">{{ unit.type.name }} <span class="fa fa-caret-right"></span></a>
+                            <div class="collapse" id="collapse_{{ unit.id }}">
+
+                                <div class="row form-group">
+                                    <div class="col-xs-12 col-sm-4">
+                                        <div class="list-group">
+                                            <li class="list-group-item list-group-item-top">{% trans from "school" %}unit.addresses{% endtrans %}</li>
+                                            {% set types = ['VISITING', 'RELAYS', 'DINING', 'LODGING'] %}
+                                            {% for type in types %}
+                                                {% set active = (type == 'VISITING' ? true : false) %}
+                                                {% set badgeIcon = (unit.usesAddress(type) ? 'check' : (type == 'VISITING' ? 'info' : 'exclamation')) %}
+                                                <a href="#" onclick="$(this).siblings('a').removeClass('active'); $(this).addClass('active'); $('#address_{{ unit.id }}').load('./school/billing_address/{{ unit.id }}/{{ type }}'); return false;" class="list-group-item{{ active ? ' active' : ''}}">{{ type|lower|trans([], 'school') }} <span class="badge bg-success"><i class="fa fa-{{ badgeIcon }}"></i></span></a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-8" id="address_{{ unit.id }}">
+                                        {% set options = { 'type':'VISITING', 'unit': unit, 'addressType' : unit.usesAddress('VISITING') ? 'VISITING' : 'SCHOOL', 'address': unit.getAddress('VISITING', null,  true)} %}
+                                        {% include 'manager/school/billing_address.html.twig' with options %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="panel-footer text-right">
+            <a onclick="$('#unit_panel').load('./school/handle_units'); return false;" class="btn btn-default"><i class="fa fa-edit"></i> {% trans from "school" %}school.handle_units{% endtrans %} <i class="fa fa-angle-right"></i></a>
+        </div>
+    </div>

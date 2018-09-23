@@ -1,0 +1,11 @@
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+    REPLY ALL
+{% endblock %}

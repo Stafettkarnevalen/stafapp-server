@@ -1,0 +1,228 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 05/05/2018
+ * Time: 21.51
+ */
+
+namespace App\Entity\Gedmo;
+
+use App\Entity\Traits\PersistencyDataTrait;
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * @ORM\Table(name="gedmo_log_entry_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @package App\Entity\Gedmo
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class LogEntry
+{
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /**
+     * @ORM\Column(name="action_fld", type="string", length=8)
+     * @var string $action
+     */
+    protected $action;
+
+    /**
+     * @ORM\Column(name="logged_at_fld", type="datetime")
+     * @var \DateTime $loggedAt
+     */
+    protected $loggedAt;
+
+    /**
+     * @ORM\Column(name="object_id_fld", length=64, nullable=true)
+     * @var string $objectId
+     */
+    protected $objectId;
+
+    /**
+     * @ORM\Column(name="object_class_fld", type="string", length=255)
+     * @var string $objectClass
+     */
+    protected $objectClass;
+
+    /**
+     * @ORM\Column(name="version_fld", type="integer")
+     * @var integer $version
+     */
+    protected $version;
+
+    /**
+     * @ORM\Column(name="data_fld", type="array", nullable=true)
+     * @var array $data
+     */
+    protected $data;
+
+    /**
+     * @ORM\Column(name="username_fld", length=255, nullable=true)
+     * @var string $data
+     */
+    protected $username;
+
+    /**
+     * Gets the action
+     *
+     * @return string
+     */
+    public function getAction()
+    {
+        return $this->action;
+    }
+
+    /**
+     * Sets the action
+     *
+     * @param string $action
+     * @return $this
+     */
+    public function setAction($action)
+    {
+        $this->action = $action;
+
+        return $this;
+    }
+
+    /**
+     * Gets the object class
+     *
+     * @return string
+     */
+    public function getObjectClass()
+    {
+        return $this->objectClass;
+    }
+
+    /**
+     * Sets the object class
+     *
+     * @param string $objectClass
+     * @return $this
+     */
+    public function setObjectClass($objectClass)
+    {
+        $this->objectClass = $objectClass;
+
+        return $this;
+    }
+
+    /**
+     * Gets the object id
+     *
+     * @return string
+     */
+    public function getObjectId()
+    {
+        return $this->objectId;
+    }
+
+    /**
+     * Sets the object id
+     *
+     * @param string $objectId
+     * @return $this
+     */
+    public function setObjectId($objectId)
+    {
+        $this->objectId = $objectId;
+
+        return $this;
+    }
+
+    /**
+     * Gets the username
+     *
+     * @return string
+     */
+    public function getUsername()
+    {
+        return $this->username;
+    }
+
+    /**
+     * Sets the username
+     *
+     * @param string $username
+     * @return $this
+     */
+    public function setUsername($username)
+    {
+        $this->username = $username;
+
+        return $this;
+    }
+
+    /**
+     * Gets the loggedAt
+     *
+     * @return \DateTime
+     */
+    public function getLoggedAt()
+    {
+        return $this->loggedAt;
+    }
+
+    /**
+     * Sets hte loggedAt to "now"
+     * @return $this
+     */
+    public function setLoggedAt()
+    {
+        $this->loggedAt = new \DateTime();
+
+        return $this;
+    }
+
+    /**
+     * Gets the data
+     *
+     * @return array
+     */
+    public function getData()
+    {
+        return $this->data;
+    }
+
+    /**
+     * Sets the data
+     *
+     * @param array $data
+     * @return $this
+     */
+    public function setData($data)
+    {
+        $this->data = $data;
+
+        return $this;
+    }
+
+    /**
+     * Sets the current version
+     *
+     * @param integer $version
+     * @return $this
+     */
+    public function setVersion($version)
+    {
+        $this->version = $version;
+
+        return $this;
+    }
+
+    /**
+     * Gets the current version
+     *
+     * @return integer
+     */
+    public function getVersion()
+    {
+        return $this->version;
+    }
+
+}

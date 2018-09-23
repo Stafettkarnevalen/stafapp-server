@@ -1,0 +1,102 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 22/11/2016
+ * Time: 21.45
+ */
+namespace App\Form\Relay;
+
+
+use FOS\CKEditorBundle\Form\Type\CKEditorType;
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ButtonType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+
+/**
+ * Class RuleType
+ * @package App\Form\Cheerleading
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class RuleType extends AbstractType
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $rid = $builder->getData()->getId();
+        $builder
+            ->add('title', TextType::class, ['label' => 'label.rule_title'])
+            ->add('minifiedHTML', CKEditorType::class, [
+                'label' => 'label.rule_text',
+                //'autoload' => false,
+                //'async'    => true,
+            ])
+            ->add('from', DateTimeType::class, [
+                'label' => 'label.rule_from',
+                'years' => range(1960, date("Y") + 5),
+            ])
+            ->add('until', DateTimeType::class, [
+                'label' => 'label.rule_until',
+                'years' => range(1960, date("Y") + 5),
+                'required' => false,
+            ])
+            ->add('isActive', ChoiceType::class, [
+                'label' => 'label.rule_status',
+                'expanded' => true,
+                'choice_attr' => function () { return ['class' => 'inline']; },
+                'label_attr' => ['class' => 'radio-inline'],
+                'choices' => ['label.inactive' => 0, 'label.active' => 1],
+            ])
+            ->add('submit', SubmitType::class, [
+                'left_icon' => 'fa-save',
+                'right_icon' => 'fa-check',
+                'attr' => ['class' => 'btn-success form-submit'],
+                'label' => 'label.save',
+            ])
+            ->add('close', ButtonType::class, [
+                'left_icon' => 'fa-chevron-left',
+                'right_icon' => 'fa-close',
+                'attr' => [
+                    'class' => 'btn-default',
+                    'data-dismiss' => 'modal',
+                ],
+                'label' => 'label.close',
+            ])
+        ;
+
+        if ($rid) $builder->add('delete', ButtonType::class, [
+            'left_icon' => 'fa-trash',
+            'right_icon' => 'fa-minus',
+            'attr' => [
+                'class' => 'btn-danger',
+                'data-toggle' => 'confirm',
+                'data-reload' => 'true',
+                'data-title' => $options['delete_title'],
+                'value' => $options['delete_path'],
+            ],
+            'label' => 'label.delete',
+        ]);
+
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults([
+            'data_class' => 'App\Entity\Relays\RelayRule',
+            'translation_domain' => 'relay',
+            'delete_title' => '',
+            'delete_path' => '',
+        ]);
+    }
+}

@@ -1,0 +1,62 @@
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        {% set icons = {'ASC': 'fa-chevron-up', 'DESC': 'fa-chevron-down'} %}
+        <table class="table table-bordered table-responsive table-condensed table-striped table-scrollable table-docs">
+            <thead>
+            <tr>
+                <th class="order"><a href="{{ path('nav.docs', {'sort': 'order', 'order': orders['order']}) }}">{% trans from "documentation" %}label.order{% endtrans %} {% if sort == 'order' %}<span class="fa {{ icons[order] }}"></span>{% endif %}</a></th>
+                <th class="title"><a href="{{ path('nav.docs', {'sort': 'title', 'order': orders['title']}) }}">{% trans from "documentation" %}label.title{% endtrans %} {% if sort == 'title' %}<span class="fa {{ icons[order] }}"></span>{% endif %}</a></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for doc in docs %}
+                {% if is_granted('VIEW', doc) %}
+                    <tr>
+                        <td class="order"><a href="{{ path('nav.doc', {'toc': true, 'id' : doc.id}) }}">{{ doc.order + 1 }}</a></td>
+                        <td class="title"><a href="{{ path('nav.doc', {'toc': true, 'id' : doc.id}) }}">{{ doc.title }}</a></td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script type="text/javascript">
+        <!--
+        $('#clear_search').on('click', function() {
+            $('#search').val('');
+            $(this).addClass('disabled');
+            $.each($('.table-docs tbody tr'), function() {
+                $(this).css('display', '');
+            });
+        });
+        $('#search').on('input', function() {
+            if ($(this).val().length > 0) {
+                $('#clear_search').removeClass('disabled');
+                filter = $(this).val();
+                $.each($('.table-docs tbody tr'), function() {
+                    $(this).css('display', $(this).find('td a').is(':icontains(' + filter + ')') ? '' : 'none');
+                });
+            } else {
+                $('#clear_search').trigger('click');
+            }
+        });
+
+        $.expr[":"].icontains = $.expr.createPseudo(function(arg) {
+            return function( elem ) {
+                return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
+            };
+        });
+        //-->
+    </script>
+{% endblock %}

@@ -1,0 +1,53 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 31/12/2017
+ * Time: 22.01
+ */
+
+namespace App\Repository;
+
+use App\Entity\Schools\School;
+use App\Entity\Schools\SchoolUnit;
+use Doctrine\ORM\EntityRepository;
+
+class SchoolTypeRepository extends EntityRepository
+{
+    public function findByOrderBetween($from, $until, $group = null)
+    {
+        $qb = $this->createQueryBuilder('st');
+
+        $where = 'st.order >= :from AND st.order <= :until AND ' . ($group ? 'st.group = :group' : 'st.group IS NULL');
+
+        $qb->where($where)
+            ->setParameter('from', $from)
+            ->setParameter('until', $until);
+        if ($group)
+            $qb->setParameter('group', $group);
+
+        $result = $qb->getQuery()->getResult();
+
+        return $result;
+    }
+
+    public function findAvailableForSchool(School $school)
+    {
+        if ($school->getSchoolUnits()->count() === 0)
+            return $this->findBy([], ['order' => 'ASC']);
+
+        $typeGroups = [];
+        /** @var SchoolUnit $su */
+        foreach ($school->getSchoolUnits() as $su)
+            if ($su->getIsActive() && !in_array($su->getSchoolType()->getGroup(), $typeGroups))
+                $typeGroups[] = $su->getSchoolType()->getGroup();
+
+        return $this->createQueryBuilder('st')
+                ->where('st.group NOT IN (:typeGroups)')
+                ->setParameter('types', $typeGroups)
+                //->andWhere('n.isActive = 1')
+                //->orderBy($orderBy)
+                ->getQuery()
+                ->getResult();
+    }
+}

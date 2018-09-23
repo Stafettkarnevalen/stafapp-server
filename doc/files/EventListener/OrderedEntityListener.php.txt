@@ -1,0 +1,51 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 21.19
+ */
+
+namespace App\EventListener;
+
+use App\Entity\Interfaces\OrderedEntityInterface;
+use App\Entity\Relays\Team;
+use Doctrine\ORM\Event\LifecycleEventArgs;
+
+/**
+ * Class OrderedEntityListener
+ * @package AppBundle\EventListener
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class OrderedEntityListener
+{
+    /**
+     * Performs operations on an entity's siblings before the entity is removed.
+     *
+     * @param LifecycleEventArgs $event
+     */
+    public function preRemove(LifecycleEventArgs $event)
+    {
+        $entity = $event->getEntity();
+        $em = $event->getEntityManager();
+
+        // check if an ordered entity is being deleted
+        if ($entity instanceof OrderedEntityInterface) {
+            $after = $entity->getSiblingsAfter($em);
+            /** @var OrderedEntityInterface $sibling */
+            foreach ($after as $sibling) {
+                $sibling->setOrder($sibling->getOrder() - 1);
+                $em->merge($sibling);
+            }
+        }
+        if ($entity instanceof Team) {
+            $after = $entity->getServiceTypeOrderSiblingsAfter();
+            /** @var Team $sibling */
+            foreach ($after as $sibling) {
+                $sibling->setServiceTypeOrder($sibling->getServiceTypeOrder() - 1);
+                $em->merge($sibling);
+            }
+        }
+    }
+}

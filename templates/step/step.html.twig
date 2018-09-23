@@ -1,0 +1,31 @@
+<table class="stepper stepper-title">
+    <tbody>
+        <tr>
+            <td>
+                {% if title_args is not defined %}
+                    {% set title_args = {} %}
+                {% endif %}
+                <h3>{{ title|trans(title_args) }}</h3>
+            </td>
+            <td class="text-right">
+                <h3>{% if step <= steps %}<span class="hidden-xs">{% trans from "messages" %}step.step{% endtrans %}</span>
+
+                        {{ step }} <span class="hidden-xs">{% trans from "messages" %}step.of{% endtrans %}</span><span class="hidden-sm hidden-md hidden-lg">/</span> {{ steps }}
+                    {% endif %}
+                </h3>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<table class="stepper">
+    <tbody>
+        <tr>
+            {% for i in 1..steps %}
+                <td class="bg-{% if i < step %}success{% elseif i == step %}primary{% else %}default{% endif %}"></td>
+                {% if i < steps %}
+                    <td class="separator"></td>
+                {% endif %}
+            {% endfor %}
+        </tr>
+    </tbody>
+</table>

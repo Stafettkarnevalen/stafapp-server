@@ -1,0 +1,88 @@
+{% macro render_sorted_table(schoolUnits, orders, order, sort, school) %}
+    {{ table(schoolUnits, {
+        'trans_domain': 'school',
+        'class': 'table table-bordered table-responsive table-condensed table-striped table-scrollable table-searchable table-sortable table-school-units',
+        'body': {
+            'row_attrs': {
+                'data-id':  {
+                    'type': 'twig',
+                    'path': 'id'
+                }
+            },
+            'link': {
+                'url': 'nav.admin_edit_school_unit',
+                'params': {
+                    'id': {
+                        'type': 'twig',
+                        'path': 'id'
+                    }
+                },
+                'attrs': {
+                    'data-reload': 'true',
+                    'data-title': 'nav.admin_list_school_units'|trans({}, 'nav'),
+                    'data-toggle': 'modal'
+                }
+            },
+            'cols': {
+                'name': {
+                    'type': 'twig',
+                    'path': 'name'
+                },
+                'schoolType': {
+                    'type': 'twig',
+                    'path': 'schoolType.abbreviation',
+                },
+                'group': {
+                    'type': 'twig',
+                    'path': 'group.email',
+                },
+                'isActive hidden-xs': {
+                    'type': 'twig',
+                    'path': 'isActive',
+                    'conditions': {
+                        '0': '<i class="text-danger fa fa-times-circle"></i>',
+                        '1': '<i class="text-success fa fa-check-circle"></i>'
+                    }
+                }
+            }
+        },
+        'head': {
+            'sortable': {
+                'orders': orders,
+                'order': order,
+                'sort': sort,
+                'icons': {
+                    'ASC': 'fa-chevron-up',
+                    'DESC': 'fa-chevron-down'
+                },
+                'link': {
+                    'url': 'nav.admin_list_school_units',
+                    'params': {
+                        'school': {
+                            'type': 'value',
+                            'value': school.id
+                        }
+                    },
+                }
+            },
+            'cols': {
+                'name': {
+                    'label': 'field.name',
+                    'sort': 'name'
+                },
+                'schoolType': {
+                    'label': 'field.schoolType',
+                    'sort': 'schoolType'
+                },
+                'group': {
+                    'label': 'field.group',
+                    'sort': 'group'
+                },
+                'isActive hidden-xs': {
+                    'label': 'field.isActive',
+                    'sort': 'isActive'
+                }
+            }
+        }
+    }) }}
+{% endmacro %}

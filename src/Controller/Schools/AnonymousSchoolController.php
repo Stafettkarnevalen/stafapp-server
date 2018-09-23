@@ -1,0 +1,47 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 31/12/2017
+ * Time: 21.49
+ */
+
+namespace App\Controller\Schools;
+
+use App\Controller\Interfaces\ModalEventController;
+use App\Controller\Traits\RESTFulControllerTrait;
+use App\Controller\Traits\TableSortingControllerTrait;
+use App\Entity\Communication\Message;
+use App\Entity\Communication\SchoolDistribution;
+use App\Entity\Schools\School;
+use App\Form\School\EditType as SchoolEditType;
+use App\Form\School\EditNameType as SchoolNameEditType;
+use FOS\RestBundle\Controller\FOSRestController;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Swagger\Annotations as SWG;
+use Nelmio\ApiDocBundle\Annotation as Nelmio;
+use App\Entity\Api\Message as ApiMessage;
+
+/**
+ * Class AdminSchoolController
+ * - Handles School entities.
+ * - API calls for admin.
+ * - Admin funtionality for UI.
+ *
+ * @package App\Controller\Schools
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class AnonymousSchoolController extends FOSRestController implements ModalEventController
+{
+    /** Use some REST methods */
+    use RESTFulControllerTrait;
+
+    /** Use table sorting */
+    use TableSortingControllerTrait;
+
+}

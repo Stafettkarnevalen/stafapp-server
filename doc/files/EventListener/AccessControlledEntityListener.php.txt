@@ -1,0 +1,141 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 21.19
+ */
+
+namespace App\EventListener;
+
+use App\Entity\Interfaces\AccessControlledEntityInterface;
+use App\Entity\Security\SimpleACE;
+use Doctrine\ORM\Event\LifecycleEventArgs;
+use Symfony\Component\Security\Acl\Domain\RoleSecurityIdentity;
+use Symfony\Component\Security\Acl\Model\AuditableEntryInterface;
+use Symfony\Component\Security\Acl\Model\MutableAclInterface;
+use Symfony\Component\Security\Acl\Model\MutableAclProviderInterface;
+use Symfony\Component\HttpKernel\Kernel;
+
+/**
+ * Class AccessControlledEntityListener
+ * @package AppBundle\EventListener
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class AccessControlledEntityListener
+{
+    /** @var null|Kernel $kernel The kernel */
+    private $kernel = null;
+
+    /**
+     * ModifiedDataListener constructor.
+     * @param Kernel $kernel
+     */
+    public function __construct(Kernel $kernel)
+    {
+        $this->kernel = $kernel;
+    }
+
+    /**
+     * Performs operations on entities after they are loaded.
+     *
+     * @param LifecycleEventArgs $event
+     */
+    public function postLoad(LifecycleEventArgs $event)
+    {
+        $entity = $event->getEntity();
+
+        // check if an access control list is needed and if necessary, update it
+        if ($entity instanceof AccessControlledEntityInterface) {
+            $entity->initObjectAces();
+            /** @var MutableAclProviderInterface $aclProvider */
+            $aclProvider = $this->kernel->getContainer()->get('security.acl.provider');
+            $objectIdentity = $entity->getObjectIdentity();
+            try {
+                $acl = $aclProvider->findAcl($objectIdentity);
+                $aces = [];
+                /** @var AuditableEntryInterface $ace */
+                foreach ($acl->getObjectAces() as $index => $ace) {
+                    $sid = $ace->getSecurityIdentity();
+                    if ($sid instanceof RoleSecurityIdentity)
+                        $aces[] = new SimpleACE($sid->getRole(), $ace->getMask(), $index, $ace->getId());
+                }
+                $entity->updateObjectAces($aces);
+            } catch (\Exception $e) {
+
+            }
+        }
+    }
+
+    /**
+     * Performs operations on entities after they are stored for the first time.
+     *
+     * @param LifecycleEventArgs $event
+     */
+    public function postPersist(LifecycleEventArgs $event)
+    {
+        $entity = $event->getEntity();
+
+        // check if an access control list is needed and if necessary, update it
+        if ($entity instanceof AccessControlledEntityInterface && false) {
+            /** @var MutableAclProviderInterface $aclProvider */
+            $aclProvider = $this->kernel->getContainer()->get('security.acl.provider');
+            $objectIdentity = $entity->getObjectIdentity();
+            /** @var MutableAclInterface $acl */
+            try {
+                $acl = $aclProvider->findAcl($objectIdentity);
+                /** @var AuditableEntryInterface $ace */
+                foreach ($entity->getObjectAces() as $index => $ace) {
+                    if ($ace->getId())
+                        $acl->updateObjectAce($index, $ace->getMask(), $ace->getStrategy());
+                    else
+                        $acl->insertObjectAce($ace->getSecurityIdentity(), $ace->getMask());
+                }
+                $aclProvider->updateAcl($acl);
+            } catch (\Exception $e) {
+                $acl = $aclProvider->createAcl($objectIdentity);
+                /** @var AuditableEntryInterface $ace */
+                foreach ($entity->getObjectAces() as $index => $ace) {
+                    $acl->insertObjectAce($ace->getSecurityIdentity(), $ace->getMask());
+                }
+                $aclProvider->updateAcl($acl);
+            }
+            $entity->setObjectAces($acl->getObjectAces());
+        }
+
+    }
+
+    /**
+     * Performs operations on entities after they are stored.
+     *
+     * @param LifecycleEventArgs $event
+     */
+    public function postUpdate(LifecycleEventArgs $event)
+    {
+        $this->postPersist($event);
+    }
+
+    /**
+     * Performs operations on entities after they are loaded.
+     *
+     * @param LifecycleEventArgs $event
+     */
+    public function preRemove(LifecycleEventArgs $event)
+    {
+        $entity = $event->getEntity();
+
+        // check if an access control list is needed and if necessary, update it
+        if ($entity instanceof AccessControlledEntityInterface) {
+            $entity->initObjectAces();
+            /** @var MutableAclProviderInterface $aclProvider */
+            $aclProvider = $this->kernel->getContainer()->get('security.acl.provider');
+            $objectIdentity = $entity->getObjectIdentity();
+            try {
+                $aclProvider->deleteAcl($objectIdentity);
+            } catch (\Exception $e) {
+
+            }
+        }
+    }
+}

@@ -1,0 +1,100 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/09/2017
+ * Time: 15.01
+ */
+
+namespace App\Entity\Communication;
+
+
+use App\Entity\Interfaces\MessageDistributionInterface;
+use App\Entity\Security\Group;
+use Doctrine\Common\Collections\ArrayCollection;
+
+/**
+ * Class GroupDistribution
+ * @package App\Entity\Communication
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class GroupDistribution implements MessageDistributionInterface
+{
+    /**
+     * @var Group $group The group that serves a the distribution. All the members of the group will get the message.
+     */
+    protected $group;
+
+    /**
+     * GroupDistribution constructor.
+     * @param Group $group
+     */
+    public function __construct(Group $group)
+    {
+        $this->group = $group;
+    }
+
+    /**
+     * Gets the actual users that get this message.
+     *
+     * @return ArrayCollection
+     */
+    public function getUsers() {
+        return $this->group->getUsers();
+    }
+
+    /**
+     * Gets a label for this distribution.
+     *
+     * @return string
+     */
+    public function getLabel()
+    {
+        return $this->group->getName();
+    }
+
+    /**
+     * Gets the Entity class behing this distribution.
+     * @return string
+     */
+    public function getClass()
+    {
+        return Group::class;
+    }
+
+    /**
+     * Gets the id of the Entity behind this distribution.
+     *
+     * @return integer
+     */
+    public function getId()
+    {
+        return $this->group->getId();
+    }
+
+    /**
+     * Returns a distribution of an array of GroupDistributions.
+     *
+     * @param array $groups
+     * @return array
+     */
+    public static function all(array $groups)
+    {
+        $all = [];
+        foreach ($groups as $group) {
+            $all[] = new GroupDistribution($group);
+        }
+        return $all;
+    }
+
+    /**
+     * Gets the class and id combination of the Entity behind this distribution.
+     *
+     * @return string
+     */
+    public function getValue()
+    {
+        return $this->getClass() . '-' . $this->getId();
+    }
+}

@@ -1,0 +1,127 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 03/06/2017
+ * Time: 10.16
+ */
+
+namespace App\Entity\Traits;
+use Doctrine\Common\Annotations\AnnotationException;
+use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Util\ClassUtils;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\OneToOne;
+use Doctrine\ORM\Mapping\OneToMany;
+use Doctrine\ORM\Mapping\ManyToOne;
+use Doctrine\ORM\Mapping\ManyToMany;
+/**
+ * Trait FieldsTrait
+ * @package App\Entity\Traits
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+trait FieldsTrait
+{
+    public function getSkipFll()
+    {
+        return [];
+    }
+
+    /**
+     * Gets the fields of the entity.
+     *
+     * @param array $skip
+     * @return array
+     */
+    public function getFields(array $skip = [])
+    {
+        $fields = get_object_vars($this);
+        $skip = array_merge($this->getSkipFll(), $skip);
+        foreach ($fields as $key => $value)
+            if (in_array($key, $skip))
+                unset($fields[$key]);
+
+        return $fields;
+    }
+
+    /**
+     * @see \Serializable::serialize()
+     */
+    public function serialize()
+    {
+        return serialize($this->getFields());
+    }
+
+    /**
+     * @see \Serializable::unserialize()
+     *
+     * @param string $serialized
+     */
+    public function unserialize($serialized)
+    {
+        $vars = unserialize($serialized);
+        foreach ($this->getFields() as $name => $val) {
+            $this->$name = isset($vars[$name]) ? $vars[$name] : null;
+        }
+    }
+
+    protected function isAnnotadedColumn($annotations, $class = null)
+    {
+        foreach ($annotations as $annotation) {
+            if (!$class && (
+                $annotation instanceof Column ||
+                $annotation instanceof OneToOne ||
+                $annotation instanceof OneToMany ||
+                $annotation instanceof ManyToOne ||
+                $annotation instanceof ManyToMany)
+            ) return true;
+            if ($annotation instanceof $class)
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * @see \JsonSerializable::jsonSerialize()
+     * @throws AnnotationException
+     */
+    public function jsonSerialize()
+    {
+        $fields = $fields = $this->getFields();
+        $json = [];
+        $annotationReader = new AnnotationReader();
+
+        foreach ($fields as $key => $field) {
+            try {
+                $reflection = new \ReflectionProperty($this, $key);
+                $annotations = $annotationReader->getPropertyAnnotations($reflection);
+                if ($this->isAnnotadedColumn($annotations, Column::class)) {
+                    $json[$key] = $field;
+                } else if (
+                    $this->isAnnotadedColumn($annotations, OneToOne::class) ||
+                    $this->isAnnotadedColumn($annotations, ManyToOne::class)
+                ) {
+                    $idReflection = new \ReflectionMethod(ClassUtils::getClass($field), "getId");
+
+                    $json[$key] = [ClassUtils::getClass($field) => $idReflection->invoke($field)];
+                } else if (
+                    $this->isAnnotadedColumn($annotations, OneToMany::class) ||
+                    $this->isAnnotadedColumn($annotations, ManyToMany::class)
+                ) {
+                    $jsons = [];
+                    foreach ($field as $fld) {
+                        $idReflection = new \ReflectionMethod(ClassUtils::getClass($fld), "getId");
+                        $jsons[] = [ClassUtils::getClass($fld) => $idReflection->invoke($fld)];
+                    }
+                    $json[$key] = $jsons;
+                }
+            } catch (\ReflectionException $e) {
+                continue;
+            }
+        }
+        return [
+            self::class => $json
+        ];
+    }
+}

@@ -1,0 +1,5 @@
+label.create: "Uusi rooli..."
+label.search: "Etsi"
+label.name: "Nimi"
+label.email: "S-posti"
+label.role: "Rooli"

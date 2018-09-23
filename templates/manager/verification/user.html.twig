@@ -1,0 +1,28 @@
+<div class="side-padding">
+    <div class="panel panel-default">
+        <div class="panel-heading">{{ user.fullname }}</div>
+        <div class="panel-body">
+            <dl class="dl dl-horizontal">
+                <dt>{% trans from "user" %}label.username{% endtrans %}</dt>
+                <dd>
+                    <span class="pull-left">{{ user.username }}</span>
+                    <span class="pull-right">{% if user.emailhash %}<i class="text-danger fa fa-exclamation-circle"></i>{% else %}<i class="text-success fa fa-check-circle"></i>{% endif %}</span></dd>
+                <dt>{% trans from "user" %}label.phone{% endtrans %}</dt>
+                <dd>
+                    <span class="pull-left">{{ user.phone }}</span>
+                    <span class="pull-right">{% if user.phonehash %}<i class="text-danger fa fa-exclamation-circle"></i>{% else %}<i class="text-success fa fa-check-circle"></i>{% endif %}</span></dd>
+                <dt>{% trans from "user" %}label.isActive{% endtrans %}</dt>
+                <dd>
+                    <span class="pull-left">{% if user.isActive %}{% trans from "messages" %}yes{% endtrans %}{% else %}{% trans from "messages" %}no{% endtrans %}{% endif %}</span>
+                    <span class="pull-right">{% if user.isActive %}<i class="text-success fa fa-check-circle"></i>{% else %}<i class="text-danger fa fa-exclamation-circle"></i>{% endif %}</span></dd>
+                </dd>
+            </dl>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function(){
+        $('[data-toggle="popover"]').popover();
+    });
+</script>

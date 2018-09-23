@@ -1,0 +1,42 @@
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+    <div class="side-padding">
+        <h1>{{ doc.title }}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <table class="table table-responsive table-striped">
+            <thead>
+            <tr>
+                <th>{% trans from 'documentation' %}label.version{% endtrans %}</th>
+                <th>{% trans from 'documentation' %}label.timestamp{% endtrans %}</th>
+                <th>{% trans from 'documentation' %}label.action{% endtrans %}</th>
+                <th>{% trans from 'documentation' %}label.by_whom{% endtrans %}</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for log in doc.logs %}
+                <tr>
+                    <td><a data-title="{% trans from 'documentation' %}label.version{% endtrans %} {{ log.version }}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_doc_log', {'id': doc.id, 'log': log.id}) }}">{{ log.version }}</a></td>
+                    <td><a data-title="{% trans from 'documentation' %}label.version{% endtrans %} {{ log.version }}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_doc_log', {'id': doc.id, 'log': log.id}) }}">{{ log.loggedAt|date('d.m.Y H:i:s') }}</a></td>
+                    <td><a data-title="{% trans from 'documentation' %}label.version{% endtrans %} {{ log.version }}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_doc_log', {'id': doc.id, 'log': log.id}) }}">{{ log.action|trans({}, 'documentation') }}</a></td>
+                    <td><a data-title="{% trans from 'documentation' %}label.version{% endtrans %} {{ log.version }}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_doc_log', {'id': doc.id, 'log': log.id}) }}">{{ log.username }}</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

@@ -1,0 +1,537 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 31/12/2017
+ * Time: 21.49
+ */
+
+namespace App\Controller\Schools;
+
+use App\Controller\Interfaces\ModalEventController;
+use App\Controller\Traits\RESTFulControllerTrait;
+use App\Controller\Traits\TableSortingControllerTrait;
+use App\Entity\Communication\Message;
+use App\Entity\Communication\SchoolDistribution;
+use App\Entity\Schools\School;
+use App\Form\School\EditType as SchoolEditType;
+use App\Form\School\EditNameType as SchoolNameEditType;
+use FOS\RestBundle\Controller\FOSRestController;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Swagger\Annotations as SWG;
+use Nelmio\ApiDocBundle\Annotation as Nelmio;
+use App\Entity\Api\Message as ApiMessage;
+
+/**
+ * Class AdminSchoolController
+ * - Handles School entities.
+ * - API calls for admin.
+ * - Admin funtionality for UI.
+ *
+ * @package App\Controller\Schools
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class AdminSchoolController extends FOSRestController implements ModalEventController
+{
+    /** Use some REST methods */
+    use RESTFulControllerTrait;
+
+    /** Use table sorting */
+    use TableSortingControllerTrait;
+
+    /**
+     * Controller for listing schools (admin only).
+     * RESTful API Supported (GET).
+     *
+     * @Route("/api/v2/admin/schools/list",
+     *     name="api.admin_list_schools",
+     *     methods={"GET"})
+     * @Route("/{_locale}/admin/schools/list",
+     *     options={"expose" = true},
+     *     name="nav.admin_list_schools")
+     *
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns a list of schools",
+     *     @SWG\Schema(
+     *         type="array",
+     *         @SWG\Items(ref=@Nelmio\Model(type=School::class, groups={"SchoolApi","Default"}))
+     *     )
+     * )
+     *
+     * @param integer $id if provided, the school with this id is toggled between active and inactive state.
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminListSchoolsAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $ctx = $this->getContext(['SchoolAPI', 'Default']);
+
+        // Check if toggle is needed
+        if ($id) {
+            /** @var School $school */
+            $school = $em->getRepository(School::class)->find($id);
+
+            if (!$school)
+                return $this->notFoundError('id', $id);
+
+            $school->setIsActive(!$school->getIsActive());
+            $em->merge($school);
+            $em->flush();
+
+            if ($this->isRestfulRequest($request))
+                return $this->readEntity(School::class, $id, ['SchoolAPI', 'Default']);
+        }
+
+        // handle sorting
+        list($sort, $sortKey,$order, $orders) = $this->handleSorting(
+            $request,
+            ['name', 'number', 'group', 'isActive'],
+            'admin_schools',
+            'name'
+        );
+
+        // fetch
+        $schools = $em->getRepository(School::class)->findBy([], $sort);
+
+        // Return a RESTful JSON response or HTML
+        $view = $this->view($schools, 200)
+            ->setTemplate('admin/schools/list.html.twig')
+            ->setTemplateVar('schools')
+            ->setTemplateData([
+                'orders' => $orders,
+                'order' => $order,
+                'sort' => $sortKey,
+            ])
+            ->setContext($ctx)
+        ;
+
+        return $this->handleView($view);
+    }
+
+    /**
+     * Controller for toggling active / inactive state of one scgool (admin only).
+     * RESTful API Supported (GET).
+     *
+     * @Route("/api/v2/admin/schools/{id}/toggle",
+     *     name="api.admin_toggle_school",
+     *     methods={"GET"})
+     * @Route("/{_locale}/admin/schools/{id}/toggle",
+     *     options={"expose" = true},
+     *     name="nav.admin_toggle_school")
+     *
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns the school",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=School::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=400,
+     *     description="No school was found with id",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Parameter(
+     *     name="id",
+     *     in="path",
+     *     type="integer",
+     *     description="The id of the school"
+     * )
+     *
+     * @param integer $id the school with this id is toggled between active and inactive state.
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminToggleSchoolAction($id, Request $request)
+    {
+        return $this->adminListSchoolsAction($id, $request);
+    }
+
+    /**
+     * Controller for reading a single school (admin only).
+     * RESTful API only (GET).
+     *
+     * @Route("/api/v2/admin/schools/{id}/read",
+     *     name="api.admin_read_school",
+     *     methods={"GET"})
+     *
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns the school",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=School::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=400,
+     *     description="No school was found with id",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Parameter(
+     *     name="id",
+     *     in="path",
+     *     type="integer",
+     *     description="The id of the school"
+     * )
+     *
+     * @param integer $id
+     * @return mixed
+     */
+    public function adminReadSchoolRESTAction($id)
+    {
+        return $this->readEntity(School::class, $id, ['SchoolAPI', 'Default']);
+    }
+
+    /**
+     * Controller for editing a single school (admin only).
+     * RESTful API only (POST).
+     *
+     * @Route("/api/v2/admin/schools/{id}/edit",
+     *     name="api.admin_edit_school",
+     *     methods={"POST"})
+     *
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns the school",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=School::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=400,
+     *     description="No school was found with the id",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=409,
+     *     description="The query paramters were not valid",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Parameter(
+     *     name="id",
+     *     in="path",
+     *     type="integer",
+     *     description="The id of the school"
+     * )
+     *
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminEditSchoolRESTAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $ctx = $this->getContext(['SchoolAPI', 'Default']);
+
+        // Fetch or create the entity
+        if ($id) {
+            $school = $em->getRepository(School::class)->find($id);
+            if (!$school) {
+                return $this->notFoundError('id', $id);
+            }
+        } else {
+            $school = new School();
+            $school->setIsActive(true)->setPassword(rand(1000000, 99999999));
+        }
+
+        $form = $this->createForm(SchoolEditType::class, $school, [
+            'csrf_protection' => false,
+            'include_name' => true,
+            'is_api' => true,
+        ]);
+
+        $nameForm = $this->createForm(SchoolNameEditType::class, $school->getName(), [
+            'csrf_protection' => false,
+            'embedded' => true,
+            'is_api' => true,
+        ]);
+
+        $form->submit($request->request->all());
+        $nameForm->submit($request->request->get('name'));
+
+        if ($form->isValid() && $form->isSubmitted() && $nameForm->isValid() && $nameForm->isSubmitted()) {
+            if ($school->getId())
+                $em->merge($school);
+            else
+                $em->persist($school);
+            $em->flush();
+
+            return $this->readEntity(School::class, $school->getId(), $ctx->getGroups());
+
+        } else if (!$form->isSubmitted() || !$nameForm->isSubmitted()) {
+            return $this->notValidError();
+        }
+
+        $err = $form->getErrors(true, true);
+        $nameErr = $nameForm->getErrors(true, true);
+        $errorsList = [];
+        foreach ($err as $it) {
+            $errorsList[(string)$it->getOrigin()->getPropertyPath()] = $it->getMessage();
+        }
+        foreach ($nameErr as $it) {
+            $errorsList[(string)$it->getOrigin()->getPropertyPath()] = $it->getMessage();
+        }
+
+        return $this->errors($errorsList);
+    }
+
+    /**
+     * Controller for creating a single school (admin only).
+     * RESTful API only (POST).
+     *
+     * @Route("/api/v2/admin/schools/create",
+     *     name="api.admin_create_school",
+     *     methods={"POST"})
+     *
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns the school",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=School::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=400,
+     *     description="A school was found with the same school number",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=409,
+     *     description="The query paramters were not valid",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     *
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminCreateSchoolRESTAction(Request $request)
+    {
+        return $this->adminEditSchoolRESTAction(0, $request);
+    }
+
+    /**
+     * Controller for creating or editing a single school (admin only).
+     * RESTful API separate (adminCreateOrEditSchoolRESTAction).
+     *
+     * @Route("/{_locale}/admin/schools/edit/{id}",
+     *     name="nav.admin_edit_school")
+     * @Route("/{_locale}/admin/schools/create",
+     *     name="nav.admin_create_school")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminCreateOrEditSchoolAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        // Fetch or create the entity
+        if ($id) {
+            $school = $em->getRepository(School::class)->find($id);
+        } else {
+            $school = new School();
+            $school->setIsActive(true)->setPassword(rand(1000000, 99999999));
+        }
+
+        // Create a form
+        $form = $this->createForm(SchoolEditType::class, $school, [
+            'attr' => [
+                'action' => $request->getPathInfo(),
+            ],
+            'delete_title' => $this->get('translator')->trans('label.delete', [], 'school'),
+            'delete_path' => $this->generateUrl('nav.admin_delete_school', ['id' => $id]),
+            'method' => $request->get('_route') === 'api.admin_school' ? 'get' : 'post',
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            /** @var Message $message */
+            $message = null;
+            if (($message = $school->getMessage()) && $message->getText() && $message->getTitle() && count($message->getType())) {
+                $message->setCreatedBy($this->getUser());
+                $message->setDistribution(new SchoolDistribution($school));
+            } else {
+                $message = null;
+            }
+
+            $action = $school->getId() ? 'updated' : 'saved';
+
+            if ($school->getId())
+                $em->merge($school);
+            else
+                $em->persist($school);
+
+            if ($message) {
+                $em->persist($message);
+            }
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.school.' . $action,
+                    'parameters' => ['%name%' => $school->getName()]
+                ]);
+
+            // return an empty response for the ajax modal or a full rendered view for non-modal
+            return ($request->isXmlHttpRequest() || $request->get('_route') === 'api.admin_school') ?
+                new JsonResponse([], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_list_schools');
+
+        } else if ($form->isSubmitted() && !$form->isValid()) {
+            // return error code for modal and ok for non-modals
+            $formView = $form->createView();
+            return $this->render('admin/schools/form.html.twig', [
+                'school' => $school,
+                'form' => $formView,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' => $id ?
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('delete'),
+                        $formView->offsetGet('submit')
+                    ] :
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('submit')
+                    ]
+            ], new Response('', $request->isXmlHttpRequest() ?
+                Response::HTTP_BAD_REQUEST :
+                Response::HTTP_OK));
+        }
+
+        $formView = $form->createView();
+        return $this->render('admin/schools/form.html.twig', [
+            'school' => $school,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' => $id ?
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('delete'),
+                    $formView->offsetGet('submit')
+                ] :
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('submit')
+                ]
+        ]);
+    }
+
+    /**
+     * Controller for deleting a single school (admin only).
+     * RESTful API Supported (DELETE).
+     *
+     * @Route("/api/v2/admin/schools/delete/{id}",
+     *     name="api.admin_delete_school",
+     *     methods={"DELETE"})
+     * @Route("/{_locale}/admin/schools/delete/{id}",
+     *     options={"expose" = true},
+     *     name="nav.admin_delete_school")
+     *
+     * @SWG\Response(
+     *     response=200,
+     *     description="School was deleted",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=400,
+     *     description="No school was found with id",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Parameter(
+     *     name="id",
+     *     in="path",
+     *     type="integer",
+     *     description="The id of the school"
+     * )
+     *
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDeleteSchoolAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /** @var School $school */
+        $school = $em->getRepository(School::class)->find($id);
+
+        // handle rest calls
+        if ($school && $this->isRestfulRequest($request)) {
+            $em->remove($school);
+            $em->flush();
+
+            return $this->ok();
+
+        } else if ($this->isRestfulRequest($request)) {
+            return $this->notFoundError('id', $id);
+        }
+
+        $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'school',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('yes', SubmitType::class, ['left_icon' => 'fa-trash', 'right_icon' => 'fa-check', 'attr' => ['class' => 'btn-danger'], 'label' => 'action.yes']);
+
+        $form = $fb->getForm();
+        $form->handleRequest($request);
+        if ($form->isSubmitted()) {
+            $name = $school->getName();
+
+            //$school->setName(null);
+            //$em->merge($school);
+            //$em->flush();
+
+            $school = $em->getRepository(School::class)->find($id);
+
+            /*foreach ($school->getNames() as $name) {
+                $em->remove($name);
+            }*/
+
+            $em->remove($school);
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.school.deleted',
+                    'parameters' => ['%name%' => $name]
+                ]);
+
+            // return an empty response for the modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse(['reloadPage' => 1], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_list_schools');
+        }
+
+        return $this->render('admin/schools/delete.html.twig', [
+            'school' => $school,
+            'form' => $form->createView(),
+            'modal' => $request->isXmlHttpRequest(),
+        ]);
+    }
+}

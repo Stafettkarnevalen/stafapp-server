@@ -1,0 +1,5 @@
+{{ user.fullname }}
+
+{% trans from "user" %}label.username{% endtrans %}: {{ user.username }} ({% if user.emailhash %}{% trans from "user" %}label.unverified{% endtrans %}{% else %}{% trans from "user" %}label.verified{% endtrans %}{% endif %})
+{% trans from "user" %}label.emailhash{% endtrans %}: {{ user.emailhash }}
+{% trans from "user" %}label.phone{% endtrans %}: {{ user.phone }} ({% if user.phonehash %}{% trans from "user" %}label.unverified{% endtrans %}{% else %}{% trans from "user" %}label.verified{% endtrans %}{% endif %})

@@ -1,0 +1,20 @@
+<div class="container-fluid" id="profile">
+
+    <div class="row form-group">
+        <div class="col-xs-2 col-sm-1">
+            <a href="" class="set-edit-mode" data-mode="0"><i class="edit-mode-status fa {% if profile_data('modules.tools', 0) == 0 %}fa-check-square text-success{% else %}fa-square-o text-normal{% endif %}"></i></a>
+        </div>
+        <div class="col-xs-10 col-sm-11">
+            <a href="" class="set-edit-mode text-normal" data-mode="0"><i class="fa fa-fw fa-times-circle"></i> {% trans from "nav" %}nav.editable_0{% endtrans %}</a>
+        </div>
+    </div>
+
+    <div class="row form-group">
+        <div class="col-xs-2 col-sm-1">
+            <a href="" class="set-edit-mode" data-mode="1"><i class="edit-mode-status fa {% if profile_data('modules.tools', 0) == 1 %}fa-check-square text-success{% else %}fa-square-o text-normal{% endif %}"></i></a>
+        </div>
+        <div class="col-xs-10 col-sm-11">
+            <a href="" class="set-edit-mode text-normal" data-mode="1"><i class="fa fa-fw fa-eye"></i> {% trans from "nav" %}nav.editable_1{% endtrans %}</a>
+        </div>
+    </div>
+</div>

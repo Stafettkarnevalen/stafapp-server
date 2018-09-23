@@ -1,0 +1,50 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 29/10/2017
+ * Time: 13.43
+ */
+
+namespace App\Repository;
+
+
+use App\Entity\Relays\Relay;
+use Doctrine\ORM\EntityRepository;
+
+class RelayRuleRepository extends EntityRepository
+{
+    public function findByRelay($relay, array $orderBy = [])
+    {
+        $qb = $this->createQueryBuilder('rule');
+        if ($relay) {
+            $where = ':relay IN rule.relays';
+            $qb->where($where)->setParameter('relay', $relay);
+        }
+        foreach ($orderBy as $key => $val)
+            $qb->addOrderBy('rule.' . $key, $val);
+
+        $result = $qb->getQuery()->getResult();
+
+        return $result;
+    }
+
+    public function findByOrderBetween($from, $until, $relay)
+    {
+
+        $qb = $this->createQueryBuilder('rule');
+
+        $where = $relay ?
+            ':relay IN rule.relays AND rule.order >= :from AND rule.order <= :until' :
+            'rule.relay IS NULL AND rule.order >= :from AND rule.order <= :until';
+        $qb->where($where)
+            ->setParameter('from', $from)
+            ->setParameter('until', $until);
+        if ($relay)
+            $qb->setParameter('relay', $relay);
+
+        $result = $qb->getQuery()->getResult();
+
+        return $result;
+    }
+}

@@ -1,0 +1,20 @@
+{% if module.url is not null %}
+
+    {% if is_granted('ROLE_ADMIN') %}
+        <div class="alert alert-info mod_hide">
+            <h2><i class="fa fa-info-circle"></i> {% trans from 'module' %}label.module.redirect_module.url{% endtrans %}: <a href="{{ module.url|raw }}">{{ module.url|raw }}</a></h2>
+        </div>
+    {% else %}
+        <script type="text/javascript">
+            $(document).ready(function() {
+                // document.location.href = '{{ module.url|raw }}';
+            });
+        </script>
+
+    {% endif %}
+
+{% elseif is_granted('EDIT', module) %}
+    <div class="alert alert-info mod_hide">
+        <h2><i class="fa fa-info-circle"></i> {% trans from 'module' %}label.module.redirect_module.not_configured{% endtrans %}</h2>
+    </div>
+{% endif %}

@@ -1,0 +1,119 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 22/11/2016
+ * Time: 21.45
+ */
+namespace App\Form\FormBuilder;
+
+
+use App\Entity\Forms\FormField;
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ButtonType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+
+
+class FieldType extends AbstractType
+{
+    const TYPE_SET = [
+        FormField::TYPE_TEXT, FormField::TYPE_INPUT_TEXT, FormField::TYPE_INPUT_EMAIL, FormField::TYPE_INPUT_NUMBER,
+        FormField::TYPE_TEXTAREA, FormField::TYPE_SELECT, FormField::TYPE_CHECKBOX, FormField::TYPE_RADIO,
+        FormField::TYPE_DATETIME, FormField::TYPE_PHONE,
+    ];
+
+    /**
+     * {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $id = $builder->getData() ? $builder->getData()->getId() : null;
+        $deps = $builder->getData() ? $builder->getData()->getDependsOn() : [];
+        $builder
+            ->add('title', TextType::class, ['label' => 'label.title'])
+            ->add('type', ChoiceType::class, [
+                'label' => 'label.type',
+                'choices' => array_combine(self::TYPE_SET, self::TYPE_SET),
+                'attr' => ['onchange' => 'selectedType(this);'],
+            ])
+            ->add('required', ChoiceType::class, [
+                'label' => 'label.required',
+                'expanded' => true,
+                'choice_attr' => function () { return ['class' => 'inline']; },
+                'label_attr' => ['class' => 'radio-inline'],
+                'choices' => ['label.no' => 0, 'label.yes' => 1],
+            ])
+            ->add('text', TextareaType::class, [
+                'label' => 'label.text',
+                'required' => false,
+            ])
+            ->add('options', TextareaType::class, [
+                'label' => 'label.options',
+                'label_attr' => ['class' => 'required'],
+                'required' => false,
+            ])
+            ->add('dependsOn', FieldDependencyCollectionType::class, [
+                'target' => $builder->getData(),
+                'items' => $deps,
+                'label' => false,
+                'required' => false,
+            ])
+            /*->add('dependsOn', CollectionType::class, [
+                'entry_type' => FieldDependencyType::class,
+                'allow_add' => true,
+                'allow_delete' => true,
+            ])*/
+            ->add('submit', SubmitType::class, [
+                'left_icon' => 'fa-save',
+                'right_icon' => 'fa-check',
+                'attr' => ['class' => 'btn-success form-submit'],
+                'label' => 'label.save',
+                ])
+            ->add('close', ButtonType::class, [
+                'left_icon' => 'fa-chevron-left',
+                'right_icon' => 'fa-close',
+                'attr' => [
+                    'class' => 'btn-default',
+                    'data-dismiss' => 'modal',
+                ],
+                'label' => 'label.close',
+            ])
+        ;
+
+        if ($id) $builder->add('delete', ButtonType::class, [
+            'left_icon' => 'fa-trash',
+            'right_icon' => 'fa-minus',
+            'attr' => [
+                'class' => 'btn-danger',
+                'data-toggle' => 'confirm',
+                'data-reload' => 'true',
+                'data-title' => $options['delete_title'],
+                'value' => $options['delete_path'],
+            ],
+            'label' => 'label.delete',
+        ]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults([
+            'data_class' => 'App\Entity\Communication\FormField',
+            'translation_domain' => 'form',
+            'order' => 0,
+            'view' => 'list',
+            'delete_title' => '',
+            'delete_path' => '',
+            'allow_extra_fields' => true,
+            'validation_groups' => false,
+            'csrf_protection'   => false,
+        ]);
+    }
+}

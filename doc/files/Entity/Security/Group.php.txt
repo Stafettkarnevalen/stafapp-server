@@ -1,0 +1,568 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 24/11/2016
+ * Time: 20.59
+ */
+namespace App\Entity\Security;
+
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Traits\CloneableTrait;
+use App\Entity\Traits\ContainsMessageTrait;
+use App\Entity\Traits\NameTrait;
+use App\Google\GoogleGroup;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Acl\Domain\RoleSecurityIdentity;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use FOS\UserBundle\Model\GroupInterface;
+use App\Entity\Traits\PersistencyDataTrait;
+use Symfony\Component\Serializer\Annotation as Serialize;
+use JMS\Serializer\Annotation as Jms;
+
+/**
+ * @ORM\Table(name="group_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity(repositoryClass="App\Repository\GroupRepository")
+ * @UniqueEntity(fields="email", message="email.reserved")
+ * @ORM\HasLifecycleCallbacks
+ * @Jms\ExclusionPolicy("NONE")
+ * @package App\Entity\Security
+ * @author Robert Jürgens <robert@jurgens.fi>
+ */
+class Group implements Serializable, GroupInterface
+{
+    /** Use cloneable trait */
+    use CloneableTrait;
+
+    /**
+     * Use persistency data such as id and timestamps
+     * @Serialize\Groups({"Default"})
+     * @Jms\Groups({"Default"})
+     */
+    use PersistencyDataTrait;
+
+    /**
+     * Use name field
+     * @Serialize\Groups({"Default"})
+     * @Jms\Groups({"Default"})
+     */
+    use NameTrait;
+
+    /**
+     * Can contain a message
+     * @Jms\Exclude()
+     */
+    use ContainsMessageTrait;
+
+    /**
+     * @ORM\Column(name="email_fld", type="string", length=64, unique=true)
+     * @Assert\NotBlank()
+     * @Assert\Email()
+     * @Serialize\Groups({"Default"})
+     * @Jms\Groups({"Default"})
+     * @var string $email The email address of the Group
+     */
+    protected $email;
+
+    /**
+     * @ORM\Column(name="login_route_fld", type="string", length=64, unique=false)
+     * @Serialize\Groups({"Default"})
+     * @Jms\Groups({"Default"})
+     * @var string $loginRoute The default path to take after a successful login
+     */
+    protected $loginRoute;
+
+    /**
+     *  @ORM\Column(name="logout_route_fld", type="string", length=64, unique=false)
+     * @Serialize\Groups({"Default"})
+     * @Jms\Groups({"Default"})
+     * @var string $logoutRoute The default path to take after a logout
+     */
+    protected $logoutRoute;
+
+    /**
+     * @ORM\Column(name="google_synced_fld", type="boolean")
+     * @Serialize\Groups({"Default"})
+     * @Jms\Groups({"Default"})
+     * @var boolean $isGoogleSynced True if the role is to be synced with a GSuite Domain Group
+     */
+    protected $isGoogleSynced;
+
+    /**
+     * @ORM\Column(name="google_id_fld", type="string", length=64, unique=true, nullable=true)
+     * @Serialize\Groups({"Default"})
+     * @Jms\Groups({"Default"})
+     * @var string $googleId The id of the GSuite Domain Group to sync with
+     */
+    protected $googleId;
+
+    /**
+     * @ORM\Column(name="system_fld", type="boolean")
+     * @Serialize\Groups({"Default"})
+     * @Jms\Groups({"Default"})
+     * @var boolean $isSystem True if the Group is required by the system and thus cannot be removed and the role
+     *                        field can not be edited
+     */
+    protected $isSystem;
+
+    /**
+     * @ORM\Column(name="roles_fld", type="array", nullable=false)
+     * @Serialize\Groups({"Default"})
+     * @Jms\Groups({"Default"})
+     * @var array $groups The groups of the user.
+     */
+    protected $roles;
+
+    /**
+     * @ORM\ManyToMany(targetEntity="User", mappedBy="groups", cascade={"persist", "merge"})
+     * @Serialize\Groups({"Default"})
+     * @Serialize\MaxDepth(2)
+     * @Jms\Groups({"Default"})
+     * @Jms\MaxDepth(2)
+     * @var ArrayCollection $users The User Entities th belong to this Group
+     */
+    protected $users;
+
+    /**
+     * Group constructor.
+     */
+    public function __construct() {
+        $this->users = new ArrayCollection();
+        $this->roles = [User::ROLE_DEFAULT];
+        $this->isSystem = false;
+        $this->isGoogleSynced = false;
+    }
+
+    /**
+     * Gets a string representation of this object.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return "{$this->getName()} <{$this->getEmail()}>";
+    }
+
+    /**
+     * @see \Serializable::serialize()
+     */
+    public function serialize()
+    {
+        return serialize([
+            $this->id,
+            $this->name,
+            $this->email,
+            $this->roles,
+        ]);
+    }
+
+    /**
+     * @see \Serializable::unserialize()
+     *
+     * @param string $serialized
+     */
+    public function unserialize($serialized)
+    {
+        list (
+            $this->id,
+            $this->name,
+            $this->email,
+            $this->roles) = unserialize($serialized);
+    }
+
+    /**
+     * Gets the name.
+     *
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    /**
+     * Sets the name.
+     *
+     * @param mixed $name
+     * @return $this
+     */
+    public function setName($name)
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    /**
+     * Sets the login route.
+     *
+     * @param mixed $loginRoute
+     *
+     * @return $this
+     */
+    public function setLoginRoute($loginRoute)
+    {
+        $this->loginRoute = $loginRoute;
+
+        return $this;
+    }
+
+    /**
+     * Sets the logout route.
+     *
+     * @param mixed $logoutRoute
+     *
+     * @return $this
+     */
+    public function setLogoutRoute($logoutRoute)
+    {
+        $this->logoutRoute = $logoutRoute;
+
+        return $this;
+    }
+
+    /**
+     * Sets the users.
+     *
+     * @param mixed $users
+     *
+     * @return $this
+     */
+    public function setUsers($users)
+    {
+        $this->users = is_array($users) ?
+            new ArrayCollection($users) :
+            $users;
+
+        return $this;
+    }
+
+    /**
+     * Gets the loginRoute.
+     *
+     * @return mixed
+     */
+    public function getLoginRoute()
+    {
+        return $this->loginRoute;
+    }
+
+    /**
+     * Gets the logoutRoute.
+     *
+     * @return mixed
+     */
+    public function getLogoutRoute()
+    {
+        return $this->logoutRoute;
+    }
+
+    /**
+     * Gets the users.
+     *
+     * @param boolean $array Return value should be an array instead of an ArrayCollection
+     * @return ArrayCollection|array
+     */
+    public function getUsers($array = true)
+    {
+        return $array ?
+            $this->users->toArray() :
+            $this->users;
+    }
+
+    /**
+     * Adds a user
+     *
+     * @param User $user
+     * @param bool $cascade
+     * @return $this
+     */
+    public function addUser(User $user, $cascade = true)
+    {
+        if ($this->users->contains($user)) {
+            return $this;
+        }
+        $this->users->add($user);
+        if ($cascade) $user->addGroup($this, false);
+        return $this;
+    }
+
+    /**
+     * Removes a user
+     *
+     * @param User $user
+     * @param bool $cascade
+     * @return $this
+     */
+    public function removeUser(User $user, $cascade = true)
+    {
+        if (!$this->users->contains($user)) {
+            return $this;
+        }
+        $this->users->removeElement($user);
+        if ($cascade) $user->removeGroup($this, false);
+        return $this;
+    }
+
+    /**
+     * Checks if role has user
+     *
+     * @param User $user
+     * @return bool
+     */
+    public function hasUser($user)
+    {
+        if (!$user instanceof User) {
+            return false;
+        }
+        return $this->users->contains($user);
+    }
+
+    /**
+     * Gets the email.
+     *
+     * @return mixed
+     */
+    public function getEmail()
+    {
+        return $this->email;
+    }
+
+    /**
+     * Sets the email.
+     *
+     * @param mixed $email
+     * @return $this
+     */
+    public function setEmail($email)
+    {
+        $this->email = $email;
+
+        return $this;
+    }
+
+    /**
+     * Gets the googleId.
+     *
+     * @return mixed
+     */
+    public function getGoogleId()
+    {
+        return $this->googleId;
+    }
+
+    /**
+     * Sets the googleId.
+     *
+     * @param mixed $googleId
+     * @return $this
+     */
+    public function setGoogleId($googleId)
+    {
+        $this->googleId = $googleId;
+
+        return $this;
+    }
+
+    /**
+     * Gets the isGoogleSynced.
+     *
+     * @return mixed
+     */
+    public function isGoogleSynced()
+    {
+        return $this->isGoogleSynced;
+    }
+
+    /**
+     * Sets the isGoogleSynced.
+     *
+     * @param mixed $isGoogleSynced
+     * @return $this
+     */
+    public function setIsGoogleSynced($isGoogleSynced)
+    {
+        $this->isGoogleSynced = $isGoogleSynced;
+
+        return $this;
+    }
+
+    /**
+     * Gets the GSuite Domain Group
+     * @param string $criteria
+     * @return \Google_Service_Directory_Group|null
+     */
+    public function getGoogleGroup($criteria = 'GoogleId')
+    {
+        if ($criteria === 'GoogleId' && $this->getGoogleId())
+            return GoogleGroup::getGroup($this, $criteria);
+        else if ($criteria === 'Email')
+            return GoogleGroup::getGroup($this, $criteria);
+
+        return null;
+    }
+
+    /**
+     * Assert that a Google group corresponding to this Group exists.
+     *
+     * @return \Google_Service_Directory_Group|null
+     * @throws \Google_Exception
+     */
+    protected function assertGoogleGroup()
+    {
+        $grp = $this->getGoogleGroup('Email');
+        if ($grp === null) {
+            $grp = GoogleGroup::createGroup($this);
+            $this->setGoogleId($grp->getId());
+        } else {
+            $this->setGoogleId($grp->getId());
+            GoogleGroup::setMembers($grp, $this->getUsers());
+        }
+        return $grp;
+    }
+
+    /**
+     * Gets triggered only on insert.
+     *
+     * @ORM\PrePersist
+     * @throws \Google_Exception
+     */
+    public function onGroupPrePersist()
+    {
+        if ($this->isGoogleSynced()) {
+            // Google sync is asked for
+            $grp = $this->assertGoogleGroup();
+            $this->setGoogleId($grp->getId());
+        } else {
+            $this->setGoogleId(null);
+        }
+    }
+
+    /**
+     * Gets triggered only on update.
+     *
+     * @ORM\PreUpdate
+     * @throws \Google_Exception
+     */
+    public function onGroupPreMerge()
+    {
+        if ($this->isGoogleSynced() && $this->getGoogleGroup()) {
+            GoogleGroup::updateGroup($this);
+        } else if ($this->isGoogleSynced()) {
+            $this->assertGoogleGroup();
+        } else if (!$this->isGoogleSynced() && ($grp = $this->getGoogleGroup())) {
+            GoogleGroup::removeGroup($grp);
+            $this->setGoogleId(null);
+        }
+    }
+
+    /**
+     * Gets triggered only on remove.
+     *
+     * @ORM\PreRemove
+     */
+    public function onGroupPreRemove()
+    {
+        if ($grp = $this->getGoogleGroup()) {
+            GoogleGroup::removeGroup($grp);
+        }
+    }
+
+    /**
+     * Gets the isSystem.
+     *
+     * @return mixed
+     */
+    public function getisSystem()
+    {
+        return $this->isSystem;
+    }
+
+    /**
+     * Sets the isSystem.
+     *
+     * @param mixed $isSystem
+     * @return $this
+     */
+    public function setIsSystem($isSystem)
+    {
+        $this->isSystem = $isSystem;
+
+        return $this;
+    }
+
+    /**
+     * Wraps this Group into a GroupSecurityIdentity for ACL purposes.
+     *
+     * @return RoleSecurityIdentity
+     */
+    public function getRoleSecurityIdentity()
+    {
+        return new RoleSecurityIdentity($this->getEmail());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getRoles()
+    {
+        $roles = $this->roles;
+        $roles[] = User::ROLE_DEFAULT;
+
+        return array_unique($roles);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setRoles(array $roles)
+    {
+        $this->roles = [];
+
+        foreach ($roles as $role) {
+            $this->addRole($role);
+        }
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function addRole($role)
+    {
+        $role = strtoupper($role);
+        if ($role === User::ROLE_DEFAULT) {
+            return $this;
+        }
+
+        if (!in_array($role, $this->roles, true)) {
+            $this->roles[] = $role;
+        }
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function removeRole($role)
+    {
+        if (($key = array_search(strtoupper($role), $this->roles, true)) !== false) {
+            unset($this->roles[$key]);
+            $this->roles = array_values($this->roles);
+        }
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function hasRole($role)
+    {
+        return in_array(strtoupper($role), $this->getRoles(), true);
+    }
+}

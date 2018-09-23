@@ -1,0 +1,33 @@
+    <div class="panel panel-primary">
+        <div class="panel-heading">{% trans from "school" %}school.managers{% endtrans %}</div>
+        <div class="panel-body no-padding">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans from "school" %}manager.name{% endtrans %}</th>
+                        <th>{% trans from "school" %}manager.email{% endtrans %}</th>
+                        <th class="hidden-xs">{% trans from "school" %}manager.phone{% endtrans %}</th>
+                        <th class="hidden-xs">{% trans from "school" %}manager.lastLogin{% endtrans %}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mgr in school.managers %}
+                        <tr>
+                            <td>{{ mgr.fullname }}</td>
+                            <td>{{ mgr.email }}</td>
+                            <td class="hidden-xs">{{ mgr.phone }}</td>
+                            <td class="hidden-xs">{% if mgr.lastLogin %}{{ mgr.lastLogin|date("d.m.Y H:i") }}{% endif %}</td>
+                            <td class="text-right">
+                                <a class="btn btn-xs btn-danger" onclick="$('#manager_panel').load('./school/manager/remove/{{ mgr.id }}'); return false;"><i class="fa fa-minus"></i> {% trans from "school" %}school.remove_manager{% endtrans %}</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="panel-footer text-right">
+            <a onclick="$('#manager_panel').load('./school/manager/invite'); return false;" class="btn btn-default"><i class="fa fa-plus"></i> {% trans from "school" %}school.invite_manager{% endtrans %} <i class="fa fa-angle-right"></i></a>
+        </div>
+    </div>

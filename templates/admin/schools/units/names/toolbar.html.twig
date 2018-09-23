@@ -1,0 +1,19 @@
+{% macro render_nav(buttons, schoolUnit) %}
+    <nav class="navbar navbar-default toolbar" data-spy="affix" data-offset-top="251">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="hidden-xs navbar-header col-xs-6 col-sm-4 col-md-4 col-lg-3">
+                    <a data-helpmode data-content="{% trans from 'school' %}help.action.create.school_unit_name{% endtrans %}" title="{% trans from 'school' %}action.create_name{% endtrans %}" class="navbar-brand" data-title="{% trans from 'nav' %}nav.admin_list_school_unit_names{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_create_school_unit_name', {'schoolUnit': schoolUnit.id}) }}">
+                        <i class="fa fa-pencil-square-o"></i> {% trans from 'school' %}action.create_name{% endtrans %}
+                    </a>
+                </div>
+                <div class="top-padding-sm col-xs-12 col-sm-8 col-md-8 col-lg-9">
+                    {% import 'toolbar/toolbarbutton.html.twig' as toolBar %}
+                    {{ toolBar.render_toolbar_buttons(buttons) }}
+                    {% include 'table/searchbutton.html.twig' with {'domain': 'school'}%}
+                </div>
+            </div>
+        </div>
+        {% include 'table/searchtoggle.html.twig' with {'target': 'table-school-unit-names', 'domain': 'school_unit_name', 'fields': ['name', 'from', 'until', 'isActive']} %}
+    </nav>
+{% endmacro %}

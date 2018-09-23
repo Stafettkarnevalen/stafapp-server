@@ -1,0 +1,307 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 03/06/2017
+ * Time: 17.35
+ */
+namespace App\Entity\Cheerleading;
+
+use App\Entity\Interfaces\ScheduledEvent;
+use App\Entity\Schedule\ScheduledEntity;
+use App\Entity\Traits\ApplyDateIntervalTrait;
+use App\Entity\Traits\CloneableTrait;
+use App\Entity\Traits\VersionedNameTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use App\Entity\Traits\NotesTrait;
+use App\Entity\Traits\VersionedPriceTrait;
+use Gedmo\Mapping\Annotation as Gedmo;
+
+/**
+ * @ORM\Table(name="chant_competition_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @UniqueEntity(fields="cheerleadingCompetition", message="event.exists")
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Cheerleading
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class ChantCompetition extends ScheduledEntity
+{
+    /** use date interval trait */
+    use ApplyDateIntervalTrait;
+
+    /** Use cloneable trait */
+    use CloneableTrait;
+
+    /** Use price field */
+    use VersionedPriceTrait;
+
+    /** Use notes field */
+    use NotesTrait;
+
+    /** Use name trait */
+    use VersionedNameTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="cup_name_fld", type="string", length=64, nullable=true)
+     * @var string $cupName The name of the cup awarded to the winner of this competition
+     */
+    protected $cupName;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="ceremony_fld", type="datetime", nullable=true)
+     * @var \DateTime $ceremony The timestamp when this competition has the award ceremony
+     */
+    protected $ceremony;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="results_public_fld", type="datetime", nullable=true)
+     * @var \DateTime $resultsGoPublic The timestamp when the results can be published
+     */
+    protected $resultsGoPublic;
+
+    /**
+     * @ORM\OneToOne(targetEntity="CheerleadingCompetition", inversedBy="chantCompetition")
+     * @ORM\JoinColumn(name="cheerleading_competition_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var CheerleadingCompetition $cheerleadingCompetition The cheerleading competition that this competition is based on
+     */
+    protected $cheerleadingCompetition;
+
+    /**
+     * @ORM\OneToMany(targetEntity="CheerleadingChant", mappedBy="competition", cascade={"persist", "remove"})
+     * @var ArrayCollection $chants The chants taking part in this competition
+     */
+    protected $chants;
+
+
+    /**
+     * CheerleadingCompetition constructor.
+     */
+    public function __construct()
+    {
+        $this->chants = new ArrayCollection();
+    }
+
+    /**
+     * Gets the cup name.
+     *
+     * @return string|null
+     */
+    public function getCupName()
+    {
+        return $this->cupName;
+    }
+
+    /**
+     * Sets the cup name.
+     *
+     * @param string|null $cupName
+     * @return $this
+     */
+    public function setCupName($cupName)
+    {
+        $this->cupName = $cupName;
+
+        return $this;
+    }
+
+    /**
+     * Gets the ceremony.
+     *
+     * @return \DateTime
+     */
+    public function getCeremony()
+    {
+        return $this->ceremony;
+    }
+
+    /**
+     * Sets the ceremony.
+     *
+     * @param integer|string|\DateTime $ceremony
+     * @return $this
+     */
+    public function setCeremony($ceremony)
+    {
+        if (is_numeric($ceremony)) {
+            $this->ceremony = new \DateTime();
+            $this->ceremony = $this->ceremony->setTimestamp($ceremony);
+        } else if (is_string($ceremony)) {
+            $this->ceremony = new \DateTime($ceremony);
+        } else {
+            $this->ceremony = $ceremony;
+        }
+        return $this;
+    }
+
+    /**
+     * Gets the resultsGoPublic.
+     *
+     * @return \DateTime
+     */
+    public function getResultsGoPublic()
+    {
+        return $this->resultsGoPublic;
+    }
+
+    /**
+     * Sets the resultsGoPublic.
+     *
+     * @param \DateTime $resultsGoPublic
+     * @return $this
+     */
+    public function setResultsGoPublic($resultsGoPublic)
+    {
+        $this->resultsGoPublic = $resultsGoPublic;
+
+        return $this;
+    }
+
+    /**
+     * Gets the cheerleadingCompetition.
+     *
+     * @return CheerleadingCompetition
+     */
+    public function getCheerleadingCompetition()
+    {
+        return $this->cheerleadingCompetition;
+    }
+
+    /**
+     * Sets the cheerleadingCompetition.
+     *
+     * @param CheerleadingCompetition $cheerleadingCompetition
+     * @return $this
+     */
+    public function setCheerleadingCompetition($cheerleadingCompetition)
+    {
+        $this->cheerleadingCompetition = $cheerleadingCompetition;
+
+        return $this;
+    }
+
+    /**
+     * Gets the chants.
+     *
+     * @return ArrayCollection
+     */
+    public function getChants()
+    {
+        return $this->chants;
+    }
+
+    /**
+     * Sets the chants.
+     *
+     * @param ArrayCollection $chants
+     * @return $this
+     */
+    public function setChants($chants)
+    {
+        $this->chants = $chants;
+
+        return $this;
+    }
+
+    /**
+     * Gets the winning chant.
+     *
+     * @return CheerleadingChant|null
+     */
+    public function getWinnerChant()
+    {
+
+        return null;
+    }
+
+    /**
+     * Sets the winning chant.
+     *
+     * @param CheerleadingChant $chant
+     * @param string $explanation
+     * @return $this
+     */
+    public function setWinnerChant($chant, $explanation)
+    {
+        $chant->setRank(1)->setExplanation($explanation);
+
+        return $this;
+    }
+
+
+    /**
+     * Gets the runner up chants.
+     *
+     * @return ArrayCollection
+     */
+    public function getRunnerUpChants()
+    {
+        $runnersUp = new ArrayCollection();
+        foreach($this->getChants() as $chant) {
+            if ($chant->getRank() == 2)
+                $runnersUp->add($chant);
+        }
+        return $runnersUp;
+    }
+
+    /**
+     * Sets the runner up chants.
+     *
+     * @param ArrayCollection $chants
+     * @return $this
+     */
+    public function setRunnerUpChants(ArrayCollection $chants)
+    {
+        foreach($chants as $chant) {
+            $chant->setRank(2);
+        }
+        return $this;
+    }
+
+    /**
+     * Gets a string representation of this object.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->getCheerleadingCompetition()->__toString();
+    }
+
+    /**
+     * Gets the fields that can be modified with a \DateInterval.
+     *
+     * @return array
+     */
+    public function getDateIntervalApplicableFields()
+    {
+        return [$this->getStarts(), $this->getCeremony(), $this->getResultsGoPublic()];
+    }
+
+    /**
+     * Gets all ScheduledEvents of this entity.
+     *
+     * @return ArrayCollection
+     */
+    public function getSchedule()
+    {
+        $events = new ArrayCollection();
+        $events[$this->getStarts()->format('c')] = new ChantSchedule($this, ScheduledEvent::EVENT_TYPE_STARTS);
+        $events[$this->getCeremony()->format('c')] = new ChantSchedule($this, ScheduledEvent::EVENT_TYPE_CEREMONY);
+        return $events;
+    }
+
+    public function getEventName()
+    {
+        return $this->getName();
+    }
+}

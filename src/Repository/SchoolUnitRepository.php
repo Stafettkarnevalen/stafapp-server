@@ -1,0 +1,54 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 31/12/2017
+ * Time: 22.01
+ */
+
+namespace App\Repository;
+
+use Doctrine\ORM\EntityRepository;
+
+class SchoolUnitRepository extends EntityRepository
+{
+    public function findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+    {
+        if ($orderBy && (
+                array_key_exists('name', $orderBy) ||
+                array_key_exists('schoolType', $orderBy) ||
+                array_key_exists('group', $orderBy)
+            )) {
+            $qb = $this->createQueryBuilder('su');
+            if (array_key_exists('name', $orderBy)) {
+                $qb->leftJoin('su.names','n')->where('n.isActive = 1');
+            }
+            if (array_key_exists('schoolType', $orderBy)) {
+                $qb->leftJoin('su.schoolType','st');
+            }
+            if (array_key_exists('group', $orderBy)) {
+                $qb->leftJoin('su.group','g');
+            }
+
+            $i = 1;
+            foreach ($criteria as $a => $b) {
+                $qb->andWhere("su.{$a} = :p{$i}")->setParameter("p{$i}", $b);
+                $i++;
+            }
+
+            foreach ($orderBy as $key => $direction) {
+                if ($key === 'name')
+                    $qb->addOrderBy('n.name', $direction);
+                else if ($key === 'schoolType')
+                    $qb->addOrderBy('st.name', $direction);
+                else if ($key === 'group')
+                    $qb->addOrderBy('g.name', $direction);
+                else
+                    $qb->addOrderBy('su.'. $key, $direction);
+            }
+
+            return $qb->getQuery()->getResult();
+        }
+        return parent::findBy($criteria, $orderBy, $limit, $offset);
+    }
+}

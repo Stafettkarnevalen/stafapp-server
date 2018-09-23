@@ -1,0 +1,111 @@
+field:
+    name: "Namn"
+    number: "Nummer"
+    role: "Grupp"
+    isActive: "Aktiv"
+    password: "Hemlig nyckel"
+    abbreviation: "Förkortning"
+    address: "Gatuadress"
+    zipcode: "Postnummer"
+    city: "Postanstalt"
+    pobox: "Postbox"
+    country: "Land"
+    phone: "Telefonnummer"
+    email: "E-post"
+    status: "Tillstånd"
+    message: "Meddelande"
+    type: "Typ"
+    title: "Rubrik"
+    text: "Text"
+    school_type: "Tävlingsklass"
+    order: "Ordning"
+    minClassOf: "Årskurs från"
+    min_class_of: "Årskurs från"
+    maxClassOf: "Årskurs till"
+    max_class_of: "till"
+    group: "Grupp"
+    schoolType: "Skoltyp"
+    from: "Gäller fr.o.m."
+    until: "Gäller t.o.m."
+    username: "Användarnamn"
+    recipient_edi: "Mottagarens EDI-nummer"
+    operator: "Operatör"
+    operator_edi: "Operatörens EDI-nummer"
+    operator_bic: "Operatörens BIC-kod"
+    streetAddress: "Gatuadress"
+
+email: "e-post"
+sms: "textmeddelande"
+internal: "internt meddelande"
+
+message:
+    title: "Skicka meddelande till skolans användare"
+    text: "Du kan skicka meddelande till samtliga skolans användare genom att fylla i nedanstående fält"
+
+action:
+    units: "Skolenheter"
+    names: "Skolans namn"
+    unit_managers: "Lagledare"
+    unit_names: "Namn"
+    unit_addresses: "Adresser"
+    create_name: "Skapa nytt"
+    add_manager: "Lägg till"
+
+info:
+    number: "Skolans nummer används även för att skapa ett primärt användarkonto, ett så kallat rektorskonto, för skolan. Kontots användarnamn är <em>principal.#####@stafettkarnevalen.fi</em>."
+
+help:
+    action:
+        add:
+            school_unit_manager: '<u>Lägg till</u> en lagledare'
+        create:
+            school: '<u>Skapa</u> en ny skola.'
+            school_unit: '<u>Skapa</u> en ny skolenhet.'
+            school_name: '<u>Skapa</u> ett nytt namn åt skolan. Det gamla namnet slutar att gälla då det nya träder i kraft'
+            school_unit_name: '<u>Skapa</u> ett nytt namn åt skolenheten. Det gamla namnet slutar att gälla då det nya träder i kraft.'
+            school_type: '<u>Skapa</u> en ny skoltyp.'
+            school_subtype: '<u>Skapa</u> en ny skoltypsvariant.'
+        list:
+            units: "<u>Visa</u> skolans <em class='text-primary'>enheter</em>."
+            names: "<u>Visa</u> skolans tidigare <em class='text-primary'>namn</em>."
+            unit_managers: "<u>Visa</u> skolenhetens <em class='text-primary'>lagledare</em>."
+            unit_names: "<u>Visa</u> skolenhetens tidigare <em class='text-primary'>namn</em>."
+            unit_addresses: "<u>Visa</u> skolenhetens <em class='text-primary'>adresser</em>."
+            subtypes: "<u>Visa</u> skoltypens olika tillhörande <em class='text-primary'>varianter</em>."
+        edit:
+            school: '<u>Redigera</u> den valda skolan.'
+            school_unit: '<u>Redigera</u> den valda skolenheten.'
+            school_name: '<u>Redigera</u> det valda namnet.'
+            school_unit_name: '<u>Redigera</u> det valda namnet.'
+            school_unit_manager: '<u>Redigera</u> den valda lagledaren.'
+            school_type: '<u>Redigera</u> den valda skoltypen.'
+        delete:
+            school: "<span class='text-danger'><u>Radera</u></span> den valda skolan."
+            school_unit: "<span class='text-danger'><u>Radera</u></span> den valda skolenheten."
+            school_name: "<span class='text-danger'><u>Radera</u></span> det valda namnet. Det senaste tidigare namnet träder i kraft."
+            school_unit_name: "<span class='text-danger'><u>Radera</u></span> det valda namnet. Det senaste tidigare namnet träder i kraft."
+            school_unit_manager: "<span class='text-danger'><u>Radera</u></span> den valda lagledaren."
+            school_type: "<span class='text-danger'><u>Radera</u></span> den valda skoltypen."
+        unselect:
+            school: '<u>Avmarkera</u> den valda skolan, inga åtgärder görs.'
+            school_unit: '<u>Avmarkera</u> den valda skolenheten, inga åtgärder görs.'
+            school_name: '<u>Avmarkera</u> det valda namnet, inga åtgärder görs.'
+            school_unit_name: '<u>Avmarkera</u> det valda namnet, inga åtgärder görs.'
+            school_unit_manager: '<u>Avmarkera</u> den valda lagledaren, inga åtgärder görs.'
+            school_type: '<u>Avmarkera</u> den valda skoltypen, inga åtgärder görs.'
+        message:
+            school: '<u>Skicka meddelande</u> till skolan. Meddelandet når alla aktiva användare som är kopplade till någon av skolans enheter.'
+            school_unit: '<u>Skicka meddelande</u> till skolenheten. Meddelandet når alla aktiva användare som är kopplade till denna enhet.'
+            school_unit_manager: '<u>Skicka meddelande</u> till lagledaren.'
+            school_type: '<u>Skicka meddelande</u> till skoltypen. Meddelandet når alla aktiva användare som har en skolenhet av denna typ.'
+        toggle-active: "<u>Växla</u> mellan <em class='text-primary'>aktivt</em> och <em class='text-primary'>inaktivt</em> läge."
+        move:
+            up: "<u>Flytta</u> ett steg <em class='text-primary'>uppåt</em> i hierarkin."
+            down: "<u>Flytta</u> ett steg <em class='text-primary'>nedåt</em> i hierarkin."
+label:
+    assigned: 'Tillsatt'
+    invitation: 'Inbjuden'
+    request: 'Förfrågan'
+    accepted: 'Godkänd'
+    denied: 'Avböjd'
+    pending: 'Öppen'

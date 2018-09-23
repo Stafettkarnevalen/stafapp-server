@@ -1,0 +1,298 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 13/12/2016
+ * Time: 9.45
+ */
+
+namespace App\Entity\Invoicing;
+
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Schools\SchoolUnit;
+use App\Entity\Traits\ActiveTrait;
+use App\Entity\Traits\LoggableTrait;
+use App\Entity\Traits\VersionedBusinessIdTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Traits\VersionedAddressTrait;
+use App\Entity\Traits\CloneableTrait;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\VersionedNameTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use Symfony\Component\Validator\Constraints as Assert;
+
+/**
+ * @ORM\Table(name="invoice_address_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Invoicing
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class InvoiceAddress implements Serializable, CreatedByUserInterface, LoggableEntity
+{
+    /** Use active flag */
+    use ActiveTrait;
+
+    /** Use data asscociated with addresses */
+    use VersionedAddressTrait;
+
+    /** Use clone functions */
+    use CloneableTrait;
+
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use name field */
+    use VersionedNameTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /** use business id */
+    use VersionedBusinessIdTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @Assert\Length(min=12, max=17, minMessage="length.minimum {{ limit }}", maxMessage="length.maximum {{ limit }}")
+     * @ORM\Column(name="recipient_edi_fld", type="string", length=18, nullable=true)
+     * @var string|null $recipientEDI The recipient EDI number for e-invoicing
+     */
+    protected $recipientEDI;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="operator_fld", type="string", length=64, nullable=true)
+     * @var string|null $operator The operator name for e-invoicing
+     */
+    protected $operator;
+
+    /**
+     * @Gedmo\Versioned
+     * @Assert\Length(min=12, max=17, minMessage="length.minimum {{ limit }}", maxMessage="length.maximum {{ limit }}")
+     * @ORM\Column(name="operator_edi_fld", type="string", length=18, nullable=true)
+     * @var string|null $operatorEDI The operator EDI number for e-invoicing
+     */
+    protected $operatorEDI;
+
+    /**
+     * @Gedmo\Versioned
+     * @Assert\Length(min=8, max=11, minMessage="length.minimum {{ limit }}", maxMessage="length.maximum {{ limit }}")
+     * @ORM\Column(name="operator_bic_fld", type="string", length=12, nullable=true)
+     * @var string|null $operatorBIC The operator BIC for e-invoicing
+     */
+    protected $operatorBIC;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Schools\SchoolUnit", inversedBy="addresses")
+     * @ORM\JoinColumn(name="school_unit_fld", referencedColumnName="id_fld", nullable=true)
+     * @var SchoolUnit|null $schoolUnit The school unit that owns this invoice address
+     *
+     */
+    protected $schoolUnit;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Services\Service", mappedBy="invoiceAddress", cascade={"persist", "remove"})
+     * @var ArrayCollection $services The services that this invoice address is connected to
+     */
+    protected $services;
+
+    /**
+     * @ORM\OneToMany(targetEntity="BankAccount", mappedBy="address", cascade={"persist", "merge", "remove"})
+     * @var ArrayCollection $bankAccounts The bank accounts that this invoice address owns
+     */
+    protected $bankAccounts;
+
+    /**
+     * InvoiceAddress constructor.
+     */
+    public function __construct()
+    {
+        $this->setIsActive(true);
+        $this->services = new ArrayCollection();
+    }
+
+    /**
+     * Gets the recipient EDI code.
+     *
+     * @return string|null
+     */
+    public function getRecipientEDI()
+    {
+        return $this->recipientEDI;
+    }
+
+    /**
+     * Sets the recipient EDI code.
+     *
+     * @param string|null $recipientEDI
+     *
+     * @return $this
+     */
+    public function setRecipientEDI($recipientEDI)
+    {
+        $this->recipientEDI = $recipientEDI;
+
+        return $this;
+    }
+
+    /**
+     * Gets the operator.
+     *
+     * @return string|null
+     */
+    public function getOperator()
+    {
+        return $this->operator;
+    }
+
+    /**
+     * Sets the operator.
+     *
+     * @param string|null $operator
+     *
+     * @return $this
+     */
+    public function setOperator($operator)
+    {
+        $this->operator = $operator;
+
+        return $this;
+    }
+
+    /**
+     * Gets the operator EDI code.
+     *
+     * @return string|null
+     */
+    public function getOperatorEDI()
+    {
+        return $this->operatorEDI;
+    }
+
+    /**
+     * Sets the operator EDI code
+     *
+     * @param string|null $operatorEDI
+     *
+     * @return $this
+     */
+    public function setOperatorEDI($operatorEDI)
+    {
+        $this->operatorEDI = $operatorEDI;
+
+        return $this;
+    }
+
+    /**
+     * Gets the operator BIC code
+     *
+     * @return string|null
+     */
+    public function getOperatorBIC()
+    {
+        return $this->operatorBIC;
+    }
+
+    /**
+     * Sets the operator BIC code
+     *
+     * @param string|null $operatorBIC
+     *
+     * @return $this
+     */
+    public function setOperatorBIC($operatorBIC)
+    {
+        $this->operatorBIC = $operatorBIC;
+
+        return $this;
+    }
+
+    /**
+     * Gets the schoolUnit.
+     *
+     * @return SchoolUnit
+     */
+    public function getSchoolUnit()
+    {
+        return $this->schoolUnit;
+    }
+
+    /**
+     * Sets the schoolUnit.
+     *
+     * @param SchoolUnit $schoolUnit
+     * @return $this
+     */
+    public function setSchoolUnit($schoolUnit)
+    {
+        $this->schoolUnit = $schoolUnit;
+
+        return $this;
+    }
+
+    /**
+     * Gets the services.
+     *
+     * @return ArrayCollection
+     */
+    public function getServices()
+    {
+        return $this->services;
+    }
+
+    /**
+     * Sets the services.
+     *
+     * @param ArrayCollection $services
+     * @return $this
+     */
+    public function setServices(ArrayCollection $services)
+    {
+        $this->services = $services;
+    
+        return $this;
+    }
+
+    /**
+     * Gets the bankAccounts.
+     *
+     * @return ArrayCollection
+     */
+
+    public function getBankAccounts()
+    {
+        return $this->bankAccounts;
+    }
+
+    /**
+     * Sets the bankAccounts.
+     *
+     * @param ArrayCollection $bankAccounts
+     * @return $this
+     */
+    public function setBankAccounts(ArrayCollection $bankAccounts)
+    {
+        $this->bankAccounts = $bankAccounts;
+
+        return $this;
+    }
+
+    /**
+     * Gets a string representation of this object.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->name;
+    }
+}

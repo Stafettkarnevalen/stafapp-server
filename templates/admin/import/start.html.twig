@@ -1,0 +1,38 @@
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="side-padding">
+        {% if app.session.flashBag.has('import_success') %}
+            <div class="container-fluid">
+                <div class="alert alert-success">
+                    <h3><i class="fa fa-check-circle"></i>
+                        {% for msg in app.session.flashBag.get('import_success') %}
+                            {{ msg|trans({}, 'import') }}
+                        {% endfor %}
+                    </h3>
+                </div>
+            </div>
+        {% endif %}
+        {% include 'step/step.html.twig' with { 'step':1, 'steps':3, 'title':'import.first_step' } %}
+        <div class="form bg-default">
+            <p class="all-padding">{% trans from "import" %}import.first_step_info{% endtrans %}</p>
+        </div>
+
+        <div class="form bg-default all-padding">
+            {{ form_start(form) }}
+            {{ form_row(form.entity) }}
+            {{ form_row(form.csv) }}
+            {{ form_row(form.delim) }}
+            <div class="form-nav">
+                <div class="btn-group btn-group-justified" role="group">
+                    <div class="btn-group" role="group">
+                        {{ form_widget(form.submit) }}
+                    </div>
+                </div>
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}

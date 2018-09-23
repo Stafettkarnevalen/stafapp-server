@@ -1,0 +1,82 @@
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <nav class="navbar navbar-default toolbar">
+            <div class="container-fluid">
+                <div class="navbar-header pull-left">
+                    <a class="navbar-brand" data-title="{% trans from 'nav' %}nav.admin_cheerleading_events{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_cheerleading_event') }}">
+                        <i class="fa fa-pencil-square-o"></i> {% trans from 'cheerleading' %}label.create{% endtrans %}
+                    </a>
+                </div>
+                <div>
+                    <div class="pull-right top-padding-sm col-xs-6 col-sm-9">
+                        <div class="input-group">
+                            <span class="input-group-addon">{% trans from "cheerleading" %}label.search{% endtrans %}</span>
+                            <input id="search" class="input-sm form-control" type="text"/>
+                            <a id="clear_search" class="disabled input-group-addon btn"><i class="fa fa-times-circle-o"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        {% set icons = {'ASC': 'fa-chevron-up', 'DESC': 'fa-chevron-down'} %}
+        <table class="table table-bordered table-responsive table-condensed table-striped table-scrollable table-events">
+            <thead>
+            <tr>
+                <th class="name"><a href="{{ path('nav.admin_cheerleading_events', {'sort': 'name', 'order': orders['name']}) }}">{% trans from "cheerleading" %}label.name{% endtrans %} {% if sort == 'name' %}<span class="fa {{ icons[order] }}"></span>{% endif %}</a></th>
+                <th class="school_types">{% trans from "cheerleading" %}label.school_types{% endtrans %}</th>
+                <th class="min_class"><a href="{{ path('nav.admin_cheerleading_events', {'sort': 'minClassOf', 'order': orders['minClassOf']}) }}">{% trans from "cheerleading" %}label.s_min_class_of{% endtrans %} {% if sort == 'minClassOf' %}<span class="fa {{ icons[order] }}"></span>{% endif %}</a></th>
+                <th class="max_class"><a href="{{ path('nav.admin_cheerleading_events', {'sort': 'maxClassOf', 'order': orders['maxClassOf']}) }}">{% trans from "cheerleading" %}label.s_max_class_of{% endtrans %} {% if sort == 'maxClassOf' %}<span class="fa {{ icons[order] }}"></span>{% endif %}</a></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for event in events %}
+                <tr>
+                    <td class="name"><a data-title="{% trans from 'nav' %}nav.admin_cheerleading_events{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_cheerleading_event', {'id' : event.id}) }}">{{ event.name }}</a></td>
+                    <td class="school_types"><a data-title="{% trans from 'nav' %}nav.admin_cheerleading_events{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_cheerleading_event', {'id' : event.id}) }}">{{ event.schoolTypesAsString(true, 2) }}</a></td>
+                    <td class="min_class"><a data-title="{% trans from 'nav' %}nav.admin_cheerleading_events{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_cheerleading_event', {'id' : event.id}) }}">{{ event.minClassOf }}</a></td>
+                    <td class="max_class"><a data-title="{% trans from 'nav' %}nav.admin_cheerleading_events{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_cheerleading_event', {'id' : event.id}) }}">{{ event.maxClassOf }}</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script type="text/javascript">
+        <!--
+        $('#clear_search').on('click', function() {
+            $('#search').val('');
+            $(this).addClass('disabled');
+            $.each($('.table-events tbody tr'), function() {
+                $(this).css('display', '');
+            });
+        });
+        $('#search').on('input', function() {
+            if ($(this).val().length > 0) {
+                $('#clear_search').removeClass('disabled');
+                filter = $(this).val();
+                $.each($('.table-events tbody tr'), function() {
+                    $(this).css('display', $(this).find('td a').is(':icontains(' + filter + ')') ? '' : 'none');
+                });
+            } else {
+                $('#clear_search').trigger('click');
+            }
+        });
+
+        $.expr[":"].icontains = $.expr.createPseudo(function(arg) {
+            return function( elem ) {
+                return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
+            };
+        });
+        //-->
+    </script>
+{% endblock %}

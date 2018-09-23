@@ -1,0 +1,472 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 07/09/2017
+ * Time: 8.39
+ */
+
+namespace App\Controller;
+
+use App\Controller\Interfaces\ModalEventController;
+use App\Entity\Invoicing\BankAccount;
+use App\Entity\Invoicing\InvoiceAddress;
+use App\Entity\Services\ServiceCategory;
+use App\Form\Invoicing\BankAccountEditType;
+use App\Form\Invoicing\InvoiceAddressEditType;
+use App\Repository\BankAccountRepository;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Form\Extension\Core\Type\ButtonType;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+
+class SettingsController extends Controller implements ModalEventController
+{
+    /**
+     * Controller for handling service recipients (admin only).
+     *
+     * @Route("/{_locale}/admin/services/recipients/list/{parent}",
+     *     options={"expose"=true}, name="nav.admin_service_categories")
+     * @param integer $parent
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminServiceCategoriesAction($parent = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $parent = $em->getRepository(ServiceCategory::class)->find($parent);
+
+        $session = $request->getSession();
+        $sortKey = $request->get('sort', $session->get('admin_service_categories_sort_key', 'title'));
+        $order = $request->get('order', $session->get('admin_service_categories_sort_order', 'ASC'));
+
+        $sort = [$sortKey => $order];
+
+        $orders = [];
+        foreach(['title', 'children'] as $key) {
+            $orders[$key] = ($sortKey == $key ? ($order == 'ASC' ? 'DESC' : 'ASC') : $order);
+        }
+        $session->set('admin_service_categories_sort_key', $sortKey);
+        $session->set('admin_service_categories_sort_order', $order);
+
+        $categories = $em->getRepository(ServiceCategory::class)->findBy(['parent' => $parent], $sort);
+
+        $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'service',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('close', ButtonType::class, [
+                'translation_domain' => 'messages',
+                'left_icon' => 'fa-chevron-left',
+                'right_icon' => 'fa-close',
+                'attr' => [
+                    'class' => 'btn-default',
+                    'data-dismiss' => 'modal',
+                    'data-helpmode' => null,
+                    'data-placement' => 'top',
+                    'title' => 'action.close',
+                    'data-content' => 'help.action.close.window',
+                ],
+                'label' => 'action.close',
+            ]);
+
+        $form = $fb->getForm()->createView();
+
+        return $this->render('admin/services/categories/list.html.twig', [
+            'parent' => $parent,
+            'recipients' => $categories,
+            'orders' => $orders,
+            'order' => $order,
+            'sort' => $sortKey,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' => [$form->offsetGet('close')],
+        ]);
+    }
+
+    /**
+     * Controller for handling a single service category (admin only).
+     *
+     * @Route("/{_locale}/admin/services/recipients/category/{id}/{parent}", name="nav.admin_service_category")
+     * @param integer $id
+     * @param integer $parent
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminServiceCategoryAction($id = 0, $parent = 0,Request $request)
+    {
+
+    }
+
+    /**
+     * Controller for deleting a single service category (admin only).
+     *
+     * @Route("/{_locale}/admin/services/recipients/delete/{id}",
+     *     options={"expose" = true},
+     *     name="nav.admin_service_category_delete")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDeleteServiceCategoryAction($id = 0, Request $request)
+    {
+
+    }
+
+    /**
+     * Controller for handling invoice recipients (admin only).
+     *
+     * @Route("/{_locale}/admin/invoices/recipients/list/{id}",
+     *     options={"expose"=true}, name="nav.admin_invoice_recipients")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminInvoiceRecipients($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        if ($id) {
+            /** @var InvoiceAddress $address */
+            $address = $em->getRepository(InvoiceAddress::class)->find($id);
+            $address->setIsActive(!$address->getIsActive());
+            $em->merge($address);
+            $em->flush();
+        }
+        $session = $request->getSession();
+        $sortKey = $request->get('sort', $session->get('admin_invoice_recipients_sort_key', 'name'));
+        $order = $request->get('order', $session->get('admin_invoice_recipients_sort_order', 'ASC'));
+
+        $sort = [$sortKey => $order];
+
+        $orders = [];
+        foreach(['name', 'streetAddress', 'phone', 'email', 'isActive'] as $key) {
+            $orders[$key] = ($sortKey == $key ? ($order == 'ASC' ? 'DESC' : 'ASC') : $order);
+        }
+        $session->set('admin_invoice_recipients_sort_key', $sortKey);
+        $session->set('admin_invoice_recipients_sort_order', $order);
+
+        $addresses = $em->getRepository(InvoiceAddress::class)->findBy(['schoolUnit' => null], $sort);
+
+        return $this->render('admin/invoices/recipients/list.html.twig', [
+            'addresses' => $addresses,
+            'orders' => $orders,
+            'order' => $order,
+            'sort' => $sortKey,
+            'modal' => $request->isXmlHttpRequest(),
+        ]);
+    }
+
+    /**
+     * Controller for handling a single invoice recipient (admin only).
+     *
+     * @Route("/{_locale}/admin/invoices/recipients/recipient/{id}", name="nav.admin_invoice_recipient")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminInvoiceRecipientAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        if ($id) {
+            $address = $em->getRepository(InvoiceAddress::class)->find($id);
+        } else {
+            $address = new InvoiceAddress();
+        }
+
+        $form = $this->createForm(InvoiceAddressEditType::class, $address, [
+            'attr' => ['action' => $request->getPathInfo()],
+            'delete_title' => $this->get('translator')->trans('label.delete', [], 'invoice'),
+            'delete_path' => $this->generateUrl('nav.admin_invoice_recipient_delete', ['id' => $id]),
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $action = $address->getId() ? 'updated' : 'saved';
+
+            if ($address->getId())
+                $em->merge($address);
+            else
+                $em->persist($address);
+
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.invoice_recipient.' . $action,
+                    'parameters' => ['%name%' => $address->getName()]
+                ]);
+            // return an empty response for the ajax modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse([], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_invoice_recipients');
+
+        } else if ($form->isSubmitted() && !$form->isValid()) {
+            // return error code for modal and ok for non-modals
+            $formView = $form->createView();
+            return $this->render('admin/invoices/recipients/form.html.twig', [
+                'address' => $address,
+                'form' => $formView,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' => $id ?
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('delete'),
+                        $formView->offsetGet('submit')
+                    ] :
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('submit')
+                    ]
+            ], new Response('', $request->isXmlHttpRequest() ?
+                Response::HTTP_BAD_REQUEST :
+                Response::HTTP_OK));
+        }
+
+        $formView = $form->createView();
+        return $this->render('admin/invoices/recipients/form.html.twig', [
+            'address' => $address,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' => $id ?
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('delete'),
+                    $formView->offsetGet('submit')
+                ] :
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('submit')
+                ]
+        ]);
+    }
+
+    /**
+     * Controller for deleting a single invoice recipient (admin only).
+     *
+     * @Route("/{_locale}/admin/invoices/recipients/delete/{id}",
+     *     options={"expose" = true},
+     *     name="nav.admin_invoice_recipient_delete")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDeleteInvoiceRecipientAction($id = 0, Request $request)
+    {
+
+    }
+
+    /**
+     * Controller for handling invoice recipient accounts (admin only).
+     *
+     * @Route("/{_locale}/admin/invoices/recipients/accounts/list/{move}/{id}/{address}",
+     *     options={"expose"=true}, name="nav.admin_invoice_recipient_accounts")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminInvoiceRecipientAccounts($move = 0, $id = 0, $address = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $address = $em->getRepository(InvoiceAddress::class)->find($address);
+
+        if (!$move && $id) {
+            /** @var BankAccount $account */
+            $account = $em->getRepository(BankAccount::class)->find($id);
+            $account->setIsActive(!$account->getIsActive());
+            $em->merge($account);
+            $em->flush();
+            $address = $account->getAddress();
+        } else if ($move != 0) {
+            /** @var BankAccountRepository $repo */
+            $repo = $em->getRepository(BankAccount::class);
+            /** @var BankAccount $account */
+            $account = $repo->find($id);
+            try {
+                $oldOrder = $account->getOrder();
+                $account->setOrder($oldOrder + $move);
+                if ($move > 0) {
+                    $from = $oldOrder + 1;
+                    $until = $oldOrder + $move;
+                    $up = $repo->findByOrderBetween($from, $until, $address);
+                    /** @var BankAccount $upfld */
+                    foreach ($up as $upfld) {
+                        $upfld->setOrder($upfld->getOrder() - 1);
+                        $em->merge($upfld);
+                    }
+                    $em->merge($account);
+                    $em->flush();
+                } else {
+                    $from = $oldOrder + $move;
+                    $until = $oldOrder - 1;
+                    $down = $repo->findByOrderBetween($from, $until, $address);
+                    /** @var BankAccount $downfld */
+                    foreach ($down as $downfld) {
+                        $downfld->setOrder($downfld->getOrder() + 1);
+                        $em->merge($downfld);
+                    }
+                    $em->merge($account);
+                    $em->flush();
+                }
+            } catch (\Exception $e) {
+                return new JsonResponse(['error' => $e->getMessage(), 'status' => 'failure'], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
+        $session = $request->getSession();
+        $sortKey = $request->get('sort', $session->get('admin_bank_accounts_sort_key', 'name'));
+        $order = $request->get('order', $session->get('admin_bank_accounts_sort_order', 'ASC'));
+
+        $sort = [$sortKey => $order];
+
+        $orders = [];
+        foreach(['name', 'order', 'iban', 'bic', 'isActive'] as $key) {
+            $orders[$key] = ($sortKey == $key ? ($order == 'ASC' ? 'DESC' : 'ASC') : $order);
+        }
+        $session->set('admin_bank_accounts_sort_key', $sortKey);
+        $session->set('admin_bank_accounts_sort_order', $order);
+
+        $accounts =  $em->getRepository(BankAccount::class)->findBy(['address' => $address], $sort);
+
+        $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'school',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('close', ButtonType::class, [
+                'translation_domain' => 'messages',
+                'left_icon' => 'fa-chevron-left',
+                'right_icon' => 'fa-close',
+                'attr' => [
+                    'class' => 'btn-default',
+                    'data-dismiss' => 'modal',
+                    'data-helpmode' => null,
+                    'data-placement' => 'top',
+                    'title' => 'action.close',
+                    'data-content' => 'help.action.close.window',
+                ],
+                'label' => 'action.close',
+            ]);
+
+        $form = $fb->getForm()->createView();
+
+        return $this->render('admin/invoices/recipients/accounts/list.html.twig', [
+            'accounts' => $accounts,
+            'address' => $address,
+            'orders' => $orders,
+            'order' => $order,
+            'sort' => $sortKey,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' => [$form->offsetGet('close')],
+        ]);
+    }
+
+    /**
+     * Controller for handling a single invoice recipient account (admin only).
+     *
+     * @Route("/{_locale}/admin/invoices/recipients/accounts/account/{id}/{address}",
+     *     name="nav.admin_invoice_recipient_account")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminInvoiceRecipientAccountAction($id = 0, $address = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var InvoiceAddress $address */
+        $address = $em->getRepository(InvoiceAddress::class)->find($address);
+
+        if ($id) {
+            $account = $em->getRepository(BankAccount::class)->find($id);
+        } else {
+            $account = new BankAccount();
+            $account->setAddress($address)->setOrder($address->getBankAccounts()->count());
+        }
+
+        $form = $this->createForm(BankAccountEditType::class, $account, [
+            'attr' => ['action' => $request->getPathInfo()],
+            'delete_title' => $this->get('translator')->trans('label.delete', [], 'invoice'),
+            'delete_path' => $this->generateUrl('nav.admin_invoice_recipient_account_delete', ['id' => $id]),
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $action = $account->getId() ? 'updated' : 'saved';
+
+            if ($account->getId())
+                $em->merge($account);
+            else
+                $em->persist($account);
+
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.invoice_recipient_account.' . $action,
+                    'parameters' => ['%name%' => $account->getIban()]
+                ]);
+            // return an empty response for the ajax modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse([], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_invoice_recipients');
+
+        } else if ($form->isSubmitted() && !$form->isValid()) {
+            // return error code for modal and ok for non-modals
+            $formView = $form->createView();
+            return $this->render('admin/invoices/recipients/accounts/form.html.twig', [
+                'account' => $account,
+                'form' => $formView,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' => $id ?
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('delete'),
+                        $formView->offsetGet('submit')
+                    ] :
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('submit')
+                    ]
+            ], new Response('', $request->isXmlHttpRequest() ?
+                Response::HTTP_BAD_REQUEST :
+                Response::HTTP_OK));
+        }
+
+        $formView = $form->createView();
+        return $this->render('admin/invoices/recipients/accounts/form.html.twig', [
+            'account' => $account,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' => $id ?
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('delete'),
+                    $formView->offsetGet('submit')
+                ] :
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('submit')
+                ]
+        ]);
+    }
+
+    /**
+     * Controller for deleting a single invoice recipient (admin only).
+     *
+     * @Route("/{_locale}/admin/invoices/recipients/account/delete/{id}",
+     *     options={"expose" = true},
+     *     name="nav.admin_invoice_recipient_account_delete")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDeleteInvoiceRecipientAccountAction($id = 0, Request $request)
+    {
+
+    }
+
+}

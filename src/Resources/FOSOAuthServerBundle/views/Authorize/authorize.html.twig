@@ -1,0 +1,23 @@
+{% set use_heading = false %}
+{% set body_class = 'body-narrow' %}
+{% extends 'oauth.html.twig' %}
+
+{% block body %}
+    <h2>The application "{{ client.name }}" would like to connect to your account</h2>
+
+    {{ form_start(form, {'method': 'POST', 'action': path('fos_oauth_server_authorize'), 'label_attr': {'class': 'fos_oauth_server_authorize'} }) }}
+
+    {{ form_row(form.client_id) }}
+    {{ form_row(form.response_type) }}
+    {{ form_row(form.redirect_uri) }}
+    {{ form_row(form.state) }}
+    {{ form_row(form.scope) }}
+
+    {{ form_rest(form) }}
+
+    <button class="btn btn-success" type="submit" name="accepted"><i class="fa fa-check"></i> {{ 'authorize.accept'|trans({}, 'FOSOAuthServerBundle') }}</button>
+    <button class="btn btn-danger" type="submit" name="rejected"><i class="fa fa-remove"></i> {{ 'authorize.reject'|trans({}, 'FOSOAuthServerBundle') }}</button>
+
+    {{ form_end(form) }}
+
+{% endblock body %}

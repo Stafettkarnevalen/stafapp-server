@@ -1,0 +1,101 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/09/2017
+ * Time: 15.01
+ */
+
+namespace App\Entity\Communication;
+
+
+use App\Entity\Interfaces\MessageDistributionInterface;
+use App\Entity\Schools\SchoolType;
+use Doctrine\Common\Collections\ArrayCollection;
+
+/**
+ * Class SchoolDistribution
+ * @package App\Entity\Communication
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class SchoolTypeDistribution implements MessageDistributionInterface
+{
+    /**
+     * @var SchoolType $schoolType The school type that serves as the distribution.
+     *                             All managers of this school type will get the message.
+     */
+    protected $schoolType;
+
+    /**
+     * SchoolDistribution constructor.
+     * @param SchoolType $schoolType
+     */
+    public function __construct(SchoolType $schoolType)
+    {
+        $this->schoolType = $schoolType;
+    }
+
+    /**
+     * Gets the actual users that get this message.
+     *
+     * @return ArrayCollection
+     */
+    public function getUsers() {
+        return $this->schoolType->getManagers();
+    }
+
+    /**
+     * Gets a label for this distribution.
+     *
+     * @return string
+     */
+    public function getLabel()
+    {
+        return $this->schoolType->getName();
+    }
+
+    /**
+     * Gets the Entity class behing this distribution.
+     * @return string
+     */
+    public function getClass()
+    {
+        return SchoolType::class;
+    }
+
+    /**
+     * Gets the id of the Entity behind this distribution.
+     *
+     * @return integer
+     */
+    public function getId()
+    {
+        return $this->schoolType->getId();
+    }
+
+    /**
+     * Returns a distribution of an array of SchoolDistributions.
+     *
+     * @param array $schoolTypes
+     * @return array
+     */
+    public static function all(array $schoolTypes)
+    {
+        $all = [];
+        foreach ($schoolTypes as $schoolType) {
+            $all[] = new SchoolTypeDistribution($schoolType);
+        }
+        return $all;
+    }
+
+    /**
+     * Gets the class and id combination of the Entity behind this distribution.
+     *
+     * @return string
+     */
+    public function getValue()
+    {
+        return $this->getClass() . '-' . $this->getId();
+    }
+}

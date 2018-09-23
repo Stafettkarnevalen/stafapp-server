@@ -1,0 +1,18 @@
+{% extends 'sortable-table.html.twig' %}
+
+{% block table %}
+<table class="table table-bordered table-responsive table-condensed table-striped table-scrollable table-searchable table-school-units">
+    <thead>
+        <tr>
+            <th>{% trans from 'principal' %}field.name{% endtrans %}</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for unit in school.schoolUnits %}
+        <tr>
+            <td>{{ unit.name }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+{% set no_toolbar = true %}
+{% block body %}
+    <div class="side-padding">
+        <h1>{% if schoolUnitName.id != 0 %}{{ schoolUnitName.name }}{% else %}{% trans from "school" %}action.create{% endtrans %}{% endif %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="form bg-default all-padding">
+            {{ form_row(form.name) }}
+            {{ form_row(form.abbreviation) }}
+            {{ form_row(form.streetAddress) }}
+            {{ form_row(form.pobox) }}
+            {{ form_row(form.zipcode) }}
+            {{ form_row(form.city) }}
+            {{ form_row(form.country) }}
+            {{ form_row(form.email) }}
+            {{ form_row(form.phone) }}
+            {{ form_row(form.from) }}
+            {{ form_row(form.until) }}
+            {{ form_row(form.isActive) }}
+        </div>
+    </div>
+{% endblock %}

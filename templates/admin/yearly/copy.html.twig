@@ -1,0 +1,37 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+<div class="side-padding">
+    <h1>{{ 'label.copy_to'|trans({'%year%': year}, 'yearly') }}</h1>
+</div>
+<div class="all-padding">
+    <table class="stepper">
+        <tbody>
+        <tr>
+            <td class="bg-primary"></td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="form bg-default all-padding">
+        {{ form_row(form.serviceType) }}
+        {{ form_row(form.timestamp) }}
+
+        {% if modal is not defined or modal == false %}
+        <div class="form-nav">
+            <div class="btn-group btn-group-justified" role="group">
+                <a class="btn btn-default" href="{{ path('nav.admin_yearly') }}"><i class="fa fa-chevron-left"></i> {% trans from 'yearly' %}label.close{% endtrans %} <i class="fa fa-close"></i></a>
+                <div class="btn-group" role="group">
+                    {{ form_widget(form.submit) }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

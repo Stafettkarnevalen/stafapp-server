@@ -1,0 +1,5 @@
+email.reserved: "The specified email address is already in use"
+phone.reserved: "The specified mobile number is already in use"
+invalid.emailhash: "The verification code for the email address is invalid"
+invalid.phonehash: "The verification code for the phone number is invalid"
+password.missmatch: "Passwords do not match"

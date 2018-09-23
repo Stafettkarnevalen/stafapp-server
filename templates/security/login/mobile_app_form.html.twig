@@ -1,0 +1,105 @@
+<div class="container-fluid">
+    {% if error is defined and error %}
+        <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+    {% endif %}
+    {% if app.session.flashBag.has('ticket_login_error') %}
+        {% for msg in app.session.flashBag.get('ticket_login_error') %}
+            <div class="alert alert-danger">{{ msg|trans([], 'security') }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {% if ticket.id and ticket.username %}
+        {% if ticket.ttl < 0 %}
+
+            <!--<script type="text/javascript">document.location.href = './../app';</script>-->
+
+        {% else %}
+            <div class="alert alert-info">
+                <h2><i class="fa fa-lg fa-pulse fa-spinner"></i> {% trans from 'security' %}login.mobile_app.waiting_for_stamp{% endtrans %} <span class="login-ttl">{{ ticket.ttl }}</span></h2>
+                <hr class="message-inner-separator">
+                <p>{% trans from 'security' %}login.mobile_app.waiting_for_stamp_text{% endtrans %}</p>
+            </div>
+            {{ form_start(form) }}
+            {{ form_widget(form.phase) }}
+            <div class="form-nav">
+                <div class="btn-group btn-group-justified" role="group">
+                    <div class="btn-group" role="group">
+                        {{ form_widget(form.cancel) }}
+                    </div>
+                    <div class="btn-group" role="group">
+                        {{ form_widget(form.refresh) }}
+                    </div>
+                </div>
+            </div>
+            {{ form_end(form) }}
+            <script type="text/javascript">
+                var $polling = false;
+                var $loop = true;
+
+                function login_check_loop() {
+                    $loginTTL = $('.login-ttl');
+                    $time = parseInt($loginTTL.html());
+
+                    // poll every 5 seconds
+                    if ($time % 5 === 0) {
+                        if (!$polling && $loop) {
+                            console.log('poll');
+                            $polling = true;
+                            $.ajax({
+                                'url': document.location.href,
+                                'method': 'get',
+
+                                'success': function (data) {
+                                    if (data.stamped && data.redirect) {
+                                        $loop = false;
+                                        $loginTTL.html("{% trans from 'security' %}login.loging_in{% endtrans %}");
+                                        $('.fa-pulse').removeClass('fa-pulse').removeClass('fa-spinner').addClass('fa-check-circle');
+                                        $('.alert-info').removeClass('alert-info').addClass('alert-success');
+                                        console.log('done');
+                                        $polling = false;
+                                        console.log(data);
+                                        document.location.href = data.redirect;
+                                    } else {
+                                        console.log(data);
+                                        $polling = false;
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    if ($time > 0 && $loop) {
+                        setTimeout(login_check_loop, 1000);
+                        $loginTTL.html($time - 1);
+                    } else {
+                        if ($time <= 0) {
+                            $loginTTL.html("{% trans from 'security' %}login.out_of_time{% endtrans %}");
+                            $('.fa-pulse').removeClass('fa-pulse').removeClass('fa-spinner').addClass('fa-exclamation-triangle');
+                            $('.alert-info').removeClass('alert-info').addClass('alert-danger');
+                            document.location.href = '../app';
+                        }
+                        console.log('ttl ended');
+                    }
+                }
+
+                $(document).ready(function() {
+                    login_check_loop();
+                });
+            </script>
+        {% endif %}
+    {% else %}
+        {{ form_start(form) }}
+        {{ form_widget(form.phase) }}
+        {{ form_row(form.username) }}
+
+        <div class="form-nav">
+            <div class="btn-group btn-group-justified" role="group">
+                {% if form.phase.vars.data == 'ticket' %}
+                    <div class="btn-group" role="group">
+                        {{ form_widget(form.submit) }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {{ form_end(form) }}
+    {% endif %}
+</div>

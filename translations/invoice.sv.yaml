@@ -1,0 +1,41 @@
+action:
+    create_account: "Skapa nytt"
+    accounts: "Bankkonton"
+field:
+    name: "Namn"
+    address: "Adress"
+    phone: "Telefonnummer"
+    email: "E-post"
+    isActive: "Status"
+    street_address: "Gatuadress"
+    zipcode: "Postnummer"
+    city: "Postanstalt"
+    country: "Land"
+    pobox: "Postbox"
+    business_id: "FO-nummer"
+    recipient_edi: "Mottagarens EDI-nummer"
+    operator: "Operatör"
+    operator_edi: "Operatörens EDI-nummer"
+    operator_bic: "Operatörens BIC-kod"
+    iban: "Internationellt bankkontonummer IBAN"
+    bic: "Bankidentifieringskod BIC"
+    order: "Ordning"
+
+help:
+    action:
+        create:
+            recipient: "<u>Skapa</u> ny mottagare."
+            recipient_account: "<u>Skapa</u> nytt bankkonto."
+        list:
+            accounts: "<u>Visa</u> mottagarens <em cass='text-primary'>bankkonton</em>."
+        edit:
+            recipient: "<u>Redigera</u> den valda mottagaren."
+            recipient_account: "<u>Redigera</u> det valda bankkontot."
+        delete:
+            recipient: "<u class='text-danger'>Radera</u> den valda mottagaren."
+            recipient_account: "<u class='text-danger'>Radera</u> det valda bankkontot."
+        toggle:
+            active: "<u>Växla</u> mellan <em class='text-primary'>aktivt</em> och <em class='text-primary'>inaktivt</em> läge."
+        unselect:
+            recipient: '<u>Avmarkera</u> den valda mottagaren, inga åtgärder görs.'
+            recipient_account: '<u>Avmarkera</u> det valda bankkontot, inga åtgärder görs.'

@@ -1,0 +1,30 @@
+{% if module.data['showTitle'] is defined and module.data['showTitle'] %}
+    <h1>{{ module.title }}</h1>
+{% endif %}
+<div id="carousel_{{ module.id }}" class="carousel slide" data-ride="carousel">
+    {% if module.data['showCarouselIndicators'] is defined and module.data['showCarouselIndicators'] %}
+    <ol class="carousel-indicators">
+        {% for child in module.children %}
+        <li data-target="#carousel_{{ module.id }}" data-slide-to="{{ child.order }}"{% if child.order == 0 %} class="active"{% endif %}></li>
+        {% endfor %}
+    </ol>
+    {% endif %}
+    <div class="carousel-inner">
+        {% for child in module.children %}
+        <div class="item{% if child.order == 0 %} active{% endif %}">
+            <div class="col-xs-12"><h2>{{ child.title }}</h2></div>
+            <div class="col-xs-12">{{ child.introduction }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% if module.data['showCarouselNavigation'] is defined and module.data['showCarouselNavigation'] %}
+    <a class="left carousel-control" href="#carousel_{{ module.id }}" data-slide="prev">
+        <span class="glyphicon glyphicon-chevron-left"></span>
+        <span class="sr-only"></span>
+    </a>
+    <a class="right carousel-control" href="#carousel_{{ module.id }}" data-slide="next">
+        <span class="glyphicon glyphicon-chevron-right"></span>
+        <span class="sr-only"></span>
+    </a>
+    {% endif %}
+</div>

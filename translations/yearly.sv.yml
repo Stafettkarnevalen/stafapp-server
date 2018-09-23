@@ -1,0 +1,10 @@
+label:
+    copy: "Kopiera"
+    copy_from_year: "Kopiera schema från ett tidigare år"
+    choose_year: "Välj år att kopiera från"
+    timestamp: "Tidpunkt då första grenen löps"
+    copy_to: 'Kopiera till %year%'
+    close: "Stäng"
+yearly:
+    relays: "Stafetter"
+    info_relays: "Kryssa för vilka stafetter som löps och i vilka moment"

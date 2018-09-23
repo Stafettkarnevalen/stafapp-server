@@ -1,0 +1,23 @@
+<div class="searchbar collapse{% if app.user.data('search', {(domain): {'in': false}})[domain]['in'] %} in{% endif %}">
+    <hr class="no-padding no-margin"/>
+    <div class="input-group toolbar-padding" data-target=".{{ target }}">
+        <div class="input-group-btn">
+            <button data-helpmode data-content="{% trans %}help.action.search_categories{% endtrans %}" title="{% trans %}action.search_by_category{% endtrans %}" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{% trans %}action.search{% endtrans %} <span class="caret"></span></button>
+            <ul class="dropdown-menu">
+                {% for i in fields %}
+                    <li><a href="#"><input data-domain="{{ domain }}" name="{{ i }}" value="1" type="checkbox"{% if app.user.data('search', {domain: {'field': {i: 0}}})[domain]['field'][i] is defined and app.user.data('search', {domain: {'field': {i: 0}}})[domain]['field'][i] %} checked="checked"{% endif %}/> &nbsp; {{ ('field.' ~ i)|trans({}, domain) }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <input class="search input-md form-control" data-domain="{{ domain }}" type="text" value="{{ app.user.data('search', {(domain): {'filter': null}})[domain]['filter'] }}"/>
+        <a data-helpmode data-content="{% trans %}help.action.search_clear{% endtrans %}" data-domain="{{ domain }}" title="{% trans %}action.clear{% endtrans %}" class="{% if app.user.data('search')[domain]['filter'] is not defined or app.user.data('search')[domain]['filter'] is null %}disabled {% endif %}clear_search input-group-addon btn"><i class="fa fa-times-circle-o"></i></a>
+    </div>
+</div>
+<script type="text/javascript">
+    <!--
+        $(document).ready(function() {
+            if ($('#{{ request_id()|html_id }} .search').val().length)
+                $('#{{ request_id()|html_id }} .search').trigger('input');
+        });
+    //-->
+</script>

@@ -1,0 +1,41 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 05/09/2017
+ * Time: 15.52
+ */
+
+namespace App\Validator\Constraints;
+
+
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\ConstraintValidator;
+
+/**
+ * Class IsValidNameValidator
+ * @package App\Validator\Constraints
+ * @author Robert Jürgens <robert@jurgens.fi>
+ */
+class IsValidNameValidator extends ConstraintValidator
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function validate($value, Constraint $constraint)
+    {
+        if ($constraint instanceof IsValidName) {
+
+            if ($value === strtolower($value)) {
+                $this->context->buildViolation($constraint->messageAllLower)->setParameter('%value%', $constraint->getName())
+                    ->addViolation();
+            } else if ($value === strtoupper($value)) {
+                $this->context->buildViolation($constraint->messageAllUpper)->setParameter('%value%', $constraint->getName())
+                    ->addViolation();
+            } else if (!preg_match("/^[\s-\pL]+$/u", $value)) {
+                $this->context->buildViolation($constraint->messageIllegalCharacters)->setParameter('%value%', $constraint->getName())
+                    ->addViolation();
+            }
+        }
+    }
+}

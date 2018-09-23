@@ -1,0 +1,24 @@
+{% block button_widget -%}
+    {% set attr = attr|merge({class: (attr.class|default('btn-default') ~ ' btn')|trim}) %}
+    {%- if label is empty -%}
+        {%- if label_format is not empty -%}
+            {% set label = label_format|replace({
+            '%name%': name,
+            '%id%': id,
+            }) %}
+        {%- else -%}
+            {% set label = name|humanize %}
+        {%- endif -%}
+    {%- endif -%}
+    {% if left_icon|default %}
+        {% set leftIconHtml = '<i class="fa ' ~ left_icon ~ '"></i> ' %}
+    {% else %}
+        {% set leftIconHtml = '' %}
+    {% endif %}
+    {% if right_icon|default %}
+        {% set rightIconHtml = ' <i class="fa ' ~ right_icon ~ '"></i>' %}
+    {% else %}
+        {% set rightIconHtml = '' %}
+    {% endif %}
+    <button type="{{ type|default('button') }}" {{ block('button_attributes') }}>{{ leftIconHtml|raw }}{% autoescape false %}{{ translation_domain is same as(false) ? label : label|trans({}, translation_domain) }}{% endautoescape %}{{ rightIconHtml|raw }}</button>
+{%- endblock %}

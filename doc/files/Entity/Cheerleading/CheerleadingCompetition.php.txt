@@ -1,0 +1,381 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 03/06/2017
+ * Time: 17.35
+ */
+namespace App\Entity\Cheerleading;
+
+use App\Entity\Interfaces\ScheduledEvent;
+use App\Entity\Schedule\ScheduledEntity;
+use App\Entity\Traits\ApplyDateIntervalTrait;
+use App\Entity\Traits\CloneableTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use App\Entity\Traits\NotesTrait;
+use App\Entity\Traits\VersionedPriceTrait;
+use App\Entity\Services\Service;
+use Gedmo\Mapping\Annotation as Gedmo;
+
+/**
+ * @ORM\Table(name="cheerleading_competition_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @UniqueEntity(fields="event,serviceType", message="event.exists")
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Cheerleading
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class CheerleadingCompetition extends ScheduledEntity
+{
+    /** use date interval trait */
+    use ApplyDateIntervalTrait;
+
+    /** Use cloneable trait */
+    use CloneableTrait;
+
+    /** Use price field */
+    use VersionedPriceTrait;
+
+    /** Use notes field */
+    use NotesTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="cup_name_fld", type="string", length=64, nullable=true)
+     * @var string $cupName The name of the cup awarded to the winner of this competition
+     */
+    protected $cupName;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="gates_open_fld", type="datetime", nullable=true)
+     * @var \DateTime $gatesOpen The timestamp when the gates open for the squad to enter the stadium
+     */
+    protected $gatesOpen;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="ceremony_fld", type="datetime", nullable=true)
+     * @var \DateTime $ceremony The timestamp when this competition has the award ceremony
+     */
+    protected $ceremony;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="results_public_fld", type="datetime", nullable=true)
+     * @var \DateTime $resultsGoPublic The timestamp when the results can be published
+     */
+    protected $resultsGoPublic;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="CheerleadingEvent", inversedBy="competitions")
+     * @ORM\JoinColumn(name="event_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var CheerleadingEvent $event The event that this competition is based on
+     */
+    protected $event;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Services\Service", inversedBy="cheerleadingCompetitions")
+     * @ORM\JoinColumn(name="service_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var Service $service The service that provides this competition
+     */
+    protected $service;
+
+    /**
+     * @ORM\OneToMany(targetEntity="CheerleadingSquad", mappedBy="competition", cascade={"persist", "remove"})
+     * @var ArrayCollection $squads The squads taking part in this competition
+     */
+    protected $squads;
+
+    /**
+     * CheerleadingCompetition constructor.
+     */
+    public function __construct()
+    {
+        $this->squads = new ArrayCollection();
+    }
+
+    /**
+     * Gets the cup name.
+     *
+     * @return string|null
+     */
+    public function getCupName()
+    {
+        return $this->cupName;
+    }
+
+    /**
+     * Sets the cup name.
+     *
+     * @param string|null $cupName
+     * @return $this
+     */
+    public function setCupName($cupName)
+    {
+        $this->cupName = $cupName;
+
+        return $this;
+    }
+
+    /**
+     * Gets the event.
+     *
+     * @return CheerleadingEvent
+     */
+    public function getEvent()
+    {
+        return $this->event;
+    }
+
+    /**
+     * Sets the event.
+     *
+     * @param CheerleadingEvent $event
+     * @return $this
+     */
+    public function setEvent($event)
+    {
+        $this->event = $event;
+
+        return $this;
+    }
+
+    /**
+     * Gets the Service.
+     *
+     * @return Service
+     */
+    public function getService()
+    {
+        return $this->service;
+    }
+
+    /**
+     * Sets the Service.
+     *
+     * @param Service $service
+     * @return $this
+     */
+    public function setService($service)
+    {
+        $this->service = $service;
+
+        return $this;
+    }
+
+    /**
+     * Gets the season.
+     *
+     * @return integer
+     */
+    public function getSeason()
+    {
+        return $this->getService()->getSeason();
+    }
+
+    /**
+     * Gets the squads.
+     *
+     * @return ArrayCollection
+     */
+    public function getSquads()
+    {
+        return $this->squads;
+    }
+
+    /**
+     * Gets the ceremony.
+     *
+     * @return \DateTime
+     */
+    public function getCeremony()
+    {
+        return $this->ceremony;
+    }
+
+    /**
+     * Sets the ceremony.
+     *
+     * @param integer|string|\DateTime $ceremony
+     * @return $this
+     */
+    public function setCeremony($ceremony)
+    {
+        if (is_numeric($ceremony)) {
+            $this->ceremony = new \DateTime();
+            $this->ceremony = $this->ceremony->setTimestamp($ceremony);
+        } else if (is_string($ceremony)) {
+            $this->ceremony = new \DateTime($ceremony);
+        } else {
+            $this->ceremony = $ceremony;
+        }
+        return $this;
+    }
+
+    /**
+     * Gets the gatesOpen.
+     *
+     * @return \DateTime
+     */
+    public function getGatesOpen()
+    {
+        return $this->gatesOpen;
+    }
+
+    /**
+     * Sets the gatesOpen.
+     *
+     * @param \DateTime $gatesOpen
+     * @return $this
+     */
+    public function setGatesOpen($gatesOpen)
+    {
+        $this->gatesOpen = $gatesOpen;
+
+        return $this;
+    }
+
+    /**
+     * Gets the resultsGoPublic.
+     *
+     * @return \DateTime
+     */
+    public function getResultsGoPublic()
+    {
+        return $this->resultsGoPublic;
+    }
+
+    /**
+     * Sets the resultsGoPublic.
+     *
+     * @param \DateTime $resultsGoPublic
+     * @return $this
+     */
+    public function setResultsGoPublic($resultsGoPublic)
+    {
+        $this->resultsGoPublic = $resultsGoPublic;
+
+        return $this;
+    }
+
+    /**
+     * Sets the squads.
+     *
+     * @param ArrayCollection $squads
+     * @return $this
+     */
+    public function setSquads($squads)
+    {
+        $this->squads = $squads;
+
+        return $this;
+    }
+
+    /**
+     * Gets the winning squad.
+     *
+     * @return CheerleadingSquad|null
+     */
+    public function getWinnerSquad()
+    {
+        foreach($this->getSquads() as $squad) {
+            if ($squad->getRank() == 1)
+                return $squad;
+        }
+        return null;
+    }
+
+    /**
+     * Sets the winning squad.
+     *
+     * @param CheerleadingSquad $squad
+     * @return $this
+     */
+    public function setWinnerSquad($squad)
+    {
+        $squad->setRank(1);
+
+        return $this;
+    }
+
+
+    /**
+     * Gets the runner up squads.
+     *
+     * @return ArrayCollection
+     */
+    public function getRunnerUpSquads()
+    {
+        $runnersUp = new ArrayCollection();
+        foreach($this->getSquads() as $squad) {
+            if ($squad->getRank() == 2)
+                $runnersUp->add($squad);
+        }
+        return $runnersUp;
+    }
+
+    /**
+     * Sets the runner up squads.
+     *
+     * @param ArrayCollection $squads
+     * @return $this
+     */
+    public function setRunnerUpSquads(ArrayCollection $squads)
+    {
+        foreach($squads as $squad) {
+            $squad->setRank(2);
+        }
+        return $this;
+    }
+
+    /**
+     * Gets a string representation of this object.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->getEvent()->__toString();
+    }
+
+    /**
+     * Gets the fields that can be modified with a \DateInterval.
+     *
+     * @return array
+     */
+    public function getDateIntervalApplicableFields()
+    {
+        return [$this->getGatesOpen(), $this->getStarts(), $this->getCeremony(), $this->getResultsGoPublic()];
+    }
+    /**
+     * Gets all ScheduledEvents of this entity.
+     *
+     * @return ArrayCollection
+     */
+    public function getSchedule()
+    {
+        $events = new ArrayCollection();
+        $events[$this->getGatesOpen()->format('c')] = new CheerleadingSchedule($this, ScheduledEvent::EVENT_TYPE_GATES_OPEN);
+        $events[$this->getStarts()->format('c')] = new CheerleadingSchedule($this, ScheduledEvent::EVENT_TYPE_STARTS);
+        $events[$this->getCeremony()->format('c')] = new CheerleadingSchedule($this, ScheduledEvent::EVENT_TYPE_CEREMONY);
+        return $events;
+    }
+
+    public function getEventName()
+    {
+        return $this->getEvent()->getName();
+    }
+
+    public function getNumSquads()
+    {
+        return $this->getSquads()->count();
+    }
+}

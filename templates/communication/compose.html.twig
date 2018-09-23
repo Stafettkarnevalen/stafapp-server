@@ -1,0 +1,112 @@
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+    <div class="side-padding">
+        <h1>{% trans from "communication" %}label.create{% endtrans %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+
+        <nav class="navbar navbar-default toolbar">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a href="#" class="navbar-brand add-attachment"><i class="fa fa-paperclip"></i> &nbsp;{% trans from 'communication' %}message.attachment{% endtrans %}</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="form bg-default all-padding">
+            <div class="message-attachments" data-prototype="{{ form_row(form.attachments.vars.prototype)|e() }}"></div>
+            {{ form_row(form.distribution) }}
+            {{ form_row(form.type) }}
+            {{ form_row(form.title) }}
+            {{ form_row(form.text) }}
+            {% if modal is not defined or modal != true %}
+            <div class="form-nav">
+                <div class="btn-group btn-group-justified" role="group">
+                    <a class="btn btn-default" href="{{ referer }}"><i class="fa fa-trash"></i> {% trans from 'communication' %}message.cancel{% endtrans %} <i class="fa fa-remove"></i></a>
+                    <div class="btn-group" role="group">
+                        {{ form_widget(form.submit) }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <script type="text/javascript">
+        // keep track of how many email fields have been rendered
+        var attachmentCount = '{{ form.attachments|length }}';
+
+        $(document).ready(function() {
+            $('.add-attachment').on('click', function(e) {
+                console.log('attachment.add');
+                e.preventDefault();
+
+                var list = $(this).closest('.all-padding').find('.message-attachments');
+
+                console.log(list);
+
+                // grab the prototype template
+                var newWidget = list.attr('data-prototype');
+                // replace the "__name__" used in the id and name of the prototype
+                // with a number that's unique to your emails
+                // end name attribute looks like name="contact[emails][2]"
+                newWidget = newWidget.replace(/__name__label__/g, '<i class="fa fa-paperclip"></i>');
+                newWidget = newWidget.replace(/__name__/g, attachmentCount);
+
+                newWidget = newWidget.replace(/<div class="form-group"><input/g, '<div class="input-group"><input');
+                newWidget = newWidget.replace(/class="form-control" \/>/, 'class="form-control" /><a class="btn btn-default input-group-addon" onclick="removeAttachment(this);"><i class="fa fa-remove"></i></a>');
+
+                console.log(newWidget);
+
+                attachmentCount++;
+
+                // create a new list element and add it to the list
+                var newLi = $('<div></div>').html(newWidget);
+                newLi.appendTo(list);
+
+                console.log(list);
+
+                console.log('done: ' + attachmentCount);
+                return false;
+            });
+
+            /*
+            $('#message_test').autocompleter({
+                url_list: "{{ path('json.distribution') }}",
+                url_get: "{{ path('string.distribution') }}",
+                on_select_callback: selectedDist,
+            });
+            */
+        });
+
+        function selectedDist(val) {
+            console.log(val);
+        }
+
+        function removeAttachment(row) {
+            r = $(row);
+            r.closest('div.form-group').remove();
+            var index = 1;
+            $.each($('.message-attachments div.form-group'), function() {
+                // $(this).find('label').html(index);
+                $(this).find('input').attr('id', 'message_attachments_' + index).attr('name', 'message[attachments][' + index + ']');
+                index++;
+            });
+            attachmentCount--;
+        }
+
+    </script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+<div class="side-padding">
+    <h1>{{ doc.title }} - {% trans from 'documentation' %}label.version{% endtrans %} {{ log.version }}</h1>
+</div>
+<div class="all-padding">
+    <table class="stepper">
+        <tbody>
+        <tr>
+            <td class="bg-primary"></td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="row">
+        <div class="col-xs-12 col-sm-6">
+            <h2>{% trans from 'documentation' %}label.version{% endtrans %} {{ log.version }}</h2>
+            <dl class="well">
+                <dt>{% trans from 'documentation' %}label.title{% endtrans %}</dt>
+                <dd>
+                    {% if log.data['title'] is defined %}
+                        {{ log.data['title'] }}
+                    {% else %}
+                        {{ doc.prevLogData(log.version, 'title') }}
+                    {% endif %}
+                </dd>
+                <dt>{% trans from 'documentation' %}label.text{% endtrans %}</dt>
+                <dd>{{ log.data['text']|raw }}</dd>
+            </dl>
+        </div>
+        <div class="col-xs-12 col-sm-6">
+            <h2>{% trans from 'documentation' %}label.current_version{% endtrans %}</h2>
+            <dl class="well">
+                <dt>{% trans from 'documentation' %}label.title{% endtrans %}</dt>
+                <dd>{{ doc.title }}</dd>
+                <dt>{% trans from 'documentation' %}label.text{% endtrans %}</dt>
+                <dd>{{ doc.text|raw }}</dd>
+            </dl>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{# app/Resources/views/manager/registration/form.html.twig #}
+
+<div class="container-fluid">
+    {{ form_start(form) }}
+        {{ form_row(form.username) }}
+        {{ form_row(form.email) }}
+        {{ form_row(form.firstname) }}
+        {{ form_row(form.lastname) }}
+        {{ form_row(form.phone) }}
+        {{ form_row(form.plainPassword.first) }}
+        {{ form_row(form.plainPassword.second) }}
+        <div class="form-nav">
+            <div class="btn-group btn-group-justified" role="group">
+                <div class="btn-group" role="group">
+                    {{ form_widget(form.submit)  }}
+                </div>
+            </div>
+        </div>
+    {{ form_end(form) }}
+</div>

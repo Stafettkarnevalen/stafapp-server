@@ -1,0 +1,232 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends (app.request.get('sort') is null) ? extends  : 'sortable-table.html.twig' %}
+
+{% set buttons = [{
+    'modal': {
+        'title': {
+            'key': 'action.create',
+        },
+        'reload': true,
+    },
+    'title': {
+        'key': 'action.create',
+    },
+    'class': 'hidden-sm hidden-md hidden-lg',
+    'icon': 'plus',
+    'href': path('nav.admin_service_category')
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.list.subcategories',
+            'domain': 'service'
+        }
+    },
+    'modal': {
+        'title': {
+            'key': 'nav.admin_ervice_categories',
+            'domain': 'nav'
+        },
+        'reload': true,
+    },
+    'title': {
+        'key': 'action.subtypes',
+        'domain': 'service'
+    },
+    'class': 'btn-sub disabled',
+    'icon': 'sitemap'
+},{
+    'separator': true
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.edit.category',
+            'domain': 'service'
+        }
+    },
+    'modal': {
+        'title': {
+            'key': 'nav.admin_service_categories',
+            'domain': 'nav'
+        },
+        'reload': true,
+    },
+    'title': {
+        'key': 'action.edit'
+    },
+    'class': 'btn-open disabled',
+    'icon': 'edit'
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.delete.category',
+            'domain': 'service'
+        }
+    },
+    'modal': {
+        'title': {
+            'key': 'action.delete',
+        },
+        'reload': 'true',
+        'type': 'confirm'
+    },
+    'title': {
+        'key': 'action.delete'
+    },
+    'class': 'btn-delete disabled',
+    'icon': 'trash-o'
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.unselect.category',
+            'domain': 'service'
+        }
+    },
+    'title': {
+        'key': 'action.unselect'
+    },
+    'class': 'btn-unselect disabled',
+    'icon': 'times-circle-o'
+}] %}
+
+{% import 'admin/services/recipients/table.html.twig' as table %}
+{% import 'admin/services/recipients/toolbar.html.twig' as toolBar %}
+{% import 'toolbar/contextmenu.html.twig' as contextMenu %}
+
+{% if (app.request.get('sort') is null) %}
+    {% block body %}
+        <div class="side-padding">
+            <h1>{% trans from 'nav' %}nav.admin_service_categories{% endtrans %}</h1>
+        </div>
+
+        <div class="all-padding">
+            <table class="stepper">
+                <tbody>
+                <tr>
+                    <td class="bg-primary"></td>
+                </tr>
+                </tbody>
+            </table>
+            {{ toolBar.render_nav(buttons, parent) }}
+            <div class="workspace">
+                <div class="dropdown" style="position:absolute!important; top:0!important; left:0!important;">
+                    {% import 'toolbar/contextmenu.html.twig' as contextMenu %}
+                    {{ contextMenu.render_context_menu({'id': 'service_categories_context_menu_' ~ (parent ? parent.id : '0'), 'items': buttons|slice(1)}) }}
+                </div>
+
+                {{ table.render_sorted_table(categories, orders, order, sort, parent) }}
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            <!--
+            $(document).ready(function() {
+
+                $('#{{ request_id()|html_id }} .table-service-recipients-{{ parent ? parent.id : "0"}}')
+                    .on('change', function (e) {
+                        console.log('table-change');
+                        $(this).find('td').contextMenu({
+                            menuSelector: "#service_categories_context_menu_{{ parent ? parent.id : '0' }}",
+                            menuActivated: function (e) {
+                                // select row on context menu
+                                if (!$(e.target).parent().hasClass('selected'))
+                                    $(e.target).trigger('click');
+
+                                if ($(e.target).closest('td').parent().data('index') > 0) {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-up"]').parent().removeClass('disabled');
+                                } else {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-up"]').parent().addClass('disabled');
+                                }
+
+                                if ($(e.target).closest('td').parent().data('index') !== {{ categories|length }} - 1) {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-down"]').parent().removeClass('disabled');
+                                } else {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-down"]').parent().addClass('disabled');
+                                }
+                            },
+                            menuSelected: function (source, e) {
+                                // simulate toolbar button click on selected row
+                                $($(e.target).data('trigger')).trigger('click');
+
+                            }
+                        });
+
+                        $selected = $(this).find('tr.selected');
+
+                        if ($selected.length && $selected.data('index') === 0) {
+                            console.log('dis first');
+                            $('.btn-up').addClass('disabled');
+                        } else if ($selected.length && $selected.data('index') === {{ categories|length }} - 1) {
+                            console.log('dis last');
+                            $('.btn-down').addClass('disabled');
+                        } else if ($selected.length){
+                            console.log('ena');
+                            $('.btn-up').removeClass('disabled');
+                            $('.btn-down').removeClass('disabled');
+                        }
+                    })
+                    .trigger('change')
+                ;
+
+                $('#{{ request_id()|html_id }} ')
+                    .on('click', function (e) {
+                        var $this = $(this);
+
+                        // if clicking a table row
+                        var $td = $(e.target);
+                        if ($td.closest('.table-service-recipients-{{ parent ? parent.id : "0"}} tbody').length > 0) {
+                            console.log('select/unselect table row');
+
+                            if (!$td.parent().hasClass('selected')) {
+                                console.log('select');
+
+                                // unselect all other rows
+                                $this.find('.selected').removeClass('selected');
+
+                                // select this row
+                                $td.parent().addClass('selected');
+
+                                // enable tool buttons
+                                $this.find('.navbar.toolbar').find('.tool.disabled').removeClass('disabled');
+
+                                // assign correct urls to buttons
+                                $this.find('.btn-open').attr('href', $td.parent().data('href'));
+
+                                var $route = Routing.generate('nav.admin_service_category_delete', {
+                                    '_locale': '{{ app.request.locale }}',
+                                    'id': $td.parent().data('id')
+                                });
+                                $this.find('.btn-delete').attr('href', $route);
+
+                                $route = Routing.generate('nav.admin_service_categories', {
+                                    '_locale': '{{ app.request.locale }}',
+                                    'parent': $td.parent().data('id')
+                                });
+                                $this.find('.btn-sub').attr('href', $route);
+
+                                $this.find('.btn-unselect').off().click(function() {
+                                    $this.find('.table-service-recipients-{{ parent ? parent.id : "0"}} tr').removeClass('selected');
+                                    $this.find('.navbar.toolbar').find('.tool').addClass('disabled');
+                                    return false;
+                                });
+
+                            }
+                        }
+                    })
+                    .on('dblclick', '.table-service-recipients-{{ parent ? parent.id : "0"}} td', function (e) {
+                        $('#{{ request_id()|html_id }} ').find('.btn-open').trigger('click');
+                    })
+                ;
+            });
+            //-->
+        </script>
+    {% endblock %}
+{% else %}
+    {% block table %}
+        {{ table.render_sorted_table(categories, orders, order, sort, parent) }}
+    {% endblock %}
+{% endif %}

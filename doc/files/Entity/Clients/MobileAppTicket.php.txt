@@ -1,0 +1,230 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 06/06/2017
+ * Time: 22.13
+ */
+namespace App\Entity\Clients;
+
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Traits\FieldsTrait;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Security\Core\User\UserInterface;
+use App\Entity\Traits\LifespanTrait;
+use Symfony\Component\Serializer\Annotation as Serialize;
+use JMS\Serializer\Annotation as Jms;
+
+/**
+ * @ORM\Table(name="mobile_app_ticket_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @package App\Entity\Security
+ * @author Robert Jürgens <robert@jurgens.fi>
+ */
+class MobileAppTicket implements UserInterface, Serializable
+{
+    /** Use fields trait */
+    use FieldsTrait;
+
+    /** Use lifespan fields */
+    use LifespanTrait;
+
+    /**
+     * @const FOR_LOGIN A constant for a UserTicket issued for logins
+     */
+    const FOR_LOGIN           = 'DOLOGIN';
+
+    /**
+     * @const FOR_LOGIN A constant for a UserTicket issued for changing password
+     */
+    const FOR_CHANGE_PASSWORD = 'CHPASSW';
+
+    /**
+     * @ORM\Column(name="id_fld", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
+     * @var integer $id The Entity Id of this UserTicket
+     */
+    protected $id;
+
+    /**
+     * @ORM\Column(name="for_fld", type="string", length=8, columnDefinition="ENUM('DOLOGIN', 'CHPASSW', 'CHEMAIL', 'CHPHONE')",
+     *     nullable=false)
+     * @Assert\NotBlank()
+     * @var string $for The purpose for this UserTicket
+     */
+    protected $for;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="MobileApp", inversedBy="tickets")
+     * @ORM\JoinColumn(name="mobile_app_fld", referencedColumnName="id_fld", nullable=false)
+     * @var MobileApp $mobileApp The owner of this MobileAppTicket
+     */
+    protected $mobileApp;
+
+    /**
+     * Creates a MobileAppTicket for a specified purpose and a specified MobileApp.
+     *
+     * @param MobileApp $mobileApp
+     * @param string $for
+     * @return MobileAppTicket
+     * @throws \Exception
+     */
+    public static function createFor(MobileApp $mobileApp, $for = MobileAppTicket::FOR_LOGIN)
+    {
+        $ticket = new MobileAppTicket();
+        $expires = new \DateTime('now');
+        $expires->add(new \DateInterval("PT1M"));
+
+        return $ticket->setIsActive(false)
+            ->setFrom(new \DateTime('now'))->setUntil($expires)
+            ->setMobileApp($mobileApp)->setFor($for);
+    }
+
+    /**
+     * Refresh the ticket with a new valid period.
+     *
+     * @return $this
+     * @throws \Exception
+     */
+    public function refresh()
+    {
+        $expires = new \DateTime('now');
+        $expires->add(new \DateInterval("PT10M"));
+        return $this->setFrom(new \DateTime('now'))->setUntil($expires);
+    }
+
+    /**
+     * @return integer|null
+     */
+    public function getTTL()
+    {
+        if ($this->until)
+            return ($this->until->getTimestamp() - (new \DateTime())->getTimestamp());
+        return null;
+    }
+
+    /**
+     * MobileAppTicket constructor.
+     */
+    public function __construct()
+    {
+        $this->from = new \DateTime("now");
+        $this->isActive = false;
+    }
+    /**
+     * @see \Serializable::serialize()
+     */
+    public function serialize()
+    {
+        return serialize([
+            $this->id,
+            $this->for,
+            $this->from,
+            $this->until,
+            $this->isActive,
+            $this->mobileApp,
+        ]);
+    }
+
+    /**
+     * @see \Serializable::unserialize()
+     *
+     * @param string $serialized
+     */
+    public function unserialize($serialized)
+    {
+        list (
+            $this->id,
+            $this->for,
+            $this->from,
+            $this->until,
+            $this->isActive,
+            $this->mobileApp
+            ) = unserialize($serialized);
+    }
+
+    /**
+     * Gets the id.
+     *
+     * @return mixed
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * Gets the User.
+     *
+     * @return MobileApp
+     */
+    public function getMobileApp()
+    {
+        return $this->mobileApp;
+    }
+
+    /**
+     * Sets the MobileApp.
+     *
+     * @param mixed $mobileApp
+     * @return $this
+     */
+    public function setMobileApp($mobileApp)
+    {
+        $this->mobileApp = $mobileApp;
+
+        return $this;
+    }
+
+    public function getUsername()
+    {
+        return $this->getMobileApp()->getUser()->getUsername();
+    }
+
+    public function getPassword()
+    {
+        return $this->getMobileApp()->getUser()->getPassword();
+    }
+
+    public function eraseCredentials()
+    {
+
+    }
+
+    public function getSalt()
+    {
+        return null;
+    }
+
+    public function getRoles()
+    {
+        return $this->getMobileApp()->getUser()->getRoles();
+    }
+
+    /**
+     * Gets the purpose of this ticket.
+     *
+     * @return string
+     */
+    public function getFor()
+    {
+        return $this->for;
+    }
+
+    /**
+     * Sets the purpose of this thicket.
+     *
+     * @param string $for
+     * @return $this
+     */
+    public function setFor($for)
+    {
+        $this->for = $for;
+
+        return $this;
+    }
+
+}

@@ -1,0 +1,50 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 15/12/2016
+ * Time: 7.00
+ */
+
+namespace App\Repository;
+
+use Doctrine\Bundle\DoctrineBundle\Registry;
+use Symfony\Component\Security\Core\Authorization\AuthorizationChecker;
+
+
+class GlobalRepository
+{
+    /** @var Registry */
+    private $registry;
+
+    /** @var AuthorizationChecker */
+    private $authorizationChecker;
+
+    public function __construct(AuthorizationChecker $authorizationChecker, Registry $registry)
+    {
+        $this->registry = $registry;
+        $this->authorizationChecker = $authorizationChecker;
+    }
+
+    public function sort(array $values, $name, $property = null)
+    {
+        usort($values, function ($a, $b) use ($name, $property) {
+            $name = 'get' . $name;
+            if ($property) {
+                $property = 'get' . $property;
+                return strcasecmp($a->$name()->$property(), $b->$name()->$property());
+            } else {
+                return strcasecmp($a->$name(), $b->$name());
+            }
+        });
+        return $values;
+    }
+
+    public function findAll($class, $sortBy = null) {
+        $result = $this->registry->getManager()->getRepository($class)->findAll();
+        if ($sortBy) {
+            $result = $this->sort($result, $sortBy);
+        }
+        return $result;
+    }
+}

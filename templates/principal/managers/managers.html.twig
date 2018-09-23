@@ -1,0 +1,68 @@
+{% extends 'sortable-table.html.twig' %}
+
+{% macro render_sorted_table(managers, orders, order, sort) %}
+    {{ table(managers, {
+        'trans_domain': 'principal',
+        'class': 'table table-bordered table-responsive table-condensed table-striped table-scrollable table-searchable table-sortable table-managers',
+        'body': {
+            'row_attrs': {
+                'data-id':  {
+                    'type': 'method',
+                    'name': 'getId'
+                }
+            },
+            'link': {
+                'url': 'nav.admin_school',
+                'params': {
+                    'id': {
+                        'type': 'method',
+                        'name': 'getId'
+                    }
+                },
+                'attrs': {
+                    'data-reload': 'true',
+                    'data-title': 'nav.admin_schools'|trans({}, 'nav'),
+                    'data-toggle': 'modal'
+                }
+            },
+            'cols': {
+                'username': {
+                    'method': 'getUsername'
+                },
+                'schoolUnits': {
+                    'method': 'getSchoolUnits'
+                }
+            }
+        },
+        'head': {
+            'sortable': {
+                'orders': orders,
+                'order': order,
+                'sort': sort,
+                'icons': {
+                    'ASC': 'fa-chevron-up',
+                    'DESC': 'fa-chevron-down'
+                },
+                'link': {
+                    'url': 'nav.principal_managers'
+                }
+            },
+            'cols': {
+                'username': {
+                    'label': 'field.username',
+                    'sort': 'username'
+                },
+                'schoolUnits': {
+                    'label': 'field.school_units'
+                }
+            }
+        }
+    }) }}
+{% endmacro %}
+
+{% import _self as macro %}
+
+
+    {% block table %}
+        {{ macro.render_sorted_table(managers, orders, order, sort) }}
+    {% endblock %}

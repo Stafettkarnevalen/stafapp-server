@@ -1,0 +1,8 @@
+{
+  "webServiceURL": "https://{Host}/safaripush",
+  "websitePushID": "web.fi.stafettkarnevalen.stafapp",
+  "websiteName": "StafApp",
+  "allowedDomains": ["https://{Host}"],
+  "authenticationToken": "{AuthToken}",
+  "urlFormatString": "https://{Host}/%@"
+}

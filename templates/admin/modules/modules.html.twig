@@ -1,0 +1,35 @@
+{% set use_heading = false %}
+{% set no_toolbar = true %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+    <div class="all-padding">
+        <table class="table table-bordered table-responsive">
+            <thead>
+            <tr>
+                <th>
+                    {% trans from 'module' %}label.module.title{% endtrans %}
+                </th>
+                <th>
+                    {% trans from 'module' %}label.module.type{% endtrans %}
+                </th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for module in modules %}
+                <tr>
+                    <td><a data-toggle="modal" data-title="{% trans from 'module' %}label.edit{% endtrans %}" data-reload="true" href="{{ path('nav.admin_module', {'zone': zone, 'page': page, 'order': module.order, 'id': module.id}) }}">{{ module.title }}</a></td>
+                    <td>{{ module.type|trans({}, 'module') }}</td>
+                    <td class="text-right"><a data-toggle="confirm" data-title="{% trans from 'module' %}label.delete{% endtrans %}" data-reload="true" class="btn btn-xs btn-danger" href="{{ path('nav.admin_module_delete', {'id': module.id}) }}"><i class="fa fa-trash"></i> {% trans from 'module' %}label.delete{% endtrans %}</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

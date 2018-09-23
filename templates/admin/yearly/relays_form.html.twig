@@ -1,0 +1,153 @@
+<style>
+    .panel-group .panel {
+        border-radius:0;
+        margin:0 0 0px 0!important;
+        box-shadow: 0;
+        border:1px solid rgba(0,0,0,0.2);
+    }
+    .panel-group .panel .panel-heading {
+        background-color: rgba(0,0,0,0);
+        padding:0px;
+        border-radius: 0;
+    }
+    .panel-group .panel:nth-child(odd) .panel-heading {
+        background: rgba(255,255,255,0.8);
+    }
+    .panel-group .panel-title {
+        line-height: 12px;
+        font-size: 12px;
+        padding:0px;
+    }
+    .panel-title a {
+        display: block;
+        margin:0px;
+        padding:10px 12px;
+    }
+    .panel-title a:hover {
+        text-decoration: none;
+    }
+    .panel-group .panel-default {
+        background: rgba(255,255,255,0.4);
+    }
+    .panel-copy {
+        border:none!important;
+    }
+    .panel-copy .panel-collapse {
+        border:1px solid rgba(0,0,0,0.2);
+    }
+    .panel-copy .panel-title {
+        font-size:12px;
+        font-weight:bold;
+        padding:10px 12px;
+    }
+</style>
+<script>var active = 0;</script>
+    <div class="panel-group" id="relay_accordion" role="tablist" aria-multiselectable="true">
+        {% if form != null %}
+        <div class="panel panel-default panel-copy">
+            <div class="panel-collapse collapse {% if form.vars.submitted %}{% endif %}" id="collapse_copy" role="tabpanel">
+                <div class="panel-heading"><h4 class="panel-title">{% trans from 'relay' %}label.copy_from_year{% endtrans %}</h4></div>
+                <div class="panel-body">
+                    {{ form_start(form) }}
+                    {{ form_row(form.serviceType) }}
+                    {{ form_row(form.timestamp) }}
+                    <div class="form-nav text-right">
+                        <a class="btn btn-default" role="button" data-toggle="collapse" href="#collapse_copy" aria-expanded="true" aria-controls="collapse_copy">
+                            <i class="fa fa-chevron-left"></i> {% trans from 'relay' %}label.cancel{% endtrans %} <i class="fa fa-close"></i>
+                        </a>
+                        {{ form_widget(form.submit) }}
+                    </div>
+                {{ form_end(form) }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% for r in relays %}
+            {% set rFound = r|isFound(races, [ 'relay' ])  %}
+            {% set form = forms[r.id] %}
+            {% if form.vars.submitted %}<script>active = {{ r.id }};</script>{% endif %}
+        <div class="panel panel-default {% if rFound %}panel-dark{% else %}panel-light{% endif %}">
+            <div class="panel-heading" role="tab" id="heading_{{ r.id }}">
+                <h4 class="panel-title">
+                    <a {% if not form.vars.submitted %}class="collapsed" {% endif %}role="button" data-toggle="collapse" data-parent="#relay_accordion" href="#collapse_{{ r.id }}" aria-expanded="true" aria-controls="collapse_{{ r.id }}">
+                        {% if rFound %}
+                            <i class="fa fa-check-square-o"></i>
+                        {% else %}
+                            <i class="fa fa-square-o"></i>
+                        {% endif %}
+                        {{ r.name }}, {{ r.gender|trans({}, 'relay') }}, {% trans from 'relay' %}label.class_of{% endtrans %} {{ r.minClassOf }} - {{ r.maxClassOf }}
+                    </a>
+                </h4>
+            </div>
+            <div id="collapse_{{ r.id }}" class="panel-collapse collapse{% if form.vars.submitted %} in{% endif %}" role="tabpanel" aria-labelledby="heading_{{ r.id }}">
+                <div class="panel-body">
+                    {{ form_start(form) }}
+                    <input type="hidden" name="{{ form.vars.name }}[{{ form.active.vars.name }}]" value="0"/>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <div class="btn-group btn-group-justified" data-toggle="buttons">
+                                {{ form_widget(form.active) }}
+                                {{ form_widget(form.rounds_0) }}
+                                {{ form_widget(form.rounds_1) }}
+                                {{ form_widget(form.rounds_2) }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-nav text-right">
+                        <a class="btn btn-default" role="button" data-toggle="collapse" href="#collapse_{{ r.id }}" aria-expanded="true" aria-controls="collapse_{{ r.id }}">
+                            <i class="fa fa-chevron-left"></i> {% trans from 'relay' %}label.cancel{% endtrans %} <i class="fa fa-close"></i>
+                        </a>
+                        {{ form_widget(form.submit) }}
+                    </div>
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+<script>
+
+    $('.toggle-active').on('change', function () {
+
+        console.log('toggle-active');
+
+        label = $(this).closest('label');
+        if ($(this).hasClass('disabled') || label.hasClass('disabled'))
+            return;
+        text = $(this)[0].nextSibling;
+
+        if ($(this).is(':checked')) {
+            label.removeClass('btn-default').addClass('btn-success');
+            text.nodeValue = ' {{ 'label.active'|trans({}, 'relay') }}';
+            console.log(text.nodeValue);
+            panel = $(this).closest('.panel-collapse');
+            panel.find('.toggle-on-race').removeClass('disabled').removeAttr('disabled');
+            panel.find('.toggle-on-race-label').removeClass('disabled');
+        } else {
+            label.addClass('btn-default').removeClass('btn-success');
+            text.nodeValue = ' {{ 'label.inactive'|trans({}, 'relay') }}';
+            console.log(text.nodeValue);
+            panel = $(this).closest('.panel-collapse');
+            panel.find('.toggle-on-race').addClass('disabled').attr('disabled', 'disabled');
+            panel.find('.toggle-on-race-label').addClass('disabled');
+        }
+    });
+
+    $('.toggle-round').on('change', function() {
+        label = $(this).closest('label');
+        if ($(this).hasClass('disabled') || label.hasClass('disabled'))
+            return;
+        if ($(this).is(':checked')) {
+            label.removeClass('btn-default').addClass('btn-success');
+        } else {
+            label.addClass('btn-default').removeClass('btn-success');
+        }
+    });
+    $(document).ready(function() {
+        if (active !== 0) {
+            $('html, body').animate({
+                scrollTop: $('#collapse_' + active).offset().top - 100
+            }, 1000);
+        }
+    });
+</script>

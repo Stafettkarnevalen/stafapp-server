@@ -1,0 +1,92 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 07/01/2018
+ * Time: 10.59
+ */
+
+namespace App\Controller;
+
+use App\Entity\Schools\School;
+use App\Entity\Security\UserTicket;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+
+class ApiController extends Controller
+{
+
+    /**
+     * Controller for testing a ticket.
+     *
+     * @Route("/ajax/ticket/test/{secret}/{type}/{for}",
+     *     name="ajax.ticket_test")
+     * @param string $secret
+     * @param string $type
+     * @param string $for
+     * @return JsonResponse
+     */
+    public function ajaxTicketTestAction($secret, $type = null, $for = null)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $findBy = ['ticket' => urldecode($secret), 'isActive' => true];
+        if ($type)
+            $findBy['type'] = $type;
+        if ($for)
+            $findBy['for'] = $for;
+        /** @var UserTicket $ticket */
+        $ticket = $em->getRepository(UserTicket::class)->findOneBy($findBy);
+        if ($ticket) {
+            $user = $ticket->getUser();
+            return new JsonResponse(array_merge_recursive($ticket->getFields(["school", "user"]), ["user" => ["name" => $user->getFullname(), "username" => $user->getUsername()]]));
+        }
+        return new JsonResponse(false, Response::HTTP_NOT_FOUND);
+    }
+
+    /**
+     * Controller for .
+     *
+     * @Route("/ajax/ticket/info/{id}", name="ajax.ticket_info")
+     * @param integer $id
+     * @return JsonResponse
+     */
+    public function ajaxTicketInfoAction($id)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $ticket = $em->getRepository(UserTicket::class)->find($id);
+        if ($ticket) {
+            return new JsonResponse($ticket->getFields(["school"]));
+        }
+        return new JsonResponse(false, Response::HTTP_NOT_FOUND);
+    }
+
+    /**
+     * Controller for .
+     *
+     * @Route("/ajax/school/list/{number}", name="ajax.school_list")
+     * @param integer $number
+     * @return mixed
+     */
+    public function ajaxSchoolListAction($number = null)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $filter = ["isActive" => true];
+        if ($number)
+            $filter["number"] = $number;
+
+        $schools = $em->getRepository(School::class)->findBy($filter);
+        $result = [];
+        /** @var School $school */
+        foreach ($schools as $school) {
+            // $ticket = $school->getPrincipalTicket();
+            $result[$school->getNumber()] = [
+                "password" => $school->getPassword(),
+                "id" => $school->getId(),
+                // "ticket" => ["secret" => $ticket->getTicket(), "user" => $ticket->getUser()->__toString()]
+            ];
+        }
+        return new JsonResponse($result, Response::HTTP_OK);
+    }
+}

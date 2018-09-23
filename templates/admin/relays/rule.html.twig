@@ -1,0 +1,83 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+{% set no_toolbar = true %}
+{% block body %}
+    <div class="side-padding">
+        <h1>{% if rule.id != 0 %}{{ rule.title }}{% else %}{% trans from "relay" %}label.create_rule{% endtrans %}{% endif %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="form bg-default all-padding">
+            {{ form_row(form.title) }}
+            {{ form_row(form.minifiedHTML) }}
+            {{ form_row(form.from) }}
+            {{ form_row(form.until) }}
+            {{ form_row(form.isActive) }}
+
+            {% if modal is not defined or modal == false %}
+                <div class="form-nav">
+                    <div class="btn-group btn-group-justified" role="group">
+                        <a class="btn btn-default" href="{{ path('nav.admin_relay_rules') }}"><i class="fa fa-chevron-left"></i> {% trans from 'relay' %}label.cancel{% endtrans %} <i class="fa fa-undo"></i></a>
+                        {% if rule.id %}
+                            <a class="btn btn-danger" href="{{ path('nav.admin_relay_rule_delete', {'id': rule.id}) }}"><i class="fa fa-trash"></i> {% trans from 'relay' %}label.delete{% endtrans %} <i class="fa fa-minus"></i></a>
+                        {% endif %}
+                        <div class="btn-group" role="group">
+                            {{ form_widget(form.submit) }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <script type="text/javascript">
+        <!--
+        $('#sort').on('click', function(e) {
+            e.preventDefault();
+            chevron = $(this).find($('i.fa'));
+            if (chevron.hasClass('fa-chevron-up')) {
+                chevron.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            } else {
+                chevron.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            }
+            var list = $('#rule_relays');
+            var listItems = list.children('div');
+            list.append(listItems.get().reverse());
+        });
+        $('#clear_search').on('click', function() {
+            $('#search').val('');
+            $(this).addClass('disabled');
+            $.each($('#rule_relays div'), function() {
+                $(this).css('display', '');
+            });
+        });
+        $('#search').on('input', function() {
+            if ($(this).val().length > 0) {
+                $('#clear_search').removeClass('disabled');
+                filter = $(this).val();
+                $.each($('#rule_relays div'), function() {
+                    $(this).css('display', $(this).is(':icontains(' + filter + ')') ? '' : 'none');
+                });
+            } else {
+                $('#clear_search').trigger('click');
+            }
+        });
+
+        $.expr[":"].icontains = $.expr.createPseudo(function(arg) {
+            return function( elem ) {
+                return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
+            };
+        });
+        //-->
+    </script>
+{% endblock %}

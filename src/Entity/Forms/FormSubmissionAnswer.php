@@ -1,0 +1,144 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 08/09/2017
+ * Time: 12.40
+ */
+
+namespace App\Entity\Forms;
+
+
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Traits\LoggableTrait;
+use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\CloneableTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+
+/**
+ * @ORM\Table(name="form_submission_answer_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Forms
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class FormSubmissionAnswer implements Serializable, CreatedByUserInterface, LoggableEntity
+{
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use cloning functions */
+    use CloneableTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="answer_fld", type="text", nullable=true)
+     * @var string $answer The answer to the field in question
+     */
+    protected $answer;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="FormField"))
+     * @ORM\JoinColumn(name="form_field_fld", referencedColumnName="id_fld", nullable=true)
+     * @var FormField $formField The field that this answer is bound to
+     */
+    protected $formField;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="FormSubmission", inversedBy="answers"))
+     * @ORM\JoinColumn(name="form_submission_fld", referencedColumnName="id_fld", nullable=false)
+     * @var FormSubmission $formSubmission The submission that owns this answer
+     */
+    protected $formSubmission;
+
+
+
+    /**
+     * Form constructor.
+     */
+    public function __construct()
+    {
+
+    }
+
+    /**
+     * Gets the formField.
+     *
+     * @return FormField
+     */
+    public function getFormField()
+    {
+        return $this->formField;
+    }
+
+    /**
+     * Sets the formField.
+     *
+     * @param FormField $formField
+     * @return $this
+     */
+    public function setFormField($formField)
+    {
+        $this->formField = $formField;
+
+        return $this;
+    }
+
+    /**
+     * Gets the formSubmission.
+     *
+     * @return FormSubmission
+     */
+    public function getFormSubmission()
+    {
+        return $this->formSubmission;
+    }
+
+    /**
+     * Sets the formSubmission.
+     *
+     * @param FormSubmission $formSubmission
+     * @return $this
+     */
+    public function setFormSubmission($formSubmission)
+    {
+        $this->formSubmission = $formSubmission;
+
+        return $this;
+    }
+
+    /**
+     * Gets the answer.
+     *
+     * @return string|null
+     */
+    public function getAnswer()
+    {
+        return $this->answer;
+    }
+
+    /**
+     * Sets the answer.
+     *
+     * @param string|null $answer
+     * @return $this
+     */
+    public function setAnswer($answer)
+    {
+        $this->answer = $answer;
+
+        return $this;
+    }
+}

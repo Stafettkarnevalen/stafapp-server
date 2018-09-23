@@ -1,0 +1,64 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 02/11/2017
+ * Time: 23.46
+ */
+
+namespace App\Entity\Interfaces;
+
+/**
+ * Interface ScheduledEvent
+ * @package App\Entity\Interfaces
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+interface ScheduledEvent
+{
+    /**
+     * @const EVENT_TYPE_GATES_OPEN The event is for the time when cheerleading squads can enter the stadium
+     */
+    const EVENT_TYPE_GATES_OPEN  = 'event.type.gates_open';
+
+    /**
+     * @const EVENT_TYPE_CALLING The event is for a calling time of a race
+     */
+    const EVENT_TYPE_CALLING  = 'event.type.calling';
+
+    /**
+     * @const EVENT_TYPE_STARTS The event is for a start time of any kind of Event-typed Entity
+     */
+    const EVENT_TYPE_STARTS   = 'event.type.starts';
+
+    /**
+     * @const EVENT_TYPE_CEREMONY The event is for a ceremony for any kind of Event-typed Entity with winners
+     */
+    const EVENT_TYPE_CEREMONY = 'event.type.ceremony';
+
+    /**
+     * @const EVENT_TYPES The event types as an array
+     */
+    const EVENT_TYPES = [self::EVENT_TYPE_CALLING, self::EVENT_TYPE_STARTS, self::EVENT_TYPE_CEREMONY];
+
+    /**
+     * Gets the start time of the event.
+     *
+     * @return \DateTime
+     */
+    public function getStarts();
+
+    /**
+     * Gets the title of the event.
+     *
+     * @return string
+     */
+    public function getTitle();
+
+    /**
+     * Gets the type of the event.
+     *
+     * @return string
+     */
+    public function getType();
+}

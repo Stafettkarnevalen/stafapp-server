@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+
+<html lang="{{ app.request.locale }}">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta charset="UTF-8" />
+    <title>{% block title %}{% trans from "messages" %}title.stafapp{% endtrans %}{% endblock %}</title>
+
+    {% block stylesheets %}
+        <link href="{{ asset('build/css/font-awesome.css') }}" rel="stylesheet"/>
+        <link href="{{ asset('build/css/bootstrap.css') }}" rel="stylesheet"/>
+        <link href="{{ asset('build/css/bootstrap-datepicker.css') }}" rel="stylesheet"/>
+        <link href="{{ asset('build/css/bootstrap-datetimepicker.css') }}" rel="stylesheet"/>
+        <link href="{{ asset('bundles/foscomment/css/comments.css') }}" rel="stylesheet"/>
+        <link href="{{ asset('build/css/app.css') }}" rel="stylesheet"/>
+    {% endblock %}
+
+    <!-- Add favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('build/images/favicon.ico') }}" />
+
+    <!-- Add FCM manifest -->
+    <link rel="manifest" href="{{ asset('bundles/fcm/manifest.' ~ app.request.locale ~ '.json') }}"/>
+
+    {% block javascripts %}
+        <script src="{{ asset('build/manifest.js') }}"></script>
+        <script src="{{ asset('build/js/vendor.js') }}"></script>
+        <script src="{{ asset('build/js/app.js') }}"></script>
+        <script src="{{ asset('bundles/fosjsrouting/js/router.js') }}"></script>
+        <script src="{{ path('fos_js_routing_js', { callback: 'fos.Router.setData' }) }}"></script>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $(document).data('helpmode-default', {{ profile_data('tooltips.mode', 0) }});
+            });
+        </script>
+    {% endblock %}
+
+</head>
+<body style="background: url({{ asset('build/images/juoksurata.jpg') }}) bottom center; background-size: cover; background-repeat: no-repeat; background-attachment: fixed;">
+<div class="offcanvas">
+    <div class="offcanvas__container">
+        <a class="offcanvas__exit-overlay" href="#" data-toggle="offcanvas" data-target="exit"></a>
+        <div class="row top-bar">
+            <div class="col-xs-12 text-right">
+                <a class="side-padding" href="http://www.stafettkarnevalen.fi/" target="_blank"><i class="fa fa-globe"></i> &nbsp; {% trans from "nav" %}nav.website{% endtrans %}</a>
+                <a class="side-padding" href="https://www.facebook.com/stafettkarnevalen" target="_blank"><i class="fa fa-facebook-square"></i> &nbsp; {% trans from "nav" %}nav.facebook{% endtrans %}</a>
+            </div>
+        </div>
+        <div class="bg-primary" style="background: url({{ asset('build/images/bg-primary4.jpg') }}) center center; background-size:cover; "></div>
+
+        {% include 'navbar/navbar.html.twig' %}
+
+        <div id="{{ request_id()|html_id }}" class="body{% if body_class is defined %} {{ body_class }}{% endif %}">
+            {% include 'modules/zone.html.twig' with {'zone':'before_body'} %}
+
+            {% if app.session.flashBag.has('error') %}
+                <div class="all-padding">
+                    <div class="alert alert-danger">
+                        <h3><i class="fa fa-exclamation-circle"></i>
+                            {% for msg in app.session.flashBag.get('error') %}
+                                {% if msg is iterable %}
+                                    {{ msg.id|trans(msg.parameters|default({}), msg.domain|default(null), msg.locale|default(null))|raw }}
+                                {% else %}
+                                    {{ msg|trans|raw }}
+                                {% endif %}
+                            {% endfor %}
+                        </h3>
+                    </div>
+                </div>
+            {% endif %}
+            {% if app.session.flashBag.has('success') %}
+                <div class="alert alert-dismissible alert-success">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true"><i class="fa text-success fa-close"></i></button>
+                    <span class="fa fa-lg fa-check"></span> <strong>{% trans %}message.success{% endtrans %}</strong>
+                    <hr class="message-inner-separator">
+                    <p>
+                        {% set msgs = [] %}
+                        {% for msg in app.session.flashBag.get('success') %}
+                            {% if msg is iterable and msg not in msgs %}
+                                {{ msg.id|trans(msg.parameters|default({}), msg.domain|default(null), msg.locale|default(null))|raw }}
+                            {% elseif msg not in msgs %}
+                                {{ msg|trans|raw }}
+                            {% endif %}
+                            {% set msgs = msgs|merge([msg]) %}
+                        {% endfor %}
+                    </p>
+                </div>
+            {% endif %}
+            {% if app.session.flashBag.has('info') %}
+                <div class="all-padding">
+                    <div class="alert alert-info">
+                        <h3><i class="fa fa-info-circle"></i>
+                            {% for msg in app.session.flashBag.get('info') %}
+                                {% if msg is iterable %}
+                                    {{ msg.id|trans(msg.parameters|default({}), msg.domain|default(null), msg.locale|default(null))|raw }}
+                                {% else %}
+                                    {{ msg|trans|raw }}
+                                {% endif %}
+                            {% endfor %}
+                        </h3>
+                    </div>
+                </div>
+            {% endif %}
+            {% if app.session.flashBag.has('warning') %}
+                <div class="all-padding">
+                    <div class="alert alert-warning">
+                        <h3><i class="fa fa-exclamation-triangle"></i>
+                            {% for msg in app.session.flashBag.get('warning') %}
+                                {% if msg is iterable %}
+                                    {{ msg.id|trans(msg.parameters|default({}), msg.domain|default(null), msg.locale|default(null))|raw }}
+                                {% else %}
+                                    {{ msg|trans|raw }}
+                                {% endif %}
+                            {% endfor %}
+                        </h3>
+                    </div>
+                </div>
+            {% endif %}
+            {% if (use_heading is defined and use_heading == true) or school_form is defined %}
+                <div class="side-padding">
+                    {% if use_heading is defined and use_heading == true %}
+                        {% if route_trans_vars is not defined %}
+                            {% set route_trans_vars = {} %}
+                        {% endif %}
+                        <h1>{{ app.request.attributes.get('_route')|trans(route_trans_vars, 'nav') }}</h1>
+                    {% endif %}
+
+                    {% if school_form is defined %}
+                        <table class="stepper">
+                            <tbody>
+                            <tr>
+                                <td class="bg-primary"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="form bg-default all-padding">
+                            {{ form_start(school_form) }}
+                            {% if add_school is defined %}
+                                <div class="row">
+                                    <div class="col-xs-9 col-sm-10">
+                                        {{ form_row(school_form._school) }}
+                                    </div>
+                                    <div class="col-xs-3 col-sm-2 text-right">
+                                        <label>&nbsp;</label>
+                                        <div><a href="{{ path('nav.add_manager_to_school') }}" class="btn btn-primary"><i class="fa fa-plus"></i> {% trans from "nav" %}nav.add_manager{% endtrans %} <i class="hidden-xs fa fa-angle-right"></i></a></div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                {{ form_row(school_form._school) }}
+                            {% endif %}
+                            {{ form_end(school_form) }}
+                            {% if school_unit_form is defined %}
+                                {{ form_start(school_unit_form) }}
+                                {{ form_end(school_unit_form) }}
+                                {% if team_form is defined %}
+                                    <hr/>
+                                    {{ form_start(team_form) }}
+                                    {{ form_end(team_form) }}
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        <br/>
+                    {% endif %}
+                </div>
+            {% endif %}
+            {% block body %}
+            {% endblock %}
+            {% include 'modules/zone.html.twig' with {'zone':'after_body'} %}
+        </div>
+
+        <div class="bg-footer">
+            <div class="container-fluid">
+                <p class="small text-center"><strong>{% trans from "messages" %}footer.powered_by{% endtrans %}</strong></p>
+                <div class="all-padding row">
+                    <div class="col-xs-6 col-xs-offset-3 col-sm-2 col-sm-offset-5 text-center">
+                        <img class="img img-responsive center-block" src="{{ asset('build/images/gubbar-gs.png') }}" alt=""/>
+                    </div>
+                </div>
+                <div class="all-padding row">
+                    <div class="col-xs-6 col-xs-offset-3 col-sm-2 col-sm-offset-5 text-center">
+                        <img class="img img-responsive center-block" src="{{ asset('build/images/fma-jurgens-gs.png') }}" alt=""/>
+                    </div>
+                </div>
+                <address class="small side-padding text-center">
+                    <strong>&copy; {{ "now"|date("Y") }} Skolornas Stafettkarneval</strong><br/>
+                    <a href="http://www.stafettkarnevalen.fi/">http://www.stafettkarnevalen.fi/</a>
+                </address>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

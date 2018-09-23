@@ -1,0 +1,19 @@
+parameters:
+    facebook_client_id: '%env(FACEBOOK_CLIENT_ID)%'
+    facebook_secret: '%env(FACEBOOK_CLIENT_SECRET)%'
+    googleplus_client_id: '%env(GOOGLE_CLIENT_ID)%'
+    googleplus_secret: '%env(GOOGLE_CLIENT_SECRET)%'
+    instagram_client_id: '%env(INSTAGRAM_CLIENT_ID)%'
+    instagram_secret: '%env(INSTAGRAM_CLIENT_SECRET)%'
+    twitter_client_id: '%env(TWITTER_CLIENT_ID)%'
+    twitter_secret: '%env(TWITTER_CLIENT_SECRET)%'
+
+fos_user:
+    db_driver: orm # other valid values are 'mongodb' and 'couchdb'
+    firewall_name: main
+    user_class: App\Entity\Security\User
+    from_email:
+        address: "%mailer_user%"
+        sender_name: "%mailer_name%"
+    #service:
+    #    user_manager: 'fos_user.user_manager.default'

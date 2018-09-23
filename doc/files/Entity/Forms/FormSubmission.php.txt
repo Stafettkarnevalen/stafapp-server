@@ -1,0 +1,277 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 08/09/2017
+ * Time: 12.40
+ */
+
+namespace App\Entity\Forms;
+
+
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Schools\School;
+use App\Entity\Schools\SchoolUnit;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\Mapping as ORM;
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\CloneableTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+
+/**
+ * @ORM\Table(name="form_submission_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @package App\Entity\Forms
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class FormSubmission implements Serializable, CreatedByUserInterface
+{
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use cloning functions */
+    use CloneableTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Schools\School"))
+     * @ORM\JoinColumn(name="school_fld", referencedColumnName="id_fld", nullable=true)
+     * @var School $school If the form is directed to schools, this field stores the school that provided the submission
+     */
+    protected $school;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Schools\SchoolUnit"))
+     * @ORM\JoinColumn(name="school_unit_fld", referencedColumnName="id_fld", nullable=true)
+     * @var SchoolUnit $schoolUnit If the form is directed to school units, this field stores the school unit that
+     *                             provided the submission
+     */
+    protected $schoolUnit;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Form", inversedBy="submissions"))
+     * @ORM\JoinColumn(name="form_fld", referencedColumnName="id_fld", nullable=false)
+     * @var Form $form The form that this submission is bound to
+     */
+    protected $form;
+
+    /**
+     * @ORM\OneToMany(targetEntity="FormSubmissionAnswer", mappedBy="formSubmission", cascade={"persist", "merge", "remove"})
+     * @var ArrayCollection $answers The answers that this submission is providing for each form field
+     */
+    protected $answers;
+
+    /**
+     * @var array|null $filter An array of form fields for filtering the answers of this submission
+     */
+    protected $filter;
+
+    /**
+     * Form constructor.
+     */
+    public function __construct()
+    {
+        $this->answers = new ArrayCollection([]);
+        $this->filter = null;
+    }
+
+    /**
+     * Gets the filter.
+     *
+     * @return array|null
+     */
+    public function getFilter()
+    {
+        return $this->filter;
+    }
+
+    /**
+     * Sets the filter.
+     *
+     * @param array|null $filter
+     * @return $this
+     */
+    public function setFilter($filter)
+    {
+        $this->filter = $filter;
+
+        return $this;
+    }
+
+    /**
+     * Returns the name relevant to this submission.
+     * @return string The name of the submitting entity
+     */
+    public function getName()
+    {
+        $form = $this->getForm();
+        switch ($form->getContext()) {
+            case Form::CONTEXT_USER:
+            case Form::CONTEXT_MANAGERS:
+                return $this->getCreatedBy()->getFullname();
+            case Form::CONTEXT_RACE:
+            case Form::CONTEXT_SCHOOL_UNIT:
+                return $this->getSchoolUnit()->getSchool()->getName()->getName();
+            case Form::CONTEXT_SCHOOL:
+                return $this->getSchool()->getName()->getName();
+            default:
+                return $this->getCreatedBy()->getFullname();
+        }
+    }
+
+    /**
+     * Gets the school.
+     *
+     * @return School|null
+     */
+    public function getSchool()
+    {
+        return $this->school;
+    }
+
+    /**
+     * Sets the school.
+     *
+     * @param School|null $school
+     * @return $this
+     */
+    public function setSchool($school)
+    {
+        $this->school = $school;
+
+        return $this;
+    }
+
+    /**
+     * Gets the schoolUnit.
+     *
+     * @return SchoolUnit|null
+     */
+    public function getSchoolUnit()
+    {
+        return $this->schoolUnit;
+    }
+
+    /**
+     * Sets the schoolUnit.
+     *
+     * @param SchoolUnit|null $schoolUnit
+     * @return $this
+     */
+    public function setSchoolUnit($schoolUnit)
+    {
+        $this->schoolUnit = $schoolUnit;
+
+        return $this;
+    }
+
+    /**
+     * Gets the form.
+     *
+     * @return Form
+     */
+    public function getForm()
+    {
+        return $this->form;
+    }
+
+    /**
+     * Sets the form.
+     *
+     * @param Form $form
+     * @return $this
+     */
+    public function setForm($form)
+    {
+        $this->form = $form;
+
+        return $this;
+    }
+
+    /**
+     * Gets the answers.
+     *
+     * @param boolean $array Determines if the return value is an array or an ArrayCollection
+     * @return ArrayCollection|array
+     */
+    public function getAnswers($array = false)
+    {
+        $answers = $this->answers;
+        //print_r($this->filter);
+        if ($this->filter != null) {
+            /** @var FormSubmissionAnswer $answer */
+            foreach ($answers as $answer) {
+                if (!in_array($answer->getFormField()->getId(), $this->filter))
+                    $answers->removeElement($answer);
+            }
+        }
+        if ($answers->count() > 0)
+            return $array ?
+                $answers->toArray() :
+                $answers;
+
+        /** @var FormField $field */
+        foreach ($this->getForm()->getFormFields() as $field) {
+            if (!in_array($field->getId(), $this->filter))
+                continue;
+            $answer = new FormSubmissionAnswer();
+            $answer->setFormSubmission($this);
+            $answer->setFormField($field);
+            $answers->add($answer);
+        }
+        return $array ?
+            $answers->toArray() :
+            $answers;
+    }
+
+    /**
+     * Sets the answers.
+     *
+     * @param ArrayCollection|array $answers
+     * @return $this
+     */
+    public function setAnswers($answers)
+    {
+        if (is_array($answers))
+            $answers = new ArrayCollection($answers);
+        $this->answers = $answers;
+
+        return $this;
+    }
+
+    /**
+     * Gets a form field answer for a specific form field.
+     *
+     * @param FormField $field
+     * @return FormSubmissionAnswer|null
+     */
+    public function getAnswerForField(FormField $field)
+    {
+        $answers = $this->getAnswers();
+        // print_r($field->getTitle());
+        $criteria = Criteria::create()->where(Criteria::expr()->eq('formField', $field));
+        $answers =  $answers->matching($criteria)->toArray();
+        if (count($answers) === 1)
+            return array_pop($answers);
+        return null;
+    }
+
+    /**
+     * Gets all answers for specified set of form fields.
+     *
+     * @param array|ArrayCollection $fields
+     * @return ArrayCollection
+     */
+    public function getAnswersForFields($fields)
+    {
+        $answers = $this->getAnswers();
+        $criteria = Criteria::create()->where(Criteria::expr()->in('formField', $fields));
+        return $answers->matching($criteria);
+    }
+}

@@ -1,0 +1,62 @@
+{% macro render_sorted_table(categories, orders, order, sort, parent) %}
+    {{ table(categories, {
+        'trans_domain': 'service',
+        'class': 'table table-bordered table-responsive table-condensed table-striped table-scrollable table-searchable table-sortable table-service-recipients-' ~ (parent ? parent.id : '0'),
+        'body': {
+            'row_attrs': {
+                'data-id':  {
+                    'type': 'twig',
+                    'path': 'id'
+                },
+            },
+            'link': {
+                'url': 'nav.admin_service_category',
+                'params': {
+                    'id': {
+                        'type': 'twig',
+                        'path': 'id'
+                    }
+                },
+                'attrs': {
+                    'data-reload': 'true',
+                    'data-title': 'nav.admin_service_categories'|trans({}, 'nav'),
+                    'data-toggle': 'modal'
+                }
+            },
+            'cols': {
+                'title': {
+                    'type': 'twig',
+                    'path': 'title'
+                },
+                'sub_categories': {
+                    'type': 'twig',
+                    'path': 'children|length'
+                }
+            }
+        },
+        'head': {
+            'sortable': {
+                'orders': orders,
+                'order': order,
+                'sort': sort,
+                'icons': {
+                    'ASC': 'fa-chevron-up',
+                    'DESC': 'fa-chevron-down'
+                },
+                'link': {
+                    'url': 'nav.admin_service_categories'
+                }
+            },
+            'cols': {
+                'title': {
+                    'label': 'field.title',
+                    'sort': 'title'
+                },
+                'sub_categories': {
+                    'label': 'field.sub_categories',
+                    'sort': 'children'
+                },
+            }
+        }
+    }) }}
+{% endmacro %}

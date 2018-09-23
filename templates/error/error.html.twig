@@ -1,0 +1,38 @@
+{# app/Resources/views/manager/verification/verify.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="alert">
+    <div class="row">
+        <div class="col-xs-12">
+            <table>
+                <tbody>
+                    <tr>
+                        <td class="hidden-xs error-icon">
+                            {% image '@AppBundle/Resources/images/staf1-error.png' %}
+                            <img src="{{ absolute_url(asset_url) }}" alt="" class="img img-responsive pull-left text-bottom"/>
+                            {% endimage %}
+                        </td>
+                        <td class="text-bottom">
+                            <h1 class="">{% trans from "messages" %}error.heading{% endtrans %}</h1>
+                            <h3>{{ title|trans }}</h3>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="col-xs-12">
+            <table class="stepper">
+                <tbody>
+                <tr>
+                    <td class="bg-danger"></td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="form bg-default">
+                <p class="alert">{{ text|trans }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{{ form_start(form, {'attr':{'id':'school_form'}}) }}
+<div class="panel panel-primary">
+    <div class="panel-heading">{% trans from "school" %}school.change_name{% endtrans %}</div>
+    <div class="panel-body form bg-default">
+        {{ form_row(form.name) }}
+        {{ form_row(form.abbreviation) }}
+        {{ form_row(form.streetAddress) }}
+        {{ form_row(form.zipcode) }}
+        {{ form_row(form.city) }}
+        {{ form_row(form.pobox) }}
+        {{ form_row(form.country) }}
+        {{ form_row(form.phone) }}
+        {{ form_row(form.email) }}
+        {{ form_row(form.from) }}
+    </div>
+    <div class="panel-footer text-right">
+        <a onclick="$('#school_panel').load('{{ path('nav.view_school') }}'); scrollToAnchor('school_panel'); return false;" class="btn btn-default"><i class="fa fa-undo"></i> {% trans from "messages" %}cancel{% endtrans %}</a>
+        <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> {% trans from "messages" %}save{% endtrans %}</button>
+    </div>
+</div>
+{{ form_end(form) }}

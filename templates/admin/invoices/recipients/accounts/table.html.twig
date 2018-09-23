@@ -1,0 +1,131 @@
+{% macro render_sorted_table(accounts, orders, order, sort, address) %}
+    {{ table(accounts, {
+        'trans_domain': 'invoice',
+        'class': 'table table-bordered table-responsive table-condensed table-striped table-scrollable table-searchable table-sortable table-invoice-recipient-accounts',
+        'body': {
+            'attrs': {
+                'data-sortable': {
+                    'type': 'value',
+                    'value': (sort == 'order' and order == 'ASC') ? 1 : 0
+                },
+                'data-handle': {
+                    'type': 'value',
+                    'value': 'td'
+                },
+                'data-ajaxroute': {
+                    'type': 'value',
+                    'value': 'nav.admin_invoice_recipient_accounts'
+                },
+                'data-ajaxparams' : {
+                    'type': 'value',
+                    'value': {
+                        '_locale': {
+                            'type': 'value',
+                            'value': app.request.locale
+                        },
+                        'address': {
+                            'type': 'value',
+                            'value': address.id
+                        }
+                    }
+                },
+                'data-target': {
+                    'type': 'value',
+                    'value': 'type'
+                }
+            },
+            'row_attrs': {
+                'data-id':  {
+                    'type': 'twig',
+                    'path': 'id'
+                },
+                'data-index': {
+                    'type': 'twig',
+                    'path': 'order'
+                }
+            },
+            'link': {
+                'url': 'nav.admin_invoice_recipient_account',
+                'params': {
+                    'id': {
+                        'type': 'twig',
+                        'path': 'id'
+                    }
+                },
+                'attrs': {
+                    'data-reload': 'true',
+                    'data-title': 'nav.admin_invoice_recipient_accounts'|trans({}, 'nav'),
+                    'data-toggle': 'modal'
+                }
+            },
+            'cols': {
+                'name': {
+                    'type': 'twig',
+                    'path': 'name'
+                },
+                'order': {
+                    'type': 'twig',
+                    'path': 'order|add(1)',
+                },
+                'iban': {
+                    'type': 'twig',
+                    'path': 'iban',
+                },
+                'bic': {
+                    'type': 'twig',
+                    'path': 'bic',
+                },
+                'isActive text-center hidden-xs': {
+                    'type': 'twig',
+                    'path': 'isActive ? "1" : "0"',
+                    'conditions': {
+                        '0': '<i class="fa fa-lg fa-toggle-off"></i>',
+                        '1': '<i class="fa fa-lg text-success fa-toggle-on"></i>'
+                    }
+                }
+            }
+        },
+        'head': {
+            'sortable': {
+                'orders': orders,
+                'order': order,
+                'sort': sort,
+                'icons': {
+                    'ASC': 'fa-chevron-up',
+                    'DESC': 'fa-chevron-down'
+                },
+                'link': {
+                    'url': 'nav.admin_invoice_recipient_accounts',
+                    'params': {
+                        'address': {
+                            'type': 'value',
+                            'value': address.id
+                        }
+                    },
+                }
+            },
+            'cols': {
+                'name': {
+                    'label': 'field.name',
+                    'sort': 'name'
+                },
+                'order': {
+                    'label': 'field.order',
+                    'sort': 'order'
+                },
+                'iban': {
+                    'label': 'field.iban',
+                    'sort': 'iban'
+                },
+                'bic': {
+                    'label': 'field.bic',
+                    'sort': 'bic'
+                },
+                'isActive hidden-xs': {
+                    'label': 'field.isActive',
+                    'sort': 'isActive'
+                }
+            }
+        }
+    }) }}
+{% endmacro %}

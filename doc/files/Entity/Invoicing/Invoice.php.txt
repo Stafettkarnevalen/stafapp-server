@@ -1,0 +1,514 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 13.25
+ */
+
+namespace App\Entity\Invoicing;
+
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Traits\LoggableTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\DataTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+
+/**
+ * @ORM\Table(name="invoice_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Invoicing
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class Invoice implements \Serializable, CreatedByUserInterface, LoggableEntity
+{
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use data attributes */
+    use DataTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /**
+     * @const TYPE_INVOICE The invoice is a normal invoice
+     */
+    const TYPE_INVOICE     = "INVOICE";
+
+    /**
+     * @const TYPE_REMINDER The invoice is a reminder for an unpaid invoice
+     */
+    const TYPE_REMINDER    = "REMINDER";
+
+    /**
+     * @const TYPE_CREDIT The invoice is a credit invoice for a partially or fully faulty invoice
+     */
+    const TYPE_CREDIT      = "CREDIT";
+
+    /**
+     * @const TYPE_DEPRECIATED The invoice is depreciated after being unpaid despite of reminders
+     */
+    const TYPE_DEPRECIATED = "DEPRECIATED";
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="reference_number_fld", type="string", length=24, nullable=true)
+     * @var string $referenceNumber The reference number of this invoice
+     */
+    protected $referenceNumber;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="invoice_number_fld", type="string", length=16, nullable=true)
+     * @var string $invoiceNumber The invoice number
+     */
+    protected $invoiceNumber;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="sum_no_vat_fld", type="float", columnDefinition="DECIMAL(10,2)", nullable=true)
+     * @var float $sumNoVat The sum without VAT
+     */
+    protected $sumNoVat;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="sum_vat_fld", type="float", columnDefinition="DECIMAL(10,2)", nullable=true)
+     * @var float $sumVat The VAT part of the sum
+     */
+    protected $sumVat;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="sum_fld", type="float", columnDefinition="DECIMAL(10,2)", nullable=true)
+     * @var float $sum The sum including VAT
+     */
+    protected $sum;
+
+    /**
+     * @ORM\Column(name="issued_fld", type="datetime", nullable=true)
+     * @var \DateTime $issued The date when the invoice was issued
+     */
+    protected $issued;
+
+    /**
+     * @ORM\Column(name="due_fld", type="datetime", nullable=true)
+     * @var \DateTime $due The due date
+     */
+    protected $due;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="paid_fld", type="datetime", nullable=true)
+     * @var \DateTime $paid The date when the invoice was paid
+     */
+    protected $paid;
+
+    /**
+     * @ORM\Column(name="penalty_fld", type="float", columnDefinition="DECIMAL(10,2)", nullable=true)
+     * @var float $penalty The penalty percentage of late invoice payments
+     */
+    protected $penalty;
+
+    /**
+     * @ORM\Column(name="type_fld", type="string", columnDefinition="ENUM('INVOICE', 'REMINDER', 'CREDIT',  'DEPRECIATED')",
+     *     options={"default": "INVOICE"}, nullable=false)
+     * @Assert\NotBlank()
+     * @Assert\Choice({"INVOICE", "REMINDER", "CREDIT", "DEPRECIATED"})
+     * @var string $type The type of the invoice
+     */
+    protected $type;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="InvoiceAddress")
+     * @ORM\JoinColumn(name="seller_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var InvoiceAddress $seller The seller's address
+     */
+    protected $seller;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\ManyToOne(targetEntity="InvoiceAddress")
+     * @ORM\JoinColumn(name="customer_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var InvoiceAddress $customer The customer's address
+     */
+    protected $customer;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Invoice", mappedBy="parent")
+     * @var ArrayCollection $children Optional children of this invoice, such as reminders or credit invoices
+     */
+    protected $children;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Invoice", inversedBy="children")
+     * @ORM\JoinColumn(name="parent_fld", referencedColumnName="id_fld", nullable=false)
+     * @var Invoice $parent The parent of this invoice
+     */
+    protected $parent;
+
+    /**
+     * @ORM\OneToMany(targetEntity="InvoiceLine", mappedBy="invoice", cascade={"persist", "remove"})
+     * @var ArrayCollection $invoiceLines The invoice lines
+     */
+    protected $invoiceLines;
+
+    /**
+     * Gets the referenceNumber.
+     *
+     * @return string
+     */
+    public function getReferenceNumber()
+    {
+        return $this->referenceNumber;
+    }
+
+    /**
+     * Sets the referenceNumber.
+     *
+     * @param string $referenceNumber
+     * @return $this
+     */
+    public function setReferenceNumber($referenceNumber)
+    {
+        $this->referenceNumber = $referenceNumber;
+
+        return $this;
+    }
+
+    /**
+     * Gets the invoiceNumber.
+     *
+     * @return string
+     */
+    public function getInvoiceNumber()
+    {
+        return $this->invoiceNumber;
+    }
+
+    /**
+     * Sets the invoiceNumber.
+     *
+     * @param string $invoiceNumber
+     * @return $this
+     */
+    public function setInvoiceNumber($invoiceNumber)
+    {
+        $this->invoiceNumber = $invoiceNumber;
+
+        return $this;
+    }
+
+    /**
+     * Gets the sumNoVat.
+     *
+     * @return float
+     */
+    public function getSumNoVat()
+    {
+        return $this->sumNoVat;
+    }
+
+    /**
+     * Sets the sumNoVat.
+     *
+     * @param float $sumNoVat
+     * @return $this
+     */
+    public function setSumNoVat($sumNoVat)
+    {
+        $this->sumNoVat = $sumNoVat;
+
+        return $this;
+    }
+
+    /**
+     * Gets the sumVat.
+     *
+     * @return float
+     */
+    public function getSumVat()
+    {
+        return $this->sumVat;
+    }
+
+    /**
+     * Sets the sumVat.
+     *
+     * @param float $sumVat
+     * @return $this
+     */
+    public function setSumVat($sumVat)
+    {
+        $this->sumVat = $sumVat;
+
+        return $this;
+    }
+
+    /**
+     * Gets the sum.
+     *
+     * @return float
+     */
+    public function getSum()
+    {
+        return $this->sum;
+    }
+
+    /**
+     * Sets the sum.
+     *
+     * @param float $sum
+     * @return $this
+     */
+    public function setSum($sum)
+    {
+        $this->sum = $sum;
+
+        return $this;
+    }
+
+    /**
+     * Gets the issued.
+     *
+     * @return \DateTime
+     */
+    public function getIssued()
+    {
+        return $this->issued;
+    }
+
+    /**
+     * Sets the issued.
+     *
+     * @param \DateTime $issued
+     * @return $this
+     */
+    public function setIssued($issued)
+    {
+        $this->issued = $issued;
+
+        return $this;
+    }
+
+    /**
+     * Gets the due.
+     *
+     * @return \DateTime
+     */
+    public function getDue()
+    {
+        return $this->due;
+    }
+
+    /**
+     * Sets the due.
+     *
+     * @param \DateTime $due
+     * @return $this
+     */
+    public function setDue($due)
+    {
+        $this->due = $due;
+
+        return $this;
+    }
+
+    /**
+     * Gets the paid.
+     *
+     * @return \DateTime
+     */
+    public function getPaid()
+    {
+        return $this->paid;
+    }
+
+    /**
+     * Sets the paid.
+     *
+     * @param \DateTime $paid
+     * @return $this
+     */
+    public function setPaid($paid)
+    {
+        $this->paid = $paid;
+
+        return $this;
+    }
+
+    /**
+     * Gets the penalty.
+     *
+     * @return float
+     */
+    public function getPenalty()
+    {
+        return $this->penalty;
+    }
+
+    /**
+     * Sets the penalty.
+     *
+     * @param float $penalty
+     * @return $this
+     */
+    public function setPenalty($penalty)
+    {
+        $this->penalty = $penalty;
+
+        return $this;
+    }
+
+    /**
+     * Gets the type.
+     *
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * Sets the type.
+     *
+     * @param string $type
+     * @return $this
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
+    /**
+     * Gets the seller.
+     *
+     * @return Address
+     */
+    public function getSeller()
+    {
+        return $this->seller;
+    }
+
+    /**
+     * Sets the seller.
+     *
+     * @param Address $seller
+     * @return $this
+     */
+    public function setSeller($seller)
+    {
+        $this->seller = $seller;
+
+        return $this;
+    }
+
+    /**
+     * Gets the customer.
+     *
+     * @return Address
+     */
+    public function getCustomer()
+    {
+        return $this->customer;
+    }
+
+    /**
+     * Sets the customer.
+     *
+     * @param Address $customer
+     * @return $this
+     */
+    public function setCustomer($customer)
+    {
+        $this->customer = $customer;
+
+        return $this;
+    }
+
+    /**
+     * Gets the children.
+     *
+     * @return ArrayCollection
+     */
+    public function getChildren()
+    {
+        return $this->children;
+    }
+
+    /**
+     * Sets the children.
+     *
+     * @param ArrayCollection $children
+     * @return $this
+     */
+    public function setChildren($children)
+    {
+        $this->children = $children;
+
+        return $this;
+    }
+
+    /**
+     * Gets the parent.
+     *
+     * @return Invoice
+     */
+    public function getParent()
+    {
+        return $this->parent;
+    }
+
+    /**
+     * Sets the parent.
+     *
+     * @param Invoice $parent
+     * @return $this
+     */
+    public function setParent($parent)
+    {
+        $this->parent = $parent;
+
+        return $this;
+    }
+
+    /**
+     * Gets the invoiceLines.
+     *
+     * @return ArrayCollection
+     */
+    public function getInvoiceLines()
+    {
+        return $this->invoiceLines;
+    }
+
+    /**
+     * Sets the invoiceLines.
+     *
+     * @param ArrayCollection $invoiceLines
+     * @return $this
+     */
+    public function setInvoiceLines($invoiceLines)
+    {
+        $this->invoiceLines = $invoiceLines;
+
+        return $this;
+    }
+}

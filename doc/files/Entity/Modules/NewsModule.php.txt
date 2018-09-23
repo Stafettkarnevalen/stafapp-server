@@ -1,0 +1,197 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 13/10/2017
+ * Time: 14.16
+ */
+
+namespace App\Entity\Modules;
+
+use App\Form\Module\NewsModuleType;
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * @ORM\Table(name="news_module_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @package App\Entity\Modules
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class NewsModule extends BaseModule
+{
+    /**
+     * Gets the Symfony FormType class
+     *
+     * @return string
+     */
+    public function getFormClass()
+    {
+        return NewsModuleType::class;
+    }
+
+    /**
+     * Gets the TWIG form view.
+     *
+     * @return string
+     */
+    public function getFormView()
+    {
+        return 'admin/modules/forms/news-module.html.twig';
+    }
+
+    /**
+     * Gets the TWIG view
+     *
+     * @return string
+     */
+    public function getView()
+    {
+        return 'admin/modules/views/news-module.html.twig';
+    }
+
+    /**
+     * Gets the rendering type view.
+     *
+     * @return string
+     */
+    public function getRenderView()
+    {
+        return "admin/modules/views/news-module-{$this->getRenderType()}.html.twig";
+    }
+
+    /**
+     * Gets the rendering type.
+     *
+     * @return string
+     */
+    public function getRenderType()
+    {
+        if (isset($this->getData()['renderType']))
+            return $this->getData()['renderType'];
+        return 'list';
+    }
+
+    /**
+     * Gets the child class.
+     *
+     * @return string
+     */
+    public function getChildClass()
+    {
+        return NewsArticle::class;
+    }
+
+    /**
+     * Gets a child instance.
+     *
+     * @param integer|null $order
+     * @return NewsArticle
+     */
+    public function getChildInstance($order = null)
+    {
+        $child = new NewsArticle();
+        return $child->setParent($this)
+            ->setFrom(new \DateTime('now'))
+            ->setIsActive(true)
+            ->setZone($this->getZone())
+            ->setOrder($order === null ? $this->getChildren()->count() : $order)
+            ->setPage($this->getPage());
+    }
+
+    /**
+     * Gets the list limit.
+     *
+     * @return int
+     */
+    public function getListLimit()
+    {
+        if (isset($this->getData()['listLimit']))
+            return $this->getData()['listLimit'];
+        return 0;
+    }
+
+    /**
+     * Returns true if the module title is to be shown.
+     *
+     * @return bool
+     */
+    public function getShowTitle()
+    {
+        if (isset($this->getData()['showTitle']))
+            return $this->getData()['showTitle'];
+        return false;
+    }
+
+    /**
+     * Returns true if the list pager is to be shown.
+     *
+     * @return bool
+     */
+    public function getShowListPager()
+    {
+        if (isset($this->getData()['showListPager']))
+            return $this->getData()['showListPager'];
+        return false;
+    }
+
+    /**
+     * Returns true if the carousel indicators are to be shown.
+     *
+     * @return bool
+     */
+    public function getShowCarouselIndicators()
+    {
+        if (isset($this->getData()['showCarouselIndicators']))
+            return $this->getData()['showCarouselIndicators'];
+        return false;
+    }
+
+    /**
+     * Returns true if the carousel navigation is to be shown.
+     *
+     * @return bool
+     */
+    public function getShowCarouselNavigation()
+    {
+        if (isset($this->getData()['showCarouselNavigation']))
+            return $this->getData()['showCarouselNavigation'];
+        return false;
+    }
+
+    /**
+     * Returns true if "read more" is to be shown.
+     *
+     * @return bool
+     */
+    public function getMore()
+    {
+        if (isset($this->getData()['more']))
+            return $this->getData()['more'];
+        return false;
+    }
+
+    /**
+     * Gets the buttons for the form view.
+     *
+     * @return array
+     */
+    public function getButtons()
+    {
+        if ($this->canHaveChildren())
+            return [[
+                'permission' => 'CREATE',
+                'title' => 'label.module.news_module.create_article',
+                'reload' => 1,
+                'path' => 'nav.admin_child_module',
+                'args' => [
+                    'parent' => $this->getId(),
+                    'id' => 0,
+                    'order' => $this->getChildren()->count()],
+                'icon' => 'fa-plus',
+                'label' => 'label.module.news_module.create_article',
+            ]];
+        return [];
+    }
+}

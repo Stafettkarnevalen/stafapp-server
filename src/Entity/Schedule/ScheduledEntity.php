@@ -1,0 +1,141 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 13/10/2017
+ * Time: 13.32
+ */
+
+namespace App\Entity\Schedule;
+
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Interfaces\ProvidesSchedule;
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Traits\CloneableTrait;
+use App\Entity\Traits\LoggableTrait;
+use App\Entity\Traits\SeasonTrait;
+use App\Entity\Traits\VersionedLifespanTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Symfony\Component\Serializer\Annotation as Serialize;
+use JMS\Serializer\Annotation as Jms;
+
+/**
+ * @ORM\Table(name="scheduled_entity_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\InheritanceType("JOINED")
+ * @ORM\DiscriminatorColumn(name="discrimination_fld", type="string")
+ * @ORM\DiscriminatorMap({
+ *     "scheduled" = "ScheduledEntity",
+ *     "chant" = "App\Entity\Cheerleading\ChantCompetition",
+ *     "cheerleading" = "App\Entity\Cheerleading\CheerleadingCompetition",
+ *     "event" = "App\Entity\Events\Competition",
+ *     "round" = "App\Entity\Relays\Round",
+ *     "heat" = "App\Entity\Relays\Heat",
+ *     "program" = "App\Entity\Schedule\Program"
+ *     })
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Schedule
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class ScheduledEntity implements Serializable, CreatedByUserInterface, ProvidesSchedule, LoggableEntity
+    {
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use clone functions */
+    use CloneableTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /** Use season */
+    use SeasonTrait;
+
+    /** use lifespan */
+    use VersionedLifespanTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="starts_fld", type="datetime", nullable=true)
+     * @var \DateTime $starts The time when the first heat starts
+     */
+    protected $starts;
+
+    /**
+     * Gets the starts.
+     *
+     * @return \DateTime
+     */
+    public function getStarts()
+    {
+        return $this->from;
+    }
+
+    /**
+     * Sets the starts.
+     *
+     * @param integer|string|\DateTime $starts
+     * @return $this
+     */
+    public function setStarts($starts)
+    {
+        if (is_numeric($starts)) {
+            $this->from = new \DateTime();
+            $this->from = $this->from->setTimestamp($starts);
+        } else if (is_string($starts)) {
+            $this->from = new \DateTime($starts);
+        } else {
+            $this->from = $starts;
+        }
+        return $this;
+    }
+
+    /**
+     * Gets the ends.
+     *
+     * @return \DateTime
+     */
+    public function getEnds()
+    {
+        return $this->until;
+    }
+
+    /**
+     * Sets the ends.
+     *
+     * @param integer|string|\DateTime $ends
+     * @return $this
+     */
+    public function setEnds($ends)
+    {
+        if (is_numeric($ends)) {
+            $this->until = new \DateTime();
+            $this->until = $this->until->setTimestamp($ends);
+        } else if (is_string($ends)) {
+            $this->until = new \DateTime($ends);
+        } else {
+            $this->until = $ends;
+        }
+        return $this;
+    }
+
+    /**
+     * Gets all ScheduledEvents of this entity.
+     *
+     * @return ArrayCollection
+     */
+    public function getSchedule()
+    {
+        return new ArrayCollection();
+    }
+}

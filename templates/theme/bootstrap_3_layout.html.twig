@@ -1,0 +1,64 @@
+{% use "bootstrap_3_layout.html.twig" %}
+
+{% block button_widget -%}
+    {% set attr = attr|merge({class: (attr.class|default('btn-default') ~ ' btn')|trim}) %}
+    {%- if label is empty -%}
+        {%- if label_format is not empty -%}
+            {% set label = label_format|replace({
+                '%name%': name,
+                '%id%': id,
+            }) %}
+        {%- else -%}
+            {% set label = name|humanize %}
+        {%- endif -%}
+    {%- endif -%}
+    {% if left_icon|default %}
+        {% set leftIconHtml = '<i class="fa ' ~ left_icon ~ '"></i> ' %}
+    {% else %}
+        {% set leftIconHtml = '' %}
+    {% endif %}
+    {% if right_icon|default %}
+        {% set rightIconHtml = ' <i class="fa ' ~ right_icon ~ '"></i>' %}
+    {% else %}
+        {% set rightIconHtml = '' %}
+    {% endif %}
+    <button type="{{ type|default('button') }}" {{ block('button_attributes') }}>{{ leftIconHtml|raw }}{% autoescape false %}{{ translation_domain is same as(false) ? label : label|trans({}, translation_domain) }}{% endautoescape %}{{ rightIconHtml|raw }}</button>
+{%- endblock %}
+
+{% block phonenumber_widget -%}
+    {% set attr = attr|merge({class: (attr.class|default('') ~ ' row')|trim}) -%}
+    <div {{ block('widget_container_attributes') }}>
+        <div class="col-xs-4 col-sm-3 col-lg-2">
+            {{- form_widget(form.areaCode) -}}
+        </div>
+        <div class="col-xs-8 col-sm-9 col-lg-10">
+            {{- form_widget(form.number) -}}
+        </div>
+    </div>
+{%- endblock phonenumber_widget %}
+
+{% block label_widget -%}
+    {% set attr = attr|merge({class: (attr.class|default('') ~ ' alert')|trim}) -%}
+    {% set label = data %}
+    {% if form.vars.translation_domain %}{% set label = label|trans({}, form.vars.translation_domain) %}{% endif %}
+    <div {{ block('widget_container_attributes') }}>{{ label|raw }}</div>
+{%- endblock label_widget %}
+
+{% block bitwise_widget -%}
+    {%- for child in form %}
+        {{ form_widget(child) }}
+    {% endfor -%}
+{%- endblock bitwise_widget %}
+
+{% block attributes -%}
+    {%- for attrname, attrvalue in attr -%}
+        {{- " " -}}
+        {%- if attrname in ['placeholder', 'title', 'data-content'] -%}
+            {{- attrname }}="{{ translation_domain is same as(false) ? attrvalue : attrvalue|trans({}, translation_domain) }}"
+        {%- elseif attrvalue is same as(true) -%}
+            {{- attrname }}="{{ attrname }}"
+        {%- elseif attrvalue is not same as(false) -%}
+            {{- attrname }}="{{ attrvalue }}"
+        {%- endif -%}
+    {%- endfor -%}
+{%- endblock attributes -%}

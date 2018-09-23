@@ -1,0 +1,368 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 12/06/2017
+ * Time: 10.23
+ */
+
+namespace App\Controller;
+
+
+use App\Controller\Interfaces\ModalEventController;
+use App\Entity\Communication\MessageAttachment;
+use App\Entity\Communication\Message;
+use App\Entity\Communication\MessageRecipient;
+use App\Entity\Communication\RelayDistribution;
+use App\Entity\Communication\GroupDistribution;
+use App\Entity\Communication\SchoolDistribution;
+use App\Entity\Communication\SchoolUnitDistribution;
+use App\Entity\Communication\UserDistribution;
+use App\Entity\Relays\Relay;
+use App\Entity\Schools\School;
+use App\Entity\Schools\SchoolUnit;
+use App\Entity\Security\Group;
+use App\Entity\Security\User;
+use App\Form\Message\MessageType;
+use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Persistence\ObjectManager;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Translation\TranslatorInterface;
+
+/**
+ * Class MessagingController
+ *
+ * Takes care of message reading and composing.
+ *
+ * @package App\Controller
+ */
+class CommunicationController extends Controller implements ModalEventController
+{
+
+    /**
+     * Gets the boxes types
+     *
+     * @param ObjectManager $em
+     * @param string $sortKey
+     * @param string $order
+     * @return array
+     */
+    public function  getBoxes(ObjectManager $em, $sortKey, $order)
+    {
+        $user = $this->getUser();
+        $unread = $user->getUnreadMessages('map', $sortKey, $order);
+        $boxes = $user->getMessages('map', $sortKey, $order);
+        $sentMsgs = $em->getRepository(Message::class)->findBy(['createdBy' => $user], [$sortKey => $order]);
+
+        $sent = new ArrayCollection();
+        $unreadSent = new ArrayCollection();
+
+        /** @var Message $msg */
+        foreach ($sentMsgs as $msg) {
+            foreach ($msg->getRecipients() as $rcpt) {
+                $sent->add($rcpt);
+                if (!$rcpt->getRead())
+                    $unreadSent->add($rcpt);
+            }
+        }
+
+        if ($sortKey == 'createdBy') {
+            $iterator = $sent->getIterator();
+            $iterator->uasort(function (MessageRecipient $a, MessageRecipient $b) use($order) {
+                $check = strcmp($a->getUser()->getFullname(), $b->getUser()->getFullname());
+                return (($order == 'ASC') ? $check : (0 - $check));
+            });
+            $sent = new ArrayCollection($iterator->getArrayCopy());
+        }
+
+        return [
+            'inbox' => ['inbox', 'messages.inbox', $unread[MessageRecipient::BOX_INBOX], $boxes[MessageRecipient::BOX_INBOX]],
+            'archive' => ['archive', 'messages.archive', $unread[MessageRecipient::BOX_ARCHIVE], $boxes[MessageRecipient::BOX_ARCHIVE]],
+            'trash' => ['trash', 'messages.trash', $unread[MessageRecipient::BOX_TRASH], $boxes[MessageRecipient::BOX_TRASH]],
+            'sent' => ['sign-out', 'messages.sent', $unreadSent, $sent]
+        ];
+    }
+
+    /**
+     * Controller for reading messages.
+     *
+     * @Route("/{_locale}/user/messages/list/{box}/{message}", name="nav.messages")
+     * @param string $box
+     * @param null $message
+     * @param Request $request
+     * @return mixed
+     */
+    public function messagesAction($box = 'INBOX', $message = null, Request $request) {
+        $session = $request->getSession();
+        $em = $this->getDoctrine()->getManager();
+        $sortKey = $request->get('sort', $session->get('messages_sort_key', 'createdAt'));
+        $order = $request->get('order', $session->get('messages_sort_order', 'DESC'));
+
+        $msg = null;
+        if ($message)
+            $msg = $em->getRepository(MessageRecipient::class)->find(['id' => $message]);
+
+        // mark as read
+        if ($msg && !$msg->getRead() && $msg->getUser() == $this->getUser()) {
+            $msg->setRead(new \DateTime('now'));
+            $em->merge($msg);
+            $em->flush();
+            $msg = $em->getRepository(MessageRecipient::class)->find(['id' => $message]);
+        }
+
+        $orders = [];
+        foreach(['createdBy', 'title', 'createdAt', 'recipient'] as $key) {
+            $orders[$key] = ($sortKey == $key ? ($order == 'ASC' ? 'DESC' : 'ASC') : $order);
+        }
+        $session->set('messages_sort_key', $sortKey);
+        $session->set('messages_sort_order', $order);
+
+        return $this->render('communication/messages.html.twig', [
+            'view' => $msg,
+            'box' => $box,
+            'boxes' => $this->getBoxes($em, $sortKey, $order),
+            'orders' => $orders,
+            'order' => $order,
+            'sort' => $sortKey,
+        ]);
+    }
+
+    /**
+     * Controller for single message actions.
+     *
+     * @Route("/{_locale}/user/messages/message/{action}/{id}/{rcptType}/{rcptId}/{msgTypes}",
+     *     options={"expose" = true},
+     *     name="nav.message")
+     * @param string $action
+     * @param integer $id
+     * @param string $rcptType
+     * @param integer $rcptId
+     * @param string $msgTypes
+     * @param Request $request
+     * @return mixed
+     */
+    public function messageAction($action = 'compose', $id = 0, $rcptType = 'User', $rcptId = 0, $msgTypes = null, Request $request) {
+        $em = $this->getDoctrine()->getManager();
+        $msg = null;
+        $form = null;
+
+        $thisReferer = $request->getUriForPath($this->generateUrl('nav.message'));
+        $referer = $request->server->get('HTTP_REFERER');
+        $serverLength = strlen($request->getUriForPath(''));
+
+        if ($id) {
+            /** @var MessageRecipient $msg */
+            $msg = $em->getRepository(MessageRecipient::class)->find(['id' => $id]);
+            switch ($action) {
+                case 'archive': {
+                    if ($msg && $msg->getUser() == $this->getUser()) {
+                        $em->merge($msg->setBox(MessageRecipient::BOX_ARCHIVE));
+                        $em->flush();
+                        return $this->redirectToRoute('nav.messages');
+                    }
+                    break;
+                }
+                case 'unarchive': {
+                    if ($msg && $msg->getUser() == $this->getUser()) {
+                        $em->merge($msg->setBox(MessageRecipient::BOX_INBOX));
+                        $em->flush();
+                        return $this->redirectToRoute('nav.messages');
+                    }
+                    break;
+                }
+                case 'trash': {
+                    if ($msg && $msg->getUser() == $this->getUser()) {
+                        $em->merge($msg->setBox(MessageRecipient::BOX_TRASH));
+                        $em->flush();
+                        return $this->redirectToRoute('nav.messages');
+                    }
+                    break;
+                }
+                case 'restore': {
+                    if ($msg && $msg->getUser() == $this->getUser()) {
+                        $em->merge($msg->setBox(MessageRecipient::BOX_INBOX));
+                        $em->flush();
+                        return $this->redirectToRoute('nav.messages');
+                    }
+                    break;
+                }
+                case 'unread': {
+                    if ($msg && $msg->getUser() == $this->getUser()) {
+                        $em->merge($msg->setRead(null));
+                        $em->flush();
+                        return $this->redirectToRoute('nav.messages');
+                    }
+                    break;
+                }
+                case 'reply': {
+                    if ($msg) {
+                        $parent = $msg->getMessage();
+                        $message = new Message();
+                        $message->setCreatedBy($this->getUser())->setParent($parent)->setType($parent->getType());
+
+                        $rcpt = new MessageRecipient();
+                        $rcpt->setMessage($message)->setUser($parent->getCreatedBy());
+
+                        $form = $this->createForm(MessageType::class,
+                            $message, ['parent' => $parent, 'available_recipients' => [new UserDistribution($rcpt->getUser())]]);
+                        $form->handleRequest($request);
+
+                        if ($form->isSubmitted() && $form->isValid()) {
+                            // persist the message
+                            $em->persist($message);
+
+                                // copy to sent
+                                //$sent = $data->cloneEntity();
+                                //$sent->setUser($message->getCreatedBy())
+                                //    ->setBox(MessageRecipient::BOX_SENT)
+                                //    ->setRead(new \DateTime('now'));
+                                //$em->persist($sent);
+
+                            $em->flush();
+
+                            return $this->redirectToRoute('nav.messages', ['box' => $msg->getBox(), 'message' => $id]);
+
+                        }
+                    }
+                }
+            }
+        } else {
+            $msg = new Message();
+            $msg->setCreatedBy($this->getUser());
+            $availableRecipients = [];
+
+            if ($rcptId) {
+                if ($rcptType == 'User') {
+                    /** @var User $usr */
+                    $usr = $em->getRepository(User::class)->find($rcptId);
+                    $availableRecipients[] = new UserDistribution($usr);
+                } else if ($rcptType == 'Group') {
+                    /** @var Group $role */
+                    $role = $em->getRepository(Group::class)->find($rcptId);
+                    $availableRecipients[] = new GroupDistribution($role);
+                } else if ($rcptType == 'Relay') {
+                    /** @var Relay $relay */
+                    $relay = $em->getRepository(Relay::class)->find($rcptId);
+                    $availableRecipients[] = new RelayDistribution($relay);
+                } else if ($rcptType == 'SchoolUnit') {
+                    /** @var SchoolUnit $schoolUnit */
+                    $schoolUnit = $em->getRepository(SchoolUnit::class)->find($rcptId);
+                    $availableRecipients[] = new SchoolUnitDistribution($schoolUnit);
+                }
+            } else {
+                /** @var TranslatorInterface $tr */
+                $tr = $this->get('translator');
+                if ($this->get('security.authorization_checker')->isGranted('ROLE_ADMIN')) {
+                    $availableRecipients[$tr->trans('label.users', [], 'communication')] = UserDistribution::all($em->getRepository(User::class)->findBy([], ['firstname' => 'ASC', 'lastname' => 'ASC']));
+                    $availableRecipients[$tr->trans('label.groups', [], 'communication')] = GroupDistribution::all($em->getRepository(Group::class)->findBy([], ['name' => 'ASC']));
+                    $availableRecipients[$tr->trans('label.schools', [], 'communication')] = SchoolDistribution::all($em->getRepository(School::class)->findBy([], []));
+                } else {
+                    $availableRecipients[$tr->trans('label.groups', [], 'communication')] = GroupDistribution::all([$em->getRepository(Group::class)->find(Group::ROLE_ADMIN)]);
+                    $availableRecipients[$tr->trans('label.schools', [], 'communication')] = SchoolDistribution::all($this->getUser()->getSchools()->toArray());
+                }
+            }
+            if ($msgTypes) {
+                $msg->setType(explode(',', $msgTypes));
+            }
+            $form = $this->createForm(MessageType::class, $msg, [
+                'parent' => null,
+                'available_recipients' => $availableRecipients,
+                'attr' => ['action' => $request->getPathInfo()],
+            ]);
+            $form->handleRequest($request);
+
+            if ($form->isSubmitted() && $form->isValid()) {
+                /** @var MessageAttachment $attachment */
+                foreach ($msg->getAttachments() as $attachment)
+                    $attachment->moveToDir($this->getParameter('message_files'));
+                // persist the message
+                $em->persist($msg);
+                $em->flush();
+
+                if (in_array(Message::TYPE_SMS, $msg->getType())) {
+                    foreach ($msg->getRecipients() as $rcpt) {
+                        $this->get('sms')
+                            ->setTo($rcpt->getUser()->getPhone())
+                            ->setMessage($msg->getText() . "\n\n" . $msg->getText())
+                            ->send();
+                    }
+                }
+                if (in_array(Message::TYPE_EMAIL, $msg->getType())) {
+                    foreach ($msg->getRecipients() as $rcpt) {
+                        $message = (new \Swift_Message())
+                            ->setSubject($msg->getTitle())
+                            ->setFrom($this->getUser()->getUsername())
+                            ->setTo($rcpt->getUser()->getUsername())
+                            ->setBody($msg->getText(), 'text/plain');
+                        $this->get('mailer')->send($message);
+                    }
+                }
+
+                return $request->isXmlHttpRequest() ?
+                    new JsonResponse([], Response::HTTP_OK) :
+                    $this->redirectToRoute('nav.messages', ['box' => MessageRecipient::BOX_SENT, 'message' => $msg->getId()]);
+            } else if ($form->isSubmitted() && !$form->isValid()) {
+                // return error code for modal and ok for non-modals
+                return $this->render("communication/{$action}.html.twig", [
+                    'message' => $msg,
+                    'form' => $form ? $form->createView() : null,
+                    'modal' => $request->isXmlHttpRequest(),
+                    'referer' => ($request->isXmlHttpRequest() ? '' : (strncmp(substr($thisReferer, 3 + $serverLength), substr($referer, 3 + $serverLength), strlen($referer) - 3 - $serverLength) ?
+                        $referer : $request->getUriForPath($this->generateUrl('nav.messages')))),
+                ], new Response('', $request->isXmlHttpRequest() ?
+                    Response::HTTP_BAD_REQUEST :
+                    Response::HTTP_OK));
+            }
+        }
+        $formView = $form ? $form->createView() : null;
+        $btns = $formView ? [$formView->offsetGet('close'), $formView->offsetGet('submit')] : [];
+        return $this->render("communication/{$action}.html.twig", [
+            'message' => $msg,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'referer' => ($request->isXmlHttpRequest() ? '' : (strncmp(substr($thisReferer, 3 + $serverLength), substr($referer, 3 + $serverLength), strlen($referer) - 3 - $serverLength) ?
+                $referer : $request->getUriForPath($this->generateUrl('nav.messages')))),
+            'btns' => $btns,
+        ]);
+    }
+
+    /**
+     * Controller for autocomplete.
+     *
+     * @Route("/{_locale}/user/messages/distribution_search", name="json.distribution")
+     * @param Request $request
+     * @return mixed
+     */
+    public function searchRecipientAction(Request $request)
+    {
+        $q = $request->query->get('term');
+        /** @var UserRepository $repo */
+        $repo = $this->getDoctrine()->getRepository(User::class);
+        $users = $repo->findLike($q);
+        $results = [];
+        foreach ($users as $user) {
+            $results[] = new UserDistribution($user);
+        }
+        return $this->render('communication/distribution.html.twig', ['results' => $results]);
+    }
+
+    /**
+     * Controller for autocomplete.
+     *
+     * @Route("/{_locale}/user/messages/distribution_show/{id}", name="string.distribution")
+     * @param integer $id
+     * @return mixed
+     */
+    public function getRecipientAction($id = null)
+    {
+        $user = $this->getDoctrine()->getRepository(User::class)->find($id);
+
+        return new Response($user->getFullname());
+    }
+
+}

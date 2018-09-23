@@ -1,0 +1,235 @@
+{% extends (app.request.get('sort') is null and app.request.get('id') == 0) ? 'base.html.twig' : 'sortable-table.html.twig' %}
+{% set buttons = [{
+    'modal': {
+        'title': {
+            'key': Routes.nav_admin_list_users,
+            'domain': 'nav'
+        },
+        'reload': true,
+    },
+    'title': {
+        'key': 'action.create',
+    },
+    'class': 'hidden-sm hidden-md hidden-lg',
+    'icon': 'plus',
+    'href': path(Routes.nav_admin_create_user)
+},{
+    'separator': true
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.edit.user',
+            'domain': 'user'
+        }
+    },
+    'modal': {
+        'title': {
+            'key': Routes.nav_admin_list_users,
+            'domain': 'nav'
+        },
+        'reload': true,
+    },
+    'title': {
+        'key': 'action.edit'
+    },
+    'class': 'btn-open disabled',
+    'icon': 'edit'
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.delete.user',
+            'domain': 'user'
+        }
+    },
+    'modal': {
+        'title': {
+            'key': 'action.delete',
+        },
+        'reload': true,
+        'type': 'confirm'
+    },
+    'title': {
+        'key': 'action.delete'
+    },
+    'class': 'btn-delete disabled',
+    'icon': 'trash-o'
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.toggle-active',
+            'domain': 'user'
+        }
+    },
+    'title': {
+        'key': 'action.toggle_active',
+    },
+    'class': 'btn-toggle-active disabled',
+    'icon': 'power-off',
+    'target': '.table-users'
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.unselect.user',
+            'domain': 'user'
+        }
+    },
+    'title': {
+        'key': 'action.unselect'
+    },
+    'class': 'btn-unselect disabled',
+    'icon': 'times-circle-o'
+},{
+    'separator': true
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.message.user',
+            'domain': 'user'
+        }
+    },
+    'modal': {
+        'title': {
+            'key': 'nav.message',
+            'domain': 'nav'
+        }
+    },
+    'title': {
+        'key': 'action.compose'
+    },
+    'class': 'btn-message disabled',
+    'icon': 'envelope-o'
+}] %}
+
+{% import 'admin/users/table.html.twig' as table %}
+{% import 'admin/users/toolbar.html.twig' as toolBar %}
+{% import 'toolbar/contextmenu.html.twig' as contextMenu %}
+
+{% if (app.request.get('sort') is null) and app.request.get('id') == 0 %}
+    {% set use_heading = true %}
+    {% set body_class = 'body-medium' %}
+    {% block body %}
+        <div class="all-padding">
+            <table class="stepper">
+                <tbody>
+                <tr>
+                    <td class="bg-primary"></td>
+                </tr>
+                </tbody>
+            </table>
+            {{ toolBar.render_nav(buttons) }}
+            <div class="workspace">
+                <div class="dropdown" style="position:absolute!important; top:0!important; left:0!important;">
+                    {{ contextMenu.render_context_menu({'id': 'schools_context_menu', 'items': buttons|slice(2)}) }}
+                </div>
+                {{ table.render_sorted_table(users, orders, order, sort) }}
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            <!--
+            $(document).ready(function() {
+
+                $('#{{ request_id()|html_id }} .table-users')
+                    .on('change', function (e) {
+                        console.log('table-change');
+                        $(this).find('td').contextMenu({
+                            menuSelector: "#users_context_menu",
+                            menuActivated: function (e) {
+                                // select row on context menu
+                                if (!$(e.target).parent().hasClass('selected'))
+                                    $(e.target).trigger('click');
+
+                                if ($(e.target).closest('td').parent().data('id') === 1 ||
+                                    $(e.target).closest('td').parent().data('id') === 2) {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-delete"]')
+                                        .parent().addClass('disabled');
+                                } else {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-delete"]')
+                                        .parent().removeClass('disabled');
+                                }
+                                if ($(e.target).closest('td').parent().data('id') === 1) {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-message"]')
+                                        .parent().addClass('disabled');
+                                } else {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-message"]')
+                                        .parent().removeClass('disabled');
+                                }
+                            },
+                            menuSelected: function (source, e) {
+                                // simulate toolbar button click on selected row
+                                $($(e.target).data('trigger')).trigger('click');
+
+                            }
+                        });
+                    })
+                    .trigger('change')
+                ;
+
+                $('#{{ request_id()|html_id }} ')
+                    .on('click', function (e) {
+                        var $this = $(this);
+
+                        // if clicking a table row
+                        var $td = $(e.target);
+                        if ($td.closest('.table-users tbody').length > 0) {
+                            console.log('select/unselect table row');
+
+                            if (!$td.parent().hasClass('selected')) {
+                                console.log('select');
+
+                                // unselect all other rows
+                                $this.find('.selected').removeClass('selected');
+
+                                // select this row
+                                $td.parent().addClass('selected');
+
+                                // enable tool buttons
+                                $this.find('.navbar.toolbar').find('.tool.disabled').removeClass('disabled');
+
+                                // disable if admin or guest
+                                if ($td.parent().data('id') === 1 || $td.parent().data('id') === 2) {
+                                    $this.find('.navbar.toolbar').find('.btn-delete').addClass('disabled');
+                                }
+                                if ($td.parent().data('id') === 1) {
+                                    $this.find('.navbar.toolbar').find('.btn-message').addClass('disabled');
+                                }
+
+                                // assign correct urls to buttons
+                                $this.find('.btn-open').attr('href', $td.parent().data('href'));
+
+                                var $route = Routing.generate('{{ Routes.nav_admin_delete_user }}', {
+                                    '_locale': '{{ app.request.locale }}',
+                                    'id': $td.parent().data('id')
+                                });
+                                $this.find('.btn-delete').attr('href', $route);
+
+                                $this.find('.btn-unselect').off().click(function() {
+                                    $this.find('.table-users tr').removeClass('selected');
+                                    $this.find('.navbar.toolbar').find('.tool').addClass('disabled');
+                                    return false;
+                                });
+
+                                $route = Routing.generate('nav.message', {
+                                    '_locale': '{{ app.request.locale }}',
+                                    'action': 'compose',
+                                    'rcptType': 'User',
+                                    'rcptId': $td.parent().data('id'),
+                                    'msgTypes': 'EMAIL,INTERNAL'
+                                });
+                                $this.find('.btn-message').attr('href', $route);
+                            }
+                        }
+                    })
+                    .on('dblclick', '.table-users td', function (e) {
+                        $('#{{ request_id()|html_id }} ').find('.btn-open').trigger('click');
+                    })
+                ;
+            });
+            //-->
+        </script>
+    {% endblock %}
+{% else %}
+    {% block table %}
+        {{ table.render_sorted_table(users, orders, order, sort) }}
+    {% endblock %}
+{% endif %}

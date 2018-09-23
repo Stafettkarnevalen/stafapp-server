@@ -1,0 +1,99 @@
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="all-padding">
+    <table class="stepper">
+        <tbody>
+        <tr>
+            <td class="bg-primary"></td>
+        </tr>
+        </tbody>
+    </table>
+    <nav class="navbar navbar-default toolbar">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <div class="dropdown pull-left">
+                    <a id="year" class="navbar-brand dropdown-toggle" aria-haspopup="true" role="button" aria-expanded="false" data-toggle="dropdown"><i class="fa fa-calendar"></i> &nbsp; {{ year }}<span class="caret"></span></a>
+                    <ul class="dropdown-menu scrollable-menu" role="menu" aria-labelledby="year">
+                        {% for y in years %}
+                            <li{% if year == y %} class="active"{% endif %}><a href="{{ path('nav.schedule', { year: y }) }}">{{ y }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% if schedule.count > 0 %}
+        {% set date = schedule[0].starts|localizeddate('none', 'none', app.request.locale, null, 'ccc d.M.Y') %}
+        <h1>{{ date }}</h1>
+        <table class="table table-responsive table-striped table-bordered">
+            <thead>
+            <tr>
+                <th>{% trans from 'schedule' %}label.calling{% endtrans %}</th>
+                <th>{% trans from 'schedule' %}label.starts{% endtrans %}</th>
+                <th>{% trans from 'schedule' %}label.ceremony{% endtrans %}</th>
+                <th>{% trans from 'schedule' %}label.event{% endtrans %}</th>
+                <th>{% trans from 'schedule' %}label.round{% endtrans %}</th>
+                <th>{% trans from 'schedule' %}label.heats{% endtrans %}</th>
+                <th>{% trans from 'schedule' %}label.teams{% endtrans %}</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            {% for evt in schedule %}
+                {% if evt.starts|localizeddate('none', 'none', app.request.locale, null, 'ccc d.M.Y') != date %}
+                    {% set date = evt.starts|localizeddate('none', 'none', app.request.locale, null, 'ccc d.M.Y') %}
+                    </tbody>
+                    </table>
+                    <h1>{{ date }}</h1>
+                    <table class="table table-responsive table-striped table-bordered">
+                    <thead>
+                    <tr>
+                        <th>{% trans from 'schedule' %}label.calling{% endtrans %}</th>
+                        <th>{% trans from 'schedule' %}label.starts{% endtrans %}</th>
+                        <th>{% trans from 'schedule' %}label.ceremony{% endtrans %}</th>
+                        <th>{% trans from 'schedule' %}label.event{% endtrans %}</th>
+                        <th>{% trans from 'schedule' %}label.round{% endtrans %}</th>
+                        <th>{% trans from 'schedule' %}label.heats{% endtrans %}</th>
+                        <th>{% trans from 'schedule' %}label.teams{% endtrans %}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                {% endif %}
+                <tr>
+                    {% if evt is instanceof('AppBundle\\Entity\\Relays\\Round') %}
+                        <td>{% if evt.calling is defined and evt.calling is not null %}{{ evt.calling|date('H:i') }}{% endif %}</td>
+                        <td>{% if evt.starts is defined and evt.starts is not null %}{{ evt.starts|date('H:i') }}{% endif %}</td>
+                        <td>{% if evt.ceremony is defined and evt.ceremony is not null %}{{ evt.ceremony|date('H:i') }}{% endif %}</td>
+                        <td>{% if evt.eventName is iterable %}{{ evt.eventName['id']|transOnlyParams(evt.eventName['params'], 'relay', 'mb_strtolower') }}{% else %}{{ evt.eventName }}{% endif %}</td>
+                        <td>{{ evt.roundName }}</td>
+                        <td>{{ evt.numHeats }}</td>
+                        <td>{{ evt.numTeams }}</td>
+                    {% elseif evt is instanceof('AppBundle\\Entity\\Relays\\Heat') %}
+                        <td>{% if evt.calling is defined and evt.calling is not null %}{{ evt.calling|date('H:i') }}{% endif %}</td>
+                        <td>{% if evt.starts is defined and evt.starts is not null %}{{ evt.starts|date('H:i') }}{% endif %}</td>
+                        <td>{% if evt.ceremony is defined and evt.ceremony is not null %}{{ evt.ceremony|date('H:i') }}{% endif %}</td>
+                        <td colspan="3"><div class="side-padding">{% trans from 'relay' %}label.heat{% endtrans %} {{ evt.order }}</div></td>
+                        <td>{{ evt.results.count() }}</td>
+                    {% elseif evt is instanceof('AppBundle\\Entity\\Cheerleading\\CheerleadingCompetition') %}
+                        <td>{% if evt.gatesOpen is defined and evt.gatesOpen is not null %}{{ evt.gatesOpen|date('H:i') }} *{% endif %}</td>
+                        <td>{% if evt.starts is defined and evt.starts is not null %}{{ evt.starts|date('H:i') }}{% endif %}</td>
+                        <td>{% if evt.ceremony is defined and evt.ceremony is not null %}{{ evt.ceremony|date('H:i') }}{% endif %}</td>
+                        <td>{% if evt.eventName is iterable %}{{ evt.eventName['id']|transOnlyParams(evt.eventName['params'], 'relay', 'mb_strtolower') }}{% else %}{{ evt.eventName }}{% endif %}</td>
+                        <td></td>
+                        <td></td>
+                        <td>{{ evt.numSquads }}</td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <dl class="dl-horizontal">
+            <dt>*</dt>
+            <dd>{% trans from 'cheerleading' %}label.gates_open{% endtrans %}</dd>
+        </dl>
+    {% endif %}
+</div>
+{% endblock %}

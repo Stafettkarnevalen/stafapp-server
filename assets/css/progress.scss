@@ -1,0 +1,29 @@
+.stepper {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0px 0px; /* cellspacing */
+    *border-collapse: expression('separate', cellSpacing = '10px');
+    margin-bottom: 6px;
+}
+.stepper-title {
+    margin-bottom: 0px;
+}
+.stepper .separator {
+    width:4px;
+}
+.stepper .bg-default {
+    background:#7f98b1;
+}
+.stepper .bg-primary {
+    background:#0064a5;
+}
+.stepper .bg-success {
+    background:#5cb85c;
+}
+.stepper .bg-danger {
+    background:#d9534f;
+}
+.stepper td {
+    padding: 4px; /* cellpadding */
+    border-radius:4px;
+}

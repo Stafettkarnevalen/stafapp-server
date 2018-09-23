@@ -1,0 +1,19 @@
+{% macro render_nav(buttons, address) %}
+    <nav class="navbar navbar-default toolbar" data-spy="affix" data-offset-top="251">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="hidden-xs navbar-header col-xs-6 col-sm-4 col-md-4 col-lg-3">
+                    <a data-helpmode data-content="{% trans from 'invoice' %}help.action.create.recipient_account{% endtrans %}" title="{% trans from 'invoice' %}action.create_account{% endtrans %}" class="navbar-brand" data-title="{% trans from 'nav' %}nav.admin_invoice_recipient_accounts{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_invoice_recipient_account', {'address': address.id}) }}">
+                        <i class="fa fa-pencil-square-o"></i> {% trans from 'invoice' %}action.create_account{% endtrans %}
+                    </a>
+                </div>
+                <div class="top-padding-sm col-xs-12 col-sm-8 col-md-8 col-lg-9">
+                    {% import 'toolbar/toolbarbutton.html.twig' as toolBar %}
+                    {{ toolBar.render_toolbar_buttons(buttons) }}
+                    {% include 'table/searchbutton.html.twig' with {'domain': 'invoice_recipient_accounts'}%}
+                </div>
+            </div>
+        </div>
+        {% include 'table/searchtoggle.html.twig' with {'target': 'table-invoice-recipient-accounts', 'domain': 'invoice', 'fields': ['name', 'iban', 'bic', 'isActive']} %}
+    </nav>
+{% endmacro %}

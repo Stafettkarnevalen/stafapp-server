@@ -1,0 +1,62 @@
+{% macro render_table_head(config) %}
+    {% set head = config.head %}
+    {% set sortable = head.sortable %}
+    {% set link_params = {} %}
+    {% if sortable.link.params is defined %}
+        {% set link_params = table_column_link_args(null, sortable.link.params) %}
+    {% endif %}
+    <thead>
+    <tr>
+        {% for class, th in head.cols -%}
+            {%- if th.hidden is defined and th.hidden == 1 %}
+                <th class="hidden {{ class }}"></th>
+            {% else %}
+                <th class="{{ class }}">
+                    {%- if th.sort is defined and th.sort is not null %}
+                        {% set order = ('label.order.' ~ sortable.orders[th.sort]|lower)|trans %}
+                        {% set column = th.label|trans({}, config.trans_domain) %}
+                        <a data-helpmode data-content="{% trans with {'%order%': order, '%column%': column} %}help.action.sort{% endtrans %}" title="{% trans with {'%order%': order, '%column%': column} %}help.action.sort_title{% endtrans %}" class="ajax-sort" href="{{ path(sortable.link.url, link_params|merge({'sort': th.sort, 'order': sortable.orders[th.sort]})) }}">{{ (th.label|trans({}, config.trans_domain))|raw }}{% if sortable.sort == th.sort %}<span class="pull-right fa {{ sortable.icons[sortable.order] }}"></span>{% endif %}</a>
+                    {% else %}
+                        {{ column }}
+                    {% endif -%}
+                </th>
+            {% endif -%}
+        {%- endfor %}
+    </tr>
+    </thead>
+{% endmacro %}
+
+{% macro render_table_body(iterable, config) %}
+    {% set body = config.body %}
+    {% set body_attrs = {} %}
+    {% if body.attrs is defined %}
+        {% set body_attrs = body.attrs %}
+    {% endif %}
+    <tbody {% for attrname, attrvalue in table_column_link_args(null, body_attrs) %} {{ attrname }}="{{ attrvalue }}"{% endfor %}>
+    {% for tr in iterable %}
+        {% set tr_attrs = table_column_link_args(tr, body.row_attrs) %}
+        {% set link_args = table_column_link_args(tr, body.link.params) %}
+        <tr data-href="{{ path(body.link.url, link_args) }}"{% for attrname, attrvalue in tr_attrs %} {{ attrname }}="{{ attrvalue }}"{% endfor %}>
+            {% for class, td in body.cols -%}
+                {%- if td.hidden is defined and td.hidden == 1 %}
+                    <td class="hidden {{ class }}">
+                        <div {% for attrname, attrvalue in body.link.attrs %} {{ attrname }}="{{ attrvalue }}"{% endfor %} href="{{ path(body.link.url, link_args) }}">{{ table_column_value(tr, td) }}</div>
+                    </td>
+                {% else %}
+                    <td class="{{ class }}">{{ table_column_value(tr, td) }}</td>
+                {% endif -%}
+            {%- endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+{% endmacro %}
+
+
+{% import _self as macro %}
+
+<table class="{{ config.class }}">
+    {% if config.head -%}
+        {{ macro.render_table_head(config) }}
+    {% endif %}
+    {{ macro.render_table_body(iterable, config) }}
+</table>

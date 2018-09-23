@@ -1,0 +1,215 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 2.48
+ */
+
+namespace App\Entity\Relays;
+
+use App\Entity\Interfaces\OrderedEntityInterface;
+use App\Entity\Schedule\ScheduledEntity;
+use App\Entity\Traits\ApplyDateIntervalTrait;
+use App\Entity\Traits\CloneableTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Traits\VersionedOrderedEntityTrait;
+
+/**
+ * @ORM\Table(name="heat_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @UniqueEntity(fields="round,order", message="heat.exists")
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Relays
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class Heat extends ScheduledEntity implements OrderedEntityInterface
+{
+    /** use date interval trait */
+    use ApplyDateIntervalTrait;
+
+    /** Use ordered entity trait */
+    use VersionedOrderedEntityTrait;
+
+    /** Use fields trait */
+    use CloneableTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="calling_fld", type="datetime", nullable=true)
+     * @var \DateTime $calling The time of the calling
+     */
+    protected $calling;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Round", inversedBy="heats")
+     * @ORM\JoinColumn(name="round_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var Round $round The round that this Heat belongs to
+     */
+    protected $round;
+
+    /**
+     * @ORM\OneToMany(targetEntity="RaceResult", mappedBy="heat", cascade={"persist", "remove"})
+     * @var ArrayCollection $results The results from this Heat
+     */
+    protected $results;
+
+    /**
+     * Gets the calling.
+     *
+     * @return \DateTime
+     */
+    public function getCalling()
+    {
+        return $this->calling;
+    }
+
+    /**
+     * Sets the calling.
+     *
+     * @param integer|string|\DateTime $calling
+     * @return $this
+     */
+    public function setCalling($calling)
+    {
+        if (is_numeric($calling)) {
+            $this->calling = new \DateTime();
+            $this->calling = $this->calling->setTimestamp($calling);
+        } else if ($calling instanceof \DateTime)
+            $this->calling = $calling;
+        else if (is_string($calling))
+            $this->calling = new \DateTime($calling);
+        return $this;
+    }
+
+    /**
+     * Gets the Round.
+     *
+     * @return Round
+     */
+    public function getRound()
+    {
+        return $this->round;
+    }
+
+    /**
+     * Sets the Round.
+     *
+     * @param Round $round
+     * @return $this
+     */
+    public function setRound($round)
+    {
+        $this->round = $round;
+
+        return $this;
+    }
+
+    /**
+     * Gets the Race
+     *
+     * @return Race
+     */
+    public function getRace() {
+        return $this->getRound()->getRace();
+    }
+
+    /**
+     * Gets the Relay
+     *
+     * @return Relay
+     */
+    public function getRelay() {
+        return $this->getRound()->getRace()->getRelay();
+    }
+
+    /**
+     * Gets the Results.
+     *
+     * @return ArrayCollection
+     */
+    public function getResults()
+    {
+        return $this->results;
+    }
+
+    /**
+     * Sets the Results.
+     *
+     * @param ArrayCollection $results
+     * @return $this
+     */
+    public function setResults($results)
+    {
+        $this->results = $results;
+
+        return $this;
+    }
+
+    /**
+     * Gets the Result for a specific Team.
+     *
+     * @param Team $team
+     * @return mixed
+     */
+    public function getResult(Team $team)
+    {
+        foreach ($this->getResults() as $result) {
+            if ($result->getTeam() == $team)
+                return $result;
+        }
+        return null;
+    }
+
+    /**
+     * Gets a string representation of this object.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->getRelay()->__toString() . ", heat " . $this->getOrder();
+    }
+
+    /**
+     * Gets the fields that can be modified with a \DateInterval.
+     *
+     * @return array
+     */
+    public function getDateIntervalApplicableFields()
+    {
+        return [$this->getCalling(), $this->getStarts()];
+    }
+
+    /**
+     * Gets all ScheduledEvents of this entity.
+     *
+     * @return ArrayCollection
+     */
+    public function getSchedule()
+    {
+        return null;
+    }
+
+    /**
+     * Gets the siblings of this ordered entity.
+     *
+     * @param ObjectManager $em
+     * @return ArrayCollection
+     */
+    public function getSiblings(ObjectManager $em = null)
+    {
+        $heats = $this->getRound()->getHeats();
+        $criteria = Criteria::create()->where(Criteria::expr()->neq('id', $this->getId()))->orderBy(['order' => 'ASC']);
+        return $heats->matching($criteria);
+    }
+}

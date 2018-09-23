@@ -1,0 +1,20 @@
+type:
+    managers: "Lagledare"
+    invitations: "Inbjudningar"
+info:
+    managers: "Nedan hittar du skolans registrerade lagledare. Lagledarna har rätt att anmäla lag och beställa tjänster för angivna skolenheter."
+    invitations: "Nedan hittar du en lista på inbjudningar eller förfrågningar om att bli lagledare för din skola."
+    units: "Skolans enheter (tävlingsklasser) bör ställas in här. Stafetter och andra tävlingar blir tillgängliga på basis av dessa inställningar."
+    school: "Skolans kontaktuppgifter kan ändras här. Skolans nummer och lösenord kan endast ändras av en administratör på begäran."
+field:
+    username: "E-postadress"
+    school_units: "Skolenheter (tävlingsklasser)"
+    name: "Namn"
+view:
+    school: "Kontaktuppgifter"
+    units: "Skolenheter"
+title:
+    school_info: "Kontaktuppgifter"
+    school_data: "Nummer och lösenord"
+action:
+    edit: "Ändra"

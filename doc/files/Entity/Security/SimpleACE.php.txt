@@ -1,0 +1,171 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 22/10/2017
+ * Time: 5.26
+ */
+namespace App\Entity\Security;
+
+/**
+ * Class SimpleACE
+ * @package App\Entity\Security
+ * @author Robert Jürgens <robert@jurgens.fi>
+ */
+class SimpleACE
+{
+    /** @var string $role The security role of the Entry */
+    protected $role;
+
+    /** @var  integer $mask The mask of the Entry */
+    protected $mask;
+
+    /** @var array $maskBits The bits of the previously defined mask  */
+    protected $maskBits;
+
+    /** @var  integer $index the index of the Entry */
+    protected $index;
+
+    /** @var  integer $id The id of the Entry */
+    protected $id;
+
+    /**
+     * SimpleACE constructor.
+     * @param string $role
+     * @param integer $mask
+     * @param integer $index
+     * @param integer $id
+     */
+    public function __construct($role, $mask, $index, $id)
+    {
+        $this->role = $role;
+        $this->setMask($mask);
+        $this->index = $index;
+        $this->id = $id;
+    }
+
+    /**
+     * Gets a string representation of this Entry.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->role;
+    }
+
+    /**
+     * Gets the role.
+     *
+     * @return mixed
+     */
+    public function getRole()
+    {
+        return $this->role;
+    }
+
+    /**
+     * Sets the role.
+     *
+     * @param mixed $role
+     * @return $this
+     */
+    public function setRole($role)
+    {
+        $this->role = $role;
+
+        return $this;
+    }
+
+    /**
+     * Gets the mask.
+     *
+     * @return mixed
+     */
+    public function getMask()
+    {
+        return $this->mask;
+    }
+
+    /**
+     * Sets the mask.
+     *
+     * @param mixed $mask
+     * @return $this
+     */
+    public function setMask($mask)
+    {
+        $this->mask = $mask;
+
+        $this->maskBits = [];
+        for ($i = 0; $i < 8; $i++)
+            $this->maskBits[$i] = ($this->mask & 1 << $i) ? 1: 0;
+
+        return $this;
+    }
+
+    public function getMaskBits()
+    {
+        return $this->maskBits;
+    }
+
+    public function setMaskBits(array $maskBits)
+    {
+        $this->mask = 0;
+
+        $this->maskBits = $maskBits;
+        foreach ($this->maskBits as $i => $bit)
+            if ($bit)
+                $this->mask |= 1 << $i;
+
+        return $this;
+    }
+
+    /**
+     * Gets the index.
+     *
+     * @return mixed
+     */
+    public function getIndex()
+    {
+        return $this->index;
+    }
+
+    /**
+     * Sets the index.
+     *
+     * @param mixed $index
+     * @return $this
+     */
+    public function setIndex($index)
+    {
+        $this->index = $index;
+
+        return $this;
+    }
+
+    /**
+     * Gets the id.
+     *
+     * @return mixed
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * Sets the id.
+     *
+     * @param mixed $id
+     * @return $this
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
+
+}

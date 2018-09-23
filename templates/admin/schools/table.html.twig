@@ -1,0 +1,79 @@
+{% macro render_sorted_table(schools, orders, order, sort) %}
+    {{ table(schools, {
+        'trans_domain': 'school',
+        'class': 'table table-bordered table-responsive table-condensed table-striped table-scrollable table-searchable table-sortable table-schools',
+        'body': {
+            'row_attrs': {
+                'data-id':  {
+                    'type': 'method',
+                    'name': 'getId'
+                }
+            },
+            'link': {
+                'url': 'nav.admin_edit_school',
+                'params': {
+                    'id': {
+                        'type': 'method',
+                        'name': 'getId'
+                    }
+                },
+                'attrs': {
+                    'data-reload': 'true',
+                    'data-title': 'nav.admin_list_schools'|trans({}, 'nav'),
+                    'data-toggle': 'modal'
+                }
+            },
+            'cols': {
+                'name': {
+                    'method': 'getName'
+                },
+                'number': {
+                    'method': 'getNumber',
+                },
+                'group': {
+                    'method': 'getGroup',
+                    'filter': ['escape']
+                },
+                'isActive text-center hidden-xs': {
+                    'method': 'getIsActive',
+                    'conditions': {
+                        '0': '<i class="fa fa-lg fa-toggle-off"></i>',
+                        '1': '<i class="fa fa-lg text-success fa-toggle-on"></i>'
+                    }
+                }
+            }
+        },
+        'head': {
+            'sortable': {
+                'orders': orders,
+                'order': order,
+                'sort': sort,
+                'icons': {
+                    'ASC': 'fa-chevron-up',
+                    'DESC': 'fa-chevron-down'
+                },
+                'link': {
+                    'url': 'nav.admin_list_schools'
+                }
+            },
+            'cols': {
+                'name': {
+                    'label': 'field.name',
+                    'sort': 'name'
+                },
+                'number': {
+                    'label': 'field.number',
+                    'sort': 'number'
+                },
+                'group': {
+                    'label': 'field.group',
+                    'sort': 'group'
+                },
+                'isActive hidden-xs': {
+                    'label': 'field.isActive',
+                    'sort': 'isActive'
+                }
+            }
+        }
+    }) }}
+{% endmacro %}

@@ -1,0 +1,135 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 14.06
+ */
+
+namespace App\Entity\Events;
+
+use App\Entity\Documentation\Documentation;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * @ORM\Entity(repositoryClass="App\Repository\EventRuleRepository")
+ * @ORM\HasLifecycleCallbacks
+ * @package App\Entity\Event
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class EventRule extends Documentation
+{
+
+    /**
+     * @ORM\OneToMany(targetEntity="EventHasRule", mappedBy="rule", cascade={"persist", "merge", "remove"})
+     * @ORM\OrderBy({"order" = "ASC"})
+     * @var ArrayCollection $hasEvents The events that this rule affects
+     */
+    protected $hasEvents;
+
+    /**
+     * EventRule constructor.
+     */
+    public function __construct()
+    {
+        parent::__construct();
+        $this->hasEvents = new ArrayCollection();
+    }
+
+    /**
+     * Gets the Events.
+     *
+     * @return ArrayCollection
+     */
+    public function getEvents()
+    {
+        $events = new ArrayCollection();
+        foreach ($this->hasEvents as $eventHasRule)
+            $events->add($eventHasRule->getEvent());
+        return $events;
+    }
+
+
+    /**
+     * Add a event to this rule.
+     *
+     * @param Event $event
+     * @return $this
+     */
+    public function addEvent(Event $event)
+    {
+        if ($this->hasEvent($event)) {
+            return $this;
+        }
+        $hasEvent = new EventHasRule();
+        $hasEvent->setEvent($event)->setRule($this)->setOrder($event->getHasRules()->count());
+        return $this;
+    }
+
+    /**
+     * Removes a event from this rule.
+     *
+     * @param Event $event
+     * @return $this
+     */
+    public function removeEvent(Event $event)
+    {
+        if (!$this->hasEvent($event)) {
+            return $this;
+        }
+
+        $criteria = Criteria::create()
+            ->where(Criteria::expr()->eq('event', $event))
+            ->andWhere(Criteria::expr()->neq('rule', $this))
+        ;
+
+        $this->hasEvents = $this->hasEvents->matching($criteria);
+
+        return $this;
+    }
+
+    /**
+     * Checks if event has a rule
+     *
+     * @param Event $event The event to check for
+     *
+     * @return bool
+     */
+    public function hasEvent(Event $event)
+    {
+        $criteria = Criteria::create()
+            ->where(Criteria::expr()->eq('event', $event))
+            ->andWhere(Criteria::expr()->eq('rule', $this))
+        ;
+
+        return ($this->hasEvents->matching($criteria)->count() == 1);
+    }
+
+    /**
+     * Gets the hasEvents.
+     *
+     * @return ArrayCollection
+     */
+    public function getHasEvents()
+    {
+        return $this->hasEvents;
+    }
+
+    /**
+     * Sets the hasEvents.
+     *
+     * @param ArrayCollection $hasEvents
+     * @return $this
+     */
+    public function setHasEvents(ArrayCollection $hasEvents)
+    {
+        $this->hasEvents = $hasEvents;
+
+        return $this;
+    }
+
+
+}

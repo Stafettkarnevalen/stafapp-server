@@ -1,0 +1,368 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 12.58
+ */
+
+namespace App\Entity\Relays;
+
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Interfaces\OrderedEntityInterface;
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Traits\LoggableTrait;
+use App\Entity\Traits\OrderedEntityTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\FieldsTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use App\Entity\Schools\School;
+use App\Entity\Schools\SchoolUnit;
+use App\Entity\Invoicing\InvoiceLine;
+use App\Entity\Invoicing\Invoice;
+
+/**
+ * @ORM\Table(name="team_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @UniqueEntity(fields="race,schoolUnit,order", message="team.exists")
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Relays
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class Team implements Serializable, CreatedByUserInterface, LoggableEntity, OrderedEntityInterface
+{
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** use fields trait */
+    use FieldsTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use ordered entity trait */
+    use OrderedEntityTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="bib_fld", type="integer", nullable=true)
+     * @var integer $bib The bib number of the team
+     */
+    protected $bib;
+
+    /**
+     * @ORM\Column(name="service_type_order_fld", type="integer", nullable=false)
+     * @var integer $serviceTypeOrder The order within the service type that resides in the Race entity
+     */
+    protected $serviceTypeOrder;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Race", inversedBy="rounds")
+     * @ORM\JoinColumn(name="race_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var Race $race The race that the team is taking part of
+     */
+    protected $race;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Schools\SchoolUnit", inversedBy="teams")
+     * @ORM\JoinColumn(name="school_unit_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var SchoolUnit $schoolUnit The school unit owning the team
+     */
+    protected $schoolUnit;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Invoicing\InvoiceLine")
+     * @ORM\JoinColumn(name="invoice_line_fld", referencedColumnName="id_fld", nullable=true)
+     * @var InvoiceLine $invoiceLine The invoice line created by this team
+     */
+    protected $invoiceLine;
+
+    /**
+     * @ORM\OneToMany(targetEntity="RaceResult", mappedBy="team", cascade={"persist", "remove"})
+     * @var ArrayCollection $results The results of this team
+     */
+    protected $results;
+
+    /**
+     * @ORM\OneToMany(targetEntity="MemberOfTeam", mappedBy="team", cascade={"persist", "remove"})
+     * @var ArrayCollection $members The team mebers
+     */
+    protected $members;
+
+    /**
+     * Gets the bib.
+     *
+     * @return integer|null
+     */
+    public function getBib()
+    {
+        return $this->bib;
+    }
+
+    /**
+     * Sets the bib.
+     *
+     * @param integer|null $bib
+     * @return $this
+     */
+    public function setBib($bib)
+    {
+        $this->bib = $bib;
+
+        return $this;
+    }
+
+    /**
+     * Gets the Race.
+     *
+     * @return Race
+     */
+    public function getRace()
+    {
+        return $this->race;
+    }
+
+    /**
+     * Sets the Race.
+     *
+     * @param Race $race
+     * @return $this
+     */
+    public function setRace($race)
+    {
+        $this->race = $race;
+
+        return $this;
+    }
+
+    /**
+     * Gets the SchoolUnit.
+     *
+     * @return SchoolUnit
+     */
+    public function getSchoolUnit()
+    {
+        return $this->schoolUnit;
+    }
+
+    /**
+     * Sets the SchoolUnit.
+     *
+     * @param SchoolUnit $schoolUnit
+     * @return $this
+     */
+    public function setSchoolUnit($schoolUnit)
+    {
+        $this->schoolUnit = $schoolUnit;
+        return $this;
+    }
+
+    /**
+     * Gets the School.
+     *
+     * @return School
+     */
+    public function getSchool()
+    {
+        return $this->getSchoolUnit()->getSchool();
+    }
+
+    /**
+     * Gets the InvoiceLine after Invoices have been issued.
+     *
+     * @return InvoiceLine
+     */
+    public function getInvoiceLine()
+    {
+        return $this->invoiceLine;
+    }
+
+    /**
+     * Sets the InvoiceLine after Invoices have been issued.
+     *
+     * @param InvoiceLine $invoiceLine
+     * @return $this
+     */
+    public function setInvoiceLine($invoiceLine)
+    {
+        $this->invoiceLine = $invoiceLine;
+
+        return $this;
+    }
+
+    /**
+     * Gets the Invoice containing this Team.
+     *
+     * @return Invoice
+     */
+    public function getInvoice()
+    {
+        return $this->getInvoiceLine()->getInvoice();
+    }
+
+    /**
+     * Gets the Results.
+     *
+     * @return ArrayCollection
+     */
+    public function getResults()
+    {
+        return $this->results;
+    }
+
+    /**
+     * Sets the Resutls.
+     *
+     * @param ArrayCollection $results
+     * @return $this
+     */
+    public function setResults($results)
+    {
+        $this->results = $results;
+
+        return $this;
+    }
+
+    /**
+     * Gets the Members
+     *
+     * @return ArrayCollection
+     */
+    public function getMembers()
+    {
+        return $this->members;
+    }
+
+    /**
+     * Sets the Members.
+     *
+     * @param ArrayCollection $members
+     * @return $this
+     */
+    public function setMembers($members)
+    {
+        $this->members = $members;
+
+        return $this;
+    }
+
+    /**
+     * Gets the serviceTypeOrder.
+     *
+     * @return int
+     */
+    public function getServiceTypeOrder(): int
+    {
+        return $this->serviceTypeOrder;
+    }
+
+    /**
+     * Sets the serviceTypeOrder.
+     *
+     * @param int $serviceTypeOrder
+     * @return $this
+     */
+    public function setServiceTypeOrder(int $serviceTypeOrder)
+    {
+        $this->serviceTypeOrder = $serviceTypeOrder;
+
+        return $this;
+    }
+
+    /**
+     * Gets the siblings of this ordered entity.
+     *
+     * @param ObjectManager $em
+     * @return ArrayCollection
+     */
+    public function getSiblings(ObjectManager $em = null)
+    {
+        $teams = $this->getSchoolUnit()->getTeams($this->getRace()->getServiceType(), $this->getRace()->getRelay());
+        $criteria = Criteria::create()->where(Criteria::expr()->neq('id', $this->getId()))->orderBy(['order' => 'ASC']);
+        return $teams->matching($criteria);
+    }
+
+    /**
+     * Gets the siblings of this ordered entity.
+     *
+     * @return ArrayCollection
+     */
+    public function getServiceTypeOrderSiblings()
+    {
+        $teams = $this->getSchoolUnit()->getTeams($this->getRace()->getServiceType());
+        $criteria = Criteria::create()->where(Criteria::expr()->neq('id', $this->getId()))->orderBy(['order' => 'ASC']);
+        return $teams->matching($criteria);
+    }
+
+    /**
+     * Gets the siblings after this ordered entity.
+     *
+     * @return ArrayCollection
+     */
+    public function getServiceTypeOrderSiblingsAfter()
+    {
+        $siblings = $this->getServiceTypeOrderSiblings();
+        $criteria = Criteria::create()->where(Criteria::expr()->gt('order', $this->getOrder()))->orderBy(['order' => 'ASC']);
+        return $siblings->matching($criteria);
+    }
+
+    /**
+     * Gets the siblings before this ordered entity.
+     *
+     * @return ArrayCollection
+     */
+    public function getServiceTypeOrderSiblingsBefore()
+    {
+        $siblings = $this->getServiceTypeOrderSiblings();
+        $criteria = Criteria::create()->where(Criteria::expr()->lt('order', $this->getOrder()))->orderBy(['order' => 'ASC']);
+        return $siblings->matching($criteria);
+    }
+
+    /**
+     * Gets triggered only on insert
+     *
+     * @ORM\PrePersist
+     * @return void
+     */
+    public function onTeamPrePersist()
+    {
+        $serviceTypeOrder = 0;
+        $serviceType = $this->getRace()->getServiceType();
+        $races = $serviceType->getRaces();
+        /** @var Race $race */
+        foreach ($races as $race) {
+            $teams = $race->getTeams();
+            $criteria = Criteria::create();
+            $criteria->where(Criteria::expr()->eq("schoolUnit", $this));
+            $teams = $teams->matching($criteria);
+            $serviceTypeOrder += $teams->count();
+        }
+        $this->serviceTypeOrder = $serviceTypeOrder;
+    }
+
+    /**
+     * Gets a string representation of this object.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        $order = $this->getOrder();
+        return $this->getSchool()->getName() . ($order ? " ({$order})" : null);
+    }
+}

@@ -1,0 +1,67 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+{% macro render_doc_part(doc_part) %}
+<li><a href="#part_{{ doc_part.id }}">{{ doc_part.title }}</a></li>
+{% if doc_part.children.count %}
+    <ol class="mini-toc">
+        {% for child in doc_part.children %}
+            {{ _self.render_doc_part(child) }}
+        {% endfor %}
+    </ol>
+{% endif %}
+{% endmacro %}
+
+{% import _self as macro %}
+
+{% block body %}
+        <nav class="navbar navbar-default toolbar" role="navigation">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#menu-toggle" id="menu-toggle"><span class="fa fa-list" aria-hidden="true"></span></a>
+                    <a class="navbar-brand" href="{{ path('nav.doc_pdf', {'id': doc.id, 'cropbox': 0, 'booklet': 0}) }}"><span class="fa fa-file-pdf-o"></span></a>
+                    <span class="navbar-brand">{{ doc.title }}</span>
+                </div>
+            </div>
+        </nav>
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <div id="wrapper" class="row toggled">
+            <!-- Sidebar -->
+            <div id="sidebar-wrapper" class="pull-left">
+                <div class="all-padding">
+                    <div class="well">
+                        <a href="#part_{{ doc.id }}">{% trans from 'documentation' %}label.introduction{% endtrans %}</a>
+                        <h3>{% trans from 'documentation' %}label.toc{% endtrans %}</h3>
+                        <ol class="mini-toc">
+                            {% for chapter in doc.children %}
+                                {{ macro.render_doc_part(chapter) }}
+                            {% endfor %}
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            <!-- /#sidebar-wrapper -->
+            <!-- Page Content -->
+            <div id="page-content-wrapper" class="pull-right">
+                <div class="document">
+                    {% include 'docs/doc_part.html.twig' with {'doc':doc} %}
+                </div>
+            </div>
+            <!-- /#page-content-wrapper -->
+        </div>
+        <!-- /#wrapper -->
+
+    <script type="text/javascript">
+        $("#menu-toggle").click(function(e) {
+            e.preventDefault();
+            $("#wrapper").toggleClass("toggled");
+        });
+    </script>
+{% endblock %}

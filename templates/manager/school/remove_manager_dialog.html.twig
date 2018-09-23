@@ -1,0 +1,21 @@
+{{ form_start(form) }}
+<div class="panel panel-danger">
+    <div class="panel-heading">{% trans from "school" %}school.remove_manager{% endtrans %}</div>
+    <div class="panel-body">
+        <div class="row text-danger">
+            <div class="col-xs-2 col-sm-1"><h1 class="no-margin no-padding"><i class="fa fa-exclamation-triangle"></i></h1></div>
+            <div class="col-xs-10 col-sm-11">
+                {{ 'label.confirm_remove_manager'|trans({'%manager%': manager}, 'school') }}
+                {% if manager.id == app.user.id %}
+                <h3>{% trans from "school" %}school.remove_self{% endtrans %}</h3>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-footer text-right">
+        <a onclick="$('#manager_panel').load('{{ path('nav.view_managers') }}'); scrollToAnchor('manager_panel'); return false;" class="btn btn-default"><i class="fa fa-undo"></i> {% trans from "messages" %}no{% endtrans %}</a>
+        <button type="submit" class="btn btn-danger"><i class="fa fa-check"></i> {% trans from "messages" %}yes{% endtrans %}</button>
+    </div>
+</div>
+{{ form_end(form) }}

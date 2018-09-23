@@ -1,0 +1,86 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 06/06/2017
+ * Time: 22.13
+ */
+namespace App\Entity\Security;
+
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Traits\DataTrait;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation as Serialize;
+use JMS\Serializer\Annotation as Jms;
+
+/**
+ * @ORM\Table(name="user_profile_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @Jms\ExclusionPolicy("NONE")
+ * @package App\Entity\Security
+ * @author Robert Jürgens <robert@jurgens.fi>
+ */
+class UserProfile implements Serializable
+{
+    /**
+     * Use data trait
+     * @Serialize\Groups({"SecurityAPI", "Default"})
+     * @Jms\Groups({"SecurityAPI", "Default"})
+     * @Jms\Expose(true)
+     */
+    use DataTrait;
+
+    /**
+     * @ORM\Column(name="id_fld", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
+     * @Serialize\Groups({"SecurityAPI", "Default"})
+     * @Jms\Groups({"SecurityAPI", "Default"})
+     * @var integer $id The Entity Id of this UserTicket
+     */
+    protected $id;
+
+    /**
+     * @ORM\OneToOne(targetEntity="User", mappedBy="profile")
+     * @Serialize\Groups({"SecurityAPI", "Default"})
+     * @Serialize\MaxDepth(1)
+     * @Jms\Groups({"SecurityAPI", "Default"})
+     * @Jms\MaxDepth(1)
+     * @var User $user The owner of this profile
+     */
+    private $user;
+
+    /**
+     * Gets the id.
+     *
+     * @return mixed
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * Gets the User.
+     *
+     * @return User
+     */
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    /**
+     * Sets the User.
+     *
+     * @param mixed $user
+     * @return $this
+     */
+    public function setUser($user)
+    {
+        $this->user = $user;
+
+        return $this;
+    }
+}

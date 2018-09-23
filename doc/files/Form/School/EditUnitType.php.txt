@@ -1,0 +1,134 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 22/11/2016
+ * Time: 21.45
+ */
+namespace App\Form\School;
+
+use App\Entity\Schools\School;
+use App\Entity\Schools\SchoolUnitName;
+use App\Form\Message\MessageType;
+use App\Form\PhoneNumber\PhoneNumberType;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ButtonType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use App\Entity\Schools\SchoolType as SchoolTypeEntity;
+
+class EditUnitType extends AbstractType
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $uid = $builder->getData()->getId();
+
+        $builder
+           ->add('type', EntityType::class, [
+                'label' => 'field.school_type',
+                'class' => SchoolTypeEntity::class,
+                'choices' => $options['availableTypes'],
+                'choice_translation_domain' => false,
+                'choice_label' => 'name',
+            ])
+            ->add('password', TextType::class, [
+                'label' => 'field.password'
+            ])
+            ->add(
+                $builder->create('name', FormType::class, [
+                    'label' => false,
+                    'by_reference' => true,
+                    'data_class' => SchoolUnitName::class])
+                    ->add('name', TextType::class, [
+                        'label' => 'field.name'
+                    ])
+                    ->add('abbreviation', TextType::class, [
+                        'label' => 'field.abbreviation',
+                        'required' => false,
+                        'attr' => ['maxlength' => '12']
+                    ])
+                    ->add('streetAddress', TextType::class, [
+                        'label' => 'field.address'
+                    ])
+                    ->add('zipcode', TextType::class, [
+                        'label' => 'field.zipcode',
+                        'attr' => ['pattern' => '\\d{5}']
+                    ])
+                    ->add('city', TextType::class, [
+                        'label' => 'field.city'
+                    ])
+                    ->add('pobox', TextType::class, [
+                        'label' => 'field.pobox',
+                        'required' => false
+                    ])
+                    ->add('country', TextType::class, [
+                        'label' => 'field.country'
+                    ])
+                    ->add('phone', PhoneNumberType::class, [
+                        'label' => 'field.phone',
+                        'defaultArea' => '+358'
+                    ])
+                    ->add('email', EmailType::class, [
+                        'label' => 'field.email'
+                    ])
+            )
+            ->add('isActive', ChoiceType::class, [
+                'label' => 'field.status',
+                'expanded' => true,
+                'choice_attr' => function () { return ['class' => 'inline']; },
+                'label_attr' => ['class' => 'radio-inline'],
+                'choice_translation_domain' => 'messages',
+                'choices' => ['label.inactive' => 0, 'label.active' => 1],
+            ])
+            ->add('save', SubmitType::class, [
+                'translation_domain' => 'messages',
+                'left_icon' => 'fa-save',
+                'right_icon' => 'fa-check',
+                'attr' => ['class' => 'btn-success form-submit'],
+                'label' => 'action.save',
+            ])
+            ->add('cancel', ButtonType::class, [
+                'translation_domain' => 'messages',
+                'left_icon' => 'fa-chevron-left',
+                'right_icon' => 'fa-close',
+                'attr' => [
+                    'class' => 'btn-default',
+                    'data-dismiss' => 'modal',
+                ],
+                'label' => 'action.close',
+            ])
+        ;
+
+        if ($uid) $builder
+            ->add('message', MessageType::class, [
+                'independent' => false,
+                'label' => 'field.message',
+                'translation_domain' => 'school',
+                'required' => false,
+                ]);
+
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults([
+            'data_class' => 'App\Entity\Schools\SchoolUnit',
+            'translation_domain' => 'school',
+            'delete_title' => '',
+            'delete_path' => '',
+            'availableTypes' => [],
+        ]);
+    }
+}

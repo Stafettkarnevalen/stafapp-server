@@ -1,0 +1,345 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 17.06
+ */
+
+namespace App\Entity\Services;
+
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Invoicing\InvoiceAddress;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\LoggableTrait;
+use App\Entity\Traits\SeasonTrait;
+use App\Entity\Traits\VersionedPriceTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Traits\DataTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use App\Entity\Traits\VersionedTitleAndTextTrait;
+
+/**
+ * @ORM\Table(name="service_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Services
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class Service implements \Serializable, CreatedByUserInterface, LoggableEntity
+{
+    /** Use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use data attributes */
+    use DataTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /** Use title and text fields */
+    use VersionedTitleAndTextTrait;
+
+    /** Use season field */
+    use SeasonTrait;
+
+    /** Use price field */
+    use VersionedPriceTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="stock_fld", type="integer")
+     * @Assert\NotBlank()
+     * @var integer $stock The amount in stock, the amount that can be ordered
+     */
+    protected $stock;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="queue_fld", type="integer", nullable=true)
+     * @var integer $queue The amount that can be ordered beyond the stock as a queue
+     */
+    protected $queue;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="ServiceCategory", inversedBy="services")
+     * @ORM\JoinColumn(name="service_category_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var ServiceCategory $serviceCategory The category of this service
+     */
+    protected $serviceCategory;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Invoicing\InvoiceAddress", inversedBy="services")
+     * @ORM\JoinColumn(name="invoice_address_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var InvoiceAddress $invoiceAddress The invoice address of this service
+     */
+    protected $invoiceAddress;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Order", mappedBy="service", cascade={"persist", "remove"})
+     * @var ArrayCollection $orders The orders of this service
+     */
+    protected $orders;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Service", mappedBy="parent")
+     * @var ArrayCollection $children Children of this service
+     */
+    protected $children;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Service", inversedBy="children")
+     * @ORM\JoinColumn(name="parent_fld", referencedColumnName="id_fld", nullable=true)
+     * @var Service $parent The parent of this service
+     */
+    protected $parent;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Relays\Race", mappedBy="service", cascade={"persist", "remove"})
+     * @var ArrayCollection $races The races of this service
+     */
+    protected $races;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Cheerleading\CheerleadingCompetition",
+     *     mappedBy="service", cascade={"persist", "remove"})
+     * @var ArrayCollection $cheerleadingCompetitions The cheer leading competitions of this service
+     */
+    protected $cheerleadingCompetitions;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Events\Competition", mappedBy="service", cascade={"persist", "remove"})
+     * @var ArrayCollection $eventCompetitions The event competitions  of this service
+     */
+    protected $eventCompetitions;
+
+    /**
+     * Service constructor.
+     */
+    public function __construct()
+    {
+        $this->orders = new ArrayCollection();
+        $this->children = new ArrayCollection();
+        $this->races = new ArrayCollection();
+        $this->cheerleadingCompetitions = new ArrayCollection();
+        $this->eventCompetitions = new ArrayCollection();
+    }
+
+    /**
+     * Gets the Races.
+     *
+     * @return ArrayCollection
+     */
+    public function getRaces()
+    {
+        return $this->races;
+    }
+
+    /**
+     * Sets the Races.
+     *
+     * @param ArrayCollection $races
+     * @return $this
+     */
+    public function setRaces($races)
+    {
+        $this->races = $races;
+
+        return $this;
+    }
+
+    /**
+     * Gets the cheerleadingCompetitions.
+     *
+     * @return ArrayCollection
+     */
+    public function getCheerleadingCompetitions()
+    {
+        return $this->cheerleadingCompetitions;
+    }
+
+    /**
+     * Sets the cheerleadingCompetitions.
+     *
+     * @param ArrayCollection $cheerleadingCompetitions
+     * @return $this
+     */
+    public function setCheerleadingCompetitions($cheerleadingCompetitions)
+    {
+        $this->cheerleadingCompetitions = $cheerleadingCompetitions;
+
+        return $this;
+    }
+
+    /**
+     * Gets the eventCompetitions.
+     *
+     * @return ArrayCollection
+     */
+    public function getEventCompetitions()
+    {
+        return $this->eventCompetitions;
+    }
+
+    /**
+     * Sets the eventCompetitions.
+     *
+     * @param ArrayCollection $eventCompetitions
+     * @return $this
+     */
+    public function setEventCompetitions($eventCompetitions)
+    {
+        $this->eventCompetitions = $eventCompetitions;
+
+        return $this;
+    }
+
+    /**
+     * Gets the invoiceAddress.
+     *
+     * @return InvoiceAddress
+     */
+    public function getInvoiceAddress()
+    {
+        return $this->invoiceAddress;
+    }
+
+    /**
+     * Sets the invoiceAddress.
+     *
+     * @param InvoiceAddress $invoiceAddress
+     * @return $this
+     */
+    public function setInvoiceAddress(InvoiceAddress $invoiceAddress)
+    {
+        $this->invoiceAddress = $invoiceAddress;
+
+        return $this;
+    }
+
+    /**
+     * Gets the stock.
+     *
+     * @return integer
+     */
+    public function getStock()
+    {
+        return $this->stock;
+    }
+
+    /**
+     * Sets the stock.
+     *
+     * @param integer $stock
+     * @return $this
+     */
+    public function setStock($stock)
+    {
+        $this->stock = $stock;
+
+        return $this;
+    }
+
+    /**
+     * Gets the queue.
+     *
+     * @return integer
+     */
+    public function getQueue()
+    {
+        return $this->queue;
+    }
+
+    /**
+     * Sets the queue.
+     *
+     * @param integer $queue
+     * @return $this
+     */
+    public function setQueue($queue)
+    {
+        $this->queue = $queue;
+
+        return $this;
+    }
+
+    /**
+     * Gets the Orders.
+     *
+     * @return ArrayCollection
+     */
+    public function getOrders()
+    {
+        return $this->orders;
+    }
+
+    /**
+     * Sets the Orders.
+     *
+     * @param ArrayCollection $orders
+     * @return $this
+     */
+    public function setOrders($orders)
+    {
+        $this->orders = $orders;
+
+        return $this;
+    }
+
+    /**
+     * Gets the Subervices.
+     *
+     * @return ArrayCollection
+     */
+    public function getChildren()
+    {
+        return $this->children;
+    }
+
+    /**
+     * Sets the SubServices
+     *
+     * @param ArrayCollection $children
+     * @return $this;
+     */
+    public function setChildren($children)
+    {
+        $this->children = $children;
+
+        return $this;
+    }
+
+    /**
+     * Gets the ParentService.
+     *
+     * @return Service|null
+     */
+    public function getParent()
+    {
+        return $this->parent;
+    }
+
+    /**
+     * Sets the ParentService.
+     *
+     * @param Service|null $parent
+     * @return $this
+     */
+    public function setParent($parent)
+    {
+        $this->parent = $parent;
+
+        return $this;
+    }
+}

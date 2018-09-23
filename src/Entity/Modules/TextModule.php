@@ -1,0 +1,90 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 13/10/2017
+ * Time: 14.16
+ */
+
+namespace App\Entity\Modules;
+
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Traits\LoggableTrait;
+use App\Form\Module\TextModuleType;
+use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
+
+/**
+ * @ORM\Table(name="text_module_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Modules
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class TextModule extends BaseModule implements LoggableEntity
+{
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="text_fld", type="text", nullable=true)
+     * @var string $text The contents
+     */
+    protected $text;
+
+    /**
+     * Gets the text.
+     *
+     * @return string|null
+     */
+    public function getText()
+    {
+        return $this->text;
+    }
+
+    /**
+     * Sets the text.
+     *
+     * @param string|null $text
+     * @return $this
+     */
+    public function setText($text)
+    {
+        $this->text = $text;
+
+        return $this;
+    }
+
+    /**
+     * Gets the Symfony FormType class.
+     *
+     * @return string
+     */
+    public function getFormClass()
+    {
+        return TextModuleType::class;
+    }
+
+    /**
+     * Gets the TWIG form view.
+     *
+     * @return string
+     */
+    public function getFormView()
+    {
+        return 'admin/modules/forms/text-module.html.twig';
+    }
+
+    /**
+     * Gets the TWIG view.
+     *
+     * @return string
+     */
+    public function getView()
+    {
+        return 'admin/modules/views/text-module.html.twig';
+    }
+}

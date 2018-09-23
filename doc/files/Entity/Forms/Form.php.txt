@@ -1,0 +1,301 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 08/09/2017
+ * Time: 12.40
+ */
+
+namespace App\Entity\Forms;
+
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Relays\Race;
+use App\Entity\Traits\LoggableTrait;
+use App\Entity\Traits\VersionedLifespanTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\CloneableTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use App\Entity\Traits\VersionedTitleAndTextTrait;
+use Symfony\Component\Serializer\Annotation as Serialize;
+use JMS\Serializer\Annotation as Jms;
+
+/**
+ * @ORM\Table(name="form_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Forms
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class Form implements Serializable, CreatedByUserInterface, LoggableEntity
+{
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use cloning functions */
+    use CloneableTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /** Use lifespan trait */
+    use VersionedLifespanTrait;
+
+    /** Use title and text fields */
+    use VersionedTitleAndTextTrait;
+
+    /**
+     * @const CONTEXT_USER The form is intended for users
+     */
+    const CONTEXT_USER        = "USER";
+
+    /**
+     * @const CONTEXT_SCHOOL The form is intended for schools
+     */
+    const CONTEXT_SCHOOL      = "SCHOOL";
+
+    /**
+     * @const CONTEXT_SCHOOL_UNIT The form is intended for school units
+     */
+    const CONTEXT_SCHOOL_UNIT = "SCHOOL_UNIT";
+
+    /**
+     * @const CONTEXT_RACE The form is intended for teams in a race
+     */
+    const CONTEXT_RACE        = "RACE";
+
+    /**
+     * @const CONTEXT_MANAGERS The form is intended for all in the managers role
+     */
+    const CONTEXT_MANAGERS    = "MANAGERS";
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="context_fld", type="string", columnDefinition="ENUM('USER', 'SCHOOL', 'SCHOOL_UNIT',  'RACE', 'MANAGERS')", options={"default": "USER"}, nullable=false)
+     * @Assert\NotBlank(groups={"form"})
+     * @Assert\Choice({"USER", "SCHOOL", "SCHOOL_UNIT", "RACE", "MANAGERS"})
+     * @var string $context The context of the form, who is it intended for
+     */
+    protected $context;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Relays\Race"))
+     * @ORM\JoinColumn(name="race_fld", referencedColumnName="id_fld", nullable=true)
+     * @var Race $race The race that the form was about
+     */
+    protected $race;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="mandatory_fld", type="boolean", nullable=false)
+     * @Assert\NotBlank(groups={"form"})
+     * @var boolean $isMandatory Flag to determine if the form is mandatory within its context
+     */
+    protected $isMandatory;
+
+    /**
+     * @ORM\OneToMany(targetEntity="FormField", mappedBy="form", cascade={"persist", "merge", "remove"})
+     * @ORM\OrderBy({"order" = "ASC"})
+     * @var ArrayCollection $formFields The fields of this form
+     */
+    protected $formFields;
+
+    /**
+     * @ORM\OneToMany(targetEntity="FormSubmission", mappedBy="form", cascade={"persist", "merge", "remove"})
+     * @ORM\OrderBy({"createdAt" = "DESC"})
+     * @var ArrayCollection $submissions The submissions of this form
+     */
+    protected $submissions;
+
+    /**
+     * @ORM\OneToMany(targetEntity="FormReport", mappedBy="form", cascade={"persist", "merge", "remove"})
+     * @ORM\OrderBy({"createdAt" = "DESC"})
+     * @var ArrayCollection $reports The reports made for this form.
+     */
+    protected $reports;
+
+    /**
+     * Gets the context of the form.
+     *
+     * @return string
+     */
+    public function getContext()
+    {
+        return $this->context;
+    }
+
+    /**
+     * Sets the context of the form.
+     *
+     * @param string $context
+     * @return $this
+     */
+    public function setContext($context)
+    {
+        $this->context = $context;
+
+        return $this;
+    }
+
+    /**
+     * Gets if the form is mandatory (modal for the target group).
+     *
+     * @return boolean
+     */
+    public function getIsMandatory()
+    {
+        return $this->isMandatory;
+    }
+
+    /**
+     * Sets if the form is mandatory.
+     *
+     * @param boolean $isMandatory
+     * @return $this
+     */
+    public function setIsMandatory($isMandatory)
+    {
+        $this->isMandatory = $isMandatory;
+
+        return $this;
+    }
+
+    /**
+     * Gets the form fields.
+     *
+     * @param boolean $array If true this method returns an array instead of an ArrayCollection
+     * @return ArrayCollection|array
+     */
+    public function getFormFields($array = true)
+    {
+        return $array ?
+            $this->formFields->toArray() :
+            $this->formFields;
+    }
+
+    /**
+     * Sets the form fields.
+     *
+     * @param ArrayCollection|array $formFields
+     * @return $this
+     */
+    public function setFormFields($formFields)
+    {
+        if (is_array($formFields))
+            $formFields = new ArrayCollection($formFields);
+
+        $this->formFields = $formFields;
+
+        return $this;
+    }
+
+    /**
+     * Form constructor.
+     */
+    public function __construct()
+    {
+        $this->formFields = new ArrayCollection([]);
+        $this->submissions = new ArrayCollection([]);
+        $this->reports = new ArrayCollection([]);
+        $this->from = $this->createdAt = new \DateTime('now');
+    }
+
+    /**
+     * Gets the submissions.
+     *
+     * @return ArrayCollection
+     */
+    public function getSubmissions()
+    {
+        return $this->submissions;
+    }
+
+    /**
+     * Sets the submissions.
+     *
+     * @param ArrayCollection $submissions
+     * @return $this
+     */
+    public function setSubmissions($submissions)
+    {
+        $this->submissions = $submissions;
+
+        return $this;
+    }
+
+    /**
+     * Gets the reports.
+     *
+     * @return ArrayCollection
+     */
+    public function getReports()
+    {
+        return $this->reports;
+    }
+
+    /**
+     * Sets the reports.
+     *
+     * @param ArrayCollection $reports
+     * @return $this
+     */
+    public function setReports($reports)
+    {
+        $this->reports = $reports;
+
+        return $this;
+    }
+
+    /**
+     * Gets the race.
+     *
+     * @return mixed
+     */
+    public function getRace()
+    {
+        return $this->race;
+    }
+
+    /**
+     * Sets the race.
+     *
+     * @param mixed $race
+     * @return $this
+     */
+    public function setRace($race)
+    {
+        $this->race = $race;
+
+        return $this;
+    }
+
+    /**
+     * Gets a dependency list for rendering javascript conditions for the form.
+     *
+     * @param bool $array
+     * @return array|ArrayCollection
+     */
+    public function getFormFieldDependencies($array = false)
+    {
+        $deps = [];
+        /** @var FormField $field */
+        foreach ($this->getFormFields() as $field) {
+            $key = "client_form[answers][{$field->getOrder()}][answer]";
+            /** @var FormFieldDependency $depsOnMe */
+            foreach ($field->getDependsOnMe() as $depsOnMe) {
+                $deps[$key][] = $depsOnMe;
+            }
+        }
+        return ($array ? $deps : new ArrayCollection($deps));
+    }
+}

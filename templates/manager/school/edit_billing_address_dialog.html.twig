@@ -1,0 +1,61 @@
+{{ form_start(form, {'attr':{'id':'address_form'}}) }}
+<div class="panel panel-default">
+    <div class="panel-heading"><strong>{{ action|trans({}, 'school') }}: {{ type|lower|trans({ }, 'school')|lower }}</strong></div>
+    <div class="panel-body">
+        {% if type != 'VISITING' %}
+            {{ form_row(form.name) }}
+            {{ form_row(form.reference) }}
+            {{ form_row(form.method) }}
+            <div id="method_email"{% if address.method != 'EMAIL' %} class="hidden"{% endif %}>
+                {{ form_row(form.email) }}
+            </div>
+            <div id="method_letter"{% if address.method != 'LETTER' %} class="hidden"{% endif %}>
+                {{ form_row(form.streetAddress) }}
+                {{ form_row(form.zipcode) }}
+                {{ form_row(form.city) }}
+                {{ form_row(form.pobox) }}
+                {{ form_row(form.country) }}
+            </div>
+            <div id="method_einvoice"{% if address.method != 'EINVOICE' %} class="hidden"{% endif %}>
+                {{ form_row(form.recipient_edi) }}
+                {{ form_row(form.operator) }}
+                {{ form_row(form.operator_edi) }}
+                {{ form_row(form.operator_bic) }}
+            </div>
+        {% else %}
+            {{ form_row(form.name) }}
+            {{ form_row(form.streetAddress) }}
+            {{ form_row(form.zipcode) }}
+            {{ form_row(form.city) }}
+            {{ form_row(form.country) }}
+        {% endif %}
+    </div>
+    <div class="panel-footer text-right">
+        <a onclick="$('#address_{{ unit.id }}').load('./school/billing_address/{{ unit.id }}/{{ type }}'); scrollToAnchor('unit_panel'); return false;" class="btn btn-default"><i class="fa fa-undo"></i> {% trans from "messages" %}cancel{% endtrans %}</a>
+        <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> {% trans from "messages" %}save{% endtrans %}</button>
+    </div>
+</div>
+{{ form_end(form) }}
+<script>
+    $('document').ready(function(){
+        $('#billing_address_method_0').change(function(){
+            $('#method_letter').addClass('hidden');
+            $('#method_einvoice').addClass('hidden');
+            $('#method_email').removeClass('hidden');
+        });
+        $('#billing_address_method_1').change(function(){
+            $('#method_email').addClass('hidden');
+            $('#method_einvoice').addClass('hidden');
+            $('#method_letter').removeClass('hidden');
+        });
+        $('#billing_address_method_2').change(function(){
+            $('#method_email').addClass('hidden');
+            $('#method_letter').addClass('hidden');
+            $('#method_einvoice').removeClass('hidden');
+        });
+    });
+
+    function load_method_specific(method) {
+        alert(method.val());
+    }
+</script>

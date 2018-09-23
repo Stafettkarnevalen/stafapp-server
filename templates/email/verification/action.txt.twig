@@ -1,0 +1,2 @@
+{% trans from "user" %}label.verify_email{% endtrans %}: {{ absolute_url(path('verify', {'id':user.id, 'field':'email', 'hash':user.emailhash})) }}
+{% trans from "user" %}label.block_account{% endtrans %}: {{ absolute_url(path('block', {'id':user.id})) }}

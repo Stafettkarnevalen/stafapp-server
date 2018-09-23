@@ -1,0 +1,40 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 14/12/2016
+ * Time: 21.34
+ */
+
+namespace App\Repository;
+
+use App\Entity\Schools\SchoolUnit;
+
+class SchoolManagerRepository extends UserRepository
+{
+    /**
+     * @param SchoolUnit $schoolUnit
+     * @param array $params
+     * @param array $sort
+     * @return array
+     */
+    public function findBySchoolUnit($schoolUnit, array $params, array $sort)
+    {
+        $q = $this->createQueryBuilder('sm')
+            ->leftJoin('sm.schoolUnits', 'su')
+            ->addSelect('su')
+            ->where('su.id = :unit')
+            ->setParameter('unit', $schoolUnit->getId())
+        ;
+        $i = 1;
+        foreach ($params as $key => $val) {
+            $q->andWhere("su.{$key} = :p{$i}")->setParameter("p{$i}", $val);
+            $i++;
+        }
+
+        foreach ($sort as $key => $order)
+            $q->addOrderBy('sm.' . $key, $order);
+
+        return $q->getQuery()->getResult();
+    }
+}

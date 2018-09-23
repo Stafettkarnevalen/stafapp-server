@@ -1,0 +1,31 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 31/12/2017
+ * Time: 22.01
+ */
+
+namespace App\Repository;
+
+use Doctrine\ORM\EntityRepository;
+
+class BankAccountRepository extends EntityRepository
+{
+    public function findByOrderBetween($from, $until, $address = null)
+    {
+        $qb = $this->createQueryBuilder('ba');
+
+        $where = 'ba.order >= :from AND ba.order <= :until AND ' . ($address ? 'ba.address = :address' : 'ba.address IS NULL');
+
+        $qb->where($where)
+            ->setParameter('from', $from)
+            ->setParameter('until', $until);
+        if ($address)
+            $qb->setParameter('address', $address);
+
+        $result = $qb->getQuery()->getResult();
+
+        return $result;
+    }
+}

@@ -1,0 +1,1050 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 27/10/2017
+ * Time: 20.39
+ */
+
+namespace App\Controller;
+
+
+use App\Controller\Interfaces\ModalEventController;
+use App\Entity\Documentation\Documentation;
+use App\Entity\Documentation\FAQ;
+use App\Entity\Security\SimpleACE;
+use App\Form\Documentation\EditType;
+use App\Form\FAQ\EditType as FaqEditType;
+use App\PDF\TCPDF;
+use App\Repository\DocumentationRepository;
+use Gedmo\Loggable\Entity\LogEntry;
+use Gedmo\Loggable\Entity\Repository\LogEntryRepository;
+use IDML\Package;
+use PhpOffice\PhpWord\Element\Section;
+use PhpOffice\PhpWord\Exception\Exception;
+use PhpOffice\PhpWord\Shared\Html;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Form\Extension\Core\Type\ButtonType;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\Security\Acl\Domain\RoleSecurityIdentity;
+use Symfony\Component\Security\Acl\Model\MutableAclInterface;
+use Symfony\Component\Security\Acl\Model\MutableAclProviderInterface;
+use Symfony\Component\Security\Acl\Permission\MaskBuilder;
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\IOFactory;
+
+define ('DOC_IMAGE_DIR', dirname(__FILE__) . '/../../../web/files/documentation/');
+
+class DocumentationController extends Controller implements ModalEventController
+{
+    /**
+     * Shows documentation as IDML
+     *
+     * @Route("/{_locale}/doc2idml/{id}", name="nav.doc_idml")
+     * @param integer $id
+     * @return mixed
+     */
+    public function idmlAction($id)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var Documentation $doc */
+        $doc = $em->getRepository(Documentation::class)->find($id);
+
+        $idml = new Package();
+
+        $fileName = "idml-{$doc->getId()}.idml";
+
+        $temp_file = tempnam(sys_get_temp_dir(), $fileName);
+
+        $idml->saveAll($fileName);
+
+        $response = new BinaryFileResponse($temp_file);
+        $response->setContentDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            $fileName
+        );
+        return $response;
+    }
+
+    /**
+     * @param Section $section
+     * @param Documentation $doc
+     * @param Request $request
+     */
+    private function addSection($section, $doc, $request)
+    {
+        $section->addTitle($doc->getTitleNumbering() . ' ' . $doc->getTitle(), $doc->getTitleLevel());
+        $html = $doc->getText();
+        $html = str_replace(
+            [
+                'href="/',
+                'src="/',
+                'align: justify',
+            ],
+            [
+                'href="' . $request->getSchemeAndHttpHost() . '/',
+                'src="' . $request->getSchemeAndHttpHost() . '/',
+                'align: both',
+            ], $html);
+        Html::addHtml($section, $html);
+        // $section->addText($html);
+
+        foreach ($doc->getChildren() as $doc_part) {
+            $this->addSection($section, $doc_part, $request);
+        }
+    }
+
+    /**
+     * Shows documentation as DOCX
+     *
+     * @Route("/{_locale}/doc2docx/{id}", name="nav.doc_docx")
+     * @param integer $id
+     * @param Request $request
+     * @throws Exception
+     * @return mixed
+     */
+    public function documentationDOCXAction($id, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var Documentation $doc */
+        $doc = $em->getRepository(Documentation::class)->find($id);
+
+        // Create a new Word document
+        $phpWord = new PhpWord();
+        $h1FontStyle = ['bold' => true, 'name' => 'helvetica', 'size' => 18];
+        $h1ParaStyle = ['lineHeight' => 1.5, 'spaceAfter' => '100'];
+        $phpWord->addTitleStyle(1, $h1FontStyle, $h1ParaStyle);
+
+        $h2FontStyle = ['bold' => true, 'name' => 'helvetica', 'size' => 16];
+        $h2ParaStyle = ['lineHeight' => 1.5, 'spaceAfter' => '100'];
+        $phpWord->addTitleStyle(2, $h2FontStyle, $h2ParaStyle);
+
+        $h3FontStyle = ['bold' => true, 'name' => 'helvetica', 'size' => 14];
+        $h3ParaStyle = ['lineHeight' => 1.5, 'spaceAfter' => '100'];
+        $phpWord->addTitleStyle(3, $h3FontStyle, $h3ParaStyle);
+
+        $h4FontStyle = ['bold' => true, 'name' => 'helvetica', 'size' => 16];
+        $h4ParaStyle = ['lineHeight' => 1.5, 'spaceAfter' => '100'];
+        $phpWord->addTitleStyle(4, $h4FontStyle, $h4ParaStyle);
+
+        $phpWord->setDefaultParagraphStyle(['align' => 'both', 'spaceAfter' => 400]);
+
+        $section = $phpWord->addSection();
+        $section->setDocPart($doc->getTitle(), $doc->getId());
+        $section->addTitle($doc->getTitle(), $doc->getTitleLevel());
+
+        Html::addHtml($section, $doc->getText());
+
+        foreach ($doc->getChildren() as $doc_part) {
+            $section = $phpWord->addSection();
+            $section->setDocPart($doc->getTitle(), $doc_part->getId());
+            $this->addSection($section, $doc_part, $request);
+        }
+
+        $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
+
+        $fileName = "doc-{$doc->getId()}.docx";
+
+        $temp_file = tempnam(sys_get_temp_dir(), $fileName);
+
+        // Write in the temporal filepath
+        $objWriter->save($temp_file);
+
+        $response = new BinaryFileResponse($temp_file);
+        $response->setContentDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            $fileName
+        );
+        return $response;
+    }
+
+    /**
+     * Shows documentation as PDF
+     *
+     * @Route("/{_locale}/doc2csv/{id}", name="nav.doc_csv")
+     * @param integer $id
+     * @return mixed
+     */
+    public function documentationCSVAction($id)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var Documentation $doc */
+        $doc = $em->getRepository(Documentation::class)->find($id);
+
+        $csv = $doc->__toCSV();
+
+        $response =  new Response($csv);
+        $response->headers->set('Content-Type', 'text/csv');
+        return $response;
+    }
+
+    /**
+     * Shows documentation as PDF
+     *
+     * @Route("/{_locale}/doc2pdf/{id}/{bleed}/{cropbox}/{booklet}/{authbox}", name="nav.doc_pdf")
+     * @param integer $id
+     * @param integer $bleed
+     * @param boolean $cropbox
+     * @param boolean $booklet
+     * @param boolean $authbox
+     * @param Request $request
+     * @return mixed
+     */
+    public function documentationPDFAction($id, $bleed = 0, $cropbox = false, $booklet = true, $authbox = true, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var Documentation $doc */
+        $doc = $em->getRepository(Documentation::class)->find($id);
+
+        $this->container->get("white_october.tcpdf")->setClassName(TCPDF::class);
+        /** @var TCPDF $pdf */
+        $pdf = $this->container->get("white_october.tcpdf")->create(
+            'PORTRAIT',
+            PDF_UNIT,
+            PDF_PAGE_FORMAT,
+            true,
+            'UTF-8',
+            false
+        );
+
+        // doc setup
+        $pdf->setBleed($bleed);
+        $pdf->SetAuthBox($authbox);
+        $pdf->SetIsBooklet($booklet);
+
+        $pdf->SetCreator(PDF_CREATOR);
+        $pdf->SetAuthor($doc->getCreatedBy()->getFullname());
+        $pdf->SetTitle($doc->getTitle());
+        $pdf->SetSubject('Documentation');
+        $pdf->SetKeywords('Stafettkarnevalen, PDF');
+        $pdf->setFontSubsetting(true);
+
+        // set header and footer fonts
+        $pdf->setHeaderFont(Array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
+        $pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
+
+        // set default monospaced font
+        $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+
+        $pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP + 5, PDF_MARGIN_RIGHT);
+        $pdf->SetHeaderMargin(0);
+        $pdf->SetFooterMargin(0);
+        $pdf->SetAutoPageBreak(true, 0);
+
+        // set image scale factor
+        $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+
+        // set font
+        $pdf->SetFont('helvetica', '', 11, '', true);
+
+        // add page
+
+
+        if ($booklet) {
+            $frontImg = DOC_IMAGE_DIR . 'front-' . $doc->getId() . '.jpg';
+
+            $pdf->SetMargins(0, 0, 0);
+            $pdf->SetHeaderMargin(0);
+            $pdf->SetFooterMargin(0);
+            $pdf->SetAutoPageBreak(false, 0);
+            $pdf->AddPage('P', 'B5');
+            if (file_exists($frontImg))
+                $pdf->Image($frontImg, -$pdf->GetBleed(), -$pdf->GetBleed(), 176 + 2 * $pdf->GetBleed(), 250 + 2 * $pdf->GetBleed(), '', '', '', false, 300, '', false, false, 0);
+
+            $pdf->Rect(-$pdf->getBleed(), 200, 176 + 2 * $pdf->getBleed(), 4,'F',array(),array(255, 255, 255));
+            $pdf->Rect(-$pdf->getBleed(), 201, 176 + 2 * $pdf->getBleed(), 49 + $pdf->getBleed(),'F',array(),array(18, 122, 190));
+
+            $pdf->SetY(200);
+            $pdf->SetTextColor(255, 255, 255);
+            $pdf->SetFontSize(32);
+            $pdf->Cell(0, 40, $doc->getTitle(), 0, false, 'C', 0, '', 0, false, 'T', 'M');
+            $pdf->SetTextColor(20, 20, 20);
+            $pdf->SetFontSize(11);
+
+            $image_file = PDF_IMAGE_DIR . 'i<3staf1-nav.png';
+            $pdf->Image($image_file, 68, 235, 40, '', 'PNG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+            $pdf->AddPage('P', 'B5');
+        }
+        // set margins
+        $pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP + 5, PDF_MARGIN_RIGHT);
+        $pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
+        $pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
+
+        // set auto page breaks
+        $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
+
+        $pdf->AddPage('P', 'B5');
+
+        $html = $this->renderView(
+            'docs/doc2pdf.html.twig',
+            array(
+                'doc' => $doc,
+                'pdf' => true,
+            )
+        );
+        $html = str_replace(['href="/'], ['href="' . $request->getSchemeAndHttpHost() . '/'], $html);
+
+        $dom = new Crawler();
+        $dom->addHtmlContent($html);
+
+        //$dom->filter('tcpdf')->each(function($node, $i) use ($pdf) {
+        $dom->filter('tcpdf')->each(function(Crawler $node) use ($pdf) {
+            $params = json_decode($node->getNode(0)->getAttribute('params'), true);
+            $params = $pdf->serializeTCPDFtagParameters($params);
+            $node->getNode(0)->setAttribute('params', $params);
+        });
+        $html = $dom->html();
+
+        $pdf->writeHTMLCell(
+            $w = 176 - (PDF_MARGIN_LEFT) - (PDF_MARGIN_RIGHT),
+            $h = 0,
+            $x = PDF_MARGIN_LEFT,
+            $y = PDF_MARGIN_RIGHT,
+            $html,
+            $border = 0,
+            $ln = 1,
+            $fill = 0,
+            $reseth = true,
+            $align = '',
+            $autopadding = true
+        );
+
+        // $pdf->Bookmark('Boomark 1', 0);
+        // $pdf->Bookmark('Boomark 1.1', 1);
+        // $pdf->Bookmark('Bookmark 1.2', 1);
+        // $pdf->Bookmark('Bookmark 1.2.1', 2);
+
+        $pdf->addTOCPage('P', 'B5', true);
+        $pdf->addTOC(3 + ($booklet ? 2 : 0), 'helvetica', '. ', 'INDEX', 'B', array(128,0,0));
+        $pdf->endTOCPage();
+
+        if ($cropbox)
+            $pdf->DrawCropbox(16);
+
+        $pdf->deletePage($pdf->getNumPages());
+
+        // $pdf->writeHTML($html, true, false, false, false, '');
+         $pdf->Output($doc->getTitle() . ".pdf", 'I');
+        //print_r($html);
+
+        return new Response('ok');
+    }
+
+    /**
+     * Shows a specific documentation
+     *
+     * @Route("/{_locale}/doc/{id}/{toc}", name="nav.doc")
+     * @param integer $id
+     * @param boolean $toc
+     * @return mixed
+     */
+    public function documentationAction($id, $toc = false)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $doc = $em->getRepository(Documentation::class)->find($id);
+
+        return $this->render($toc ? '/docs/doc.html.twig' : '/docs/doc_part.html.twig', [
+            'doc' => $doc,
+            'toc' => $toc,
+        ]);
+    }
+
+    /**
+     * Shows a list of all documentations
+     *
+     * @Route("/{_locale}/docs", name="nav.docs")
+     * @param Request $request
+     * @return mixed
+     */
+    public function documentationsAction(Request $request)
+    {
+        $session = $request->getSession();
+        $em = $this->getDoctrine()->getManager();
+        $sortKey = $request->get('sort', $session->get('docs_sort_key', 'order'));
+        $order = $request->get('order', $session->get('docs_sort_order', 'ASC'));
+        $sort = [$sortKey => $order];
+
+        $orders = [];
+        foreach(['title', 'order'] as $key) {
+            $orders[$key] = ($sortKey == $key ? ($order == 'ASC' ? 'DESC' : 'ASC') : $order);
+        }
+        $session->set('docs_sort_key', $sortKey);
+        $session->set('docs_sort_order', $order);
+
+        $docs = $em->getRepository(Documentation::class)->findBy(['parent' => null], $sort);
+
+        return $this->render('/docs/docs.html.twig', [
+            'docs' => $docs,
+            'orders' => $orders,
+            'order' => $order,
+            'sort' => $sortKey,
+        ]);
+    }
+
+    /**
+     * Creates or edits a documentation
+     *
+     * @Route("/{_locale}/admin/doc/{id}/{parent}", name="nav.admin_doc")
+     * @param integer $id
+     * @param integer $parent
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDocumentationAction($id = 0, $parent = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        if ($id) {
+            $doc = $em->getRepository(Documentation::class)->find($id);
+        } else {
+            $doc = new Documentation();
+            $doc->setIsActive(true)->setLocale($this->getUser()->getLocale());
+        }
+        $title = 'label.documentation';
+        if ($parent && !$id) {
+            /** @var Documentation $p */
+            $p = $em->getRepository(Documentation::class)->find($parent);
+            $doc->setParent($p);
+            $doc->setOrder($p->getChildren()->count())
+                ->setLocale($p->getLocale())
+                ->setFrom($p->getFrom())
+                ->setUntil($p->getUntil());
+            $title = $p->getParent() ? 'label.part' : 'label.chapter';
+        } else if (!$id){
+            $doc->setOrder($doc->getSiblings($em)->count());
+        }
+
+        $form = $this->createForm(EditType::class, $doc, [
+            'attr' => ['action' => $request->getPathInfo()],
+            'delete_title' => $this->get('translator')->trans('label.delete', [], 'documentation'),
+            'delete_path' => $this->generateUrl('nav.admin_doc_delete', ['id' => $id]),
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $action = $doc->getId() ? 'updated' : 'saved';
+
+            if ($doc->getId()) {
+                $em->merge($doc);
+                $em->flush();
+
+                /** @var MutableAclProviderInterface $aclProvider */
+                $aclProvider = $this->get('security.acl.provider');
+                $objectIdentity = $doc->getObjectIdentity();
+
+                try {
+                    /** @var MutableAclInterface $acl */
+                    $acl = $aclProvider->findAcl($objectIdentity);
+                    /** @var SimpleACE $ace */
+                    foreach ($doc->getObjectAces() as $ace) {
+                        if ($ace->getId()) {
+                            $acl->updateObjectAce($ace->getIndex(), $ace->getMask());
+                        } else {
+                            $acl->insertObjectAce(new RoleSecurityIdentity($ace->getRole()), $ace->getMask(), $ace->getIndex());
+                        }
+                    }
+                    $aclProvider->updateAcl($acl);
+                } catch (\Exception $e) {
+                    $acl = $aclProvider->createAcl($objectIdentity);
+                    /** @var SimpleACE $ace */
+                    foreach ($doc->getObjectAces() as $ace) {
+                        $acl->insertObjectAce(new RoleSecurityIdentity($ace->getRole()), $ace->getMask(), $ace->getIndex());
+                    }
+                    $acl->insertObjectAce($doc->getCreatedBy()->getUserSecurityIdentity(), MaskBuilder::MASK_OWNER, count($doc->getObjectAces()));
+                    $aclProvider->updateAcl($acl);
+                }
+            } else {
+                $em->persist($doc);
+                $em->flush();
+
+                /** @var MutableAclProviderInterface $aclProvider */
+                $aclProvider = $this->get('security.acl.provider');
+                $objectIdentity = $doc->getObjectIdentity();
+                /** @var MutableAclInterface $acl */
+                $acl = $aclProvider->createAcl($objectIdentity);
+                /** @var SimpleACE $ace */
+                foreach ($doc->getObjectAces() as $ace)
+                    $acl->insertObjectAce(new RoleSecurityIdentity($ace->getRole()), $ace->getMask(), $ace->getIndex());
+                $acl->insertObjectAce($doc->getCreatedBy()->getUserSecurityIdentity(), MaskBuilder::MASK_OWNER, count($doc->getObjectAces()));
+                $aclProvider->updateAcl($acl);
+            }
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.doc.' . $action,
+                    'parameters' => ['%name%' => $doc->getTitle()]
+                ]);
+            // return an empty response for the ajax modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse([], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_docs');
+        } else if ($form->isSubmitted() && !$form->isValid()){
+            $formView = $form->createView();
+            return $this->render('admin/docs/doc.html.twig', [
+                'doc' => $doc,
+                'form' => $formView,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' => $id ?
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('delete'),
+                        $formView->offsetGet('submit')
+                    ] :
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('submit')
+                    ]
+            ], new Response('', $request->isXmlHttpRequest() ?
+                Response::HTTP_BAD_REQUEST :
+                Response::HTTP_OK));
+        }
+
+        $formView = $form->createView();
+        return $this->render('admin/docs/doc.html.twig', [
+            'doc' => $doc,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'title' => $title,
+            'btns' => $id ?
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('delete'),
+                    $formView->offsetGet('submit')
+                ] :
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('submit')
+                ]
+        ]);
+    }
+
+    /**
+     * Creates or edits a documentation
+     *
+     * @Route("/{_locale}/admin/docs", name="nav.admin_docs")
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDocumentationsAction(Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $docs = $em->getRepository(Documentation::class)->findBy(['parent' => null], ['order' => 'ASC']);
+
+        if ($id = $request->get('id')) {
+            /** @var Documentation $doc */
+            $doc = $em->getRepository(Documentation::class)->find($id);
+            $doc->setIsActive($request->get('state') ? true : false);
+            $em->merge($doc);
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add($request->get('state') ? 'success' : 'warning', [
+                    'id' => 'flash.doc.' . ($request->get('state') ? 'activated' : 'inactivated'),
+                    'parameters' => ['%name%' => $doc->getTitle()]
+                ]);
+
+            return $this->redirectToRoute('nav.admin_docs');
+        }
+
+        return $this->render('admin/docs/docs.html.twig', [
+            'docs' => $docs,
+        ]);
+    }
+
+    /**
+     * Deletes a documentation
+     *
+     * @Route("/{_locale}/admin/docdel/{id}", name="nav.admin_doc_delete")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDeleteDocumentationAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var Documentation $doc */
+        $doc = $em->getRepository(Documentation::class)->find($id);
+
+        $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'documentation',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('yes', SubmitType::class, [
+                'left_icon' => 'fa-trash',
+                'right_icon' => 'fa-check',
+                'attr' => ['class' => 'btn-danger'],
+                'label' => 'label.yes'
+            ]);
+
+        $form = $fb->getForm();
+        $form->handleRequest($request);
+        if ($form->isSubmitted()) {
+            $name = $doc->getTitle();
+
+            $em->remove($doc);
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.doc.deleted',
+                    'parameters' => ['%name%' => $name]
+                ]);
+
+            // return an empty response for the modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse(['reloadPage' => 0], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_toc');
+        }
+
+        return $this->render('admin/docs/delete.html.twig', [
+            'doc' => $doc,
+            'form' => $form->createView(),
+            'modal' => $request->isXmlHttpRequest(),
+        ]);
+    }
+
+    /**
+     * Edits a documentations chapters and parts
+     *
+     * @Route("/{_locale}/admin/doctoc/{id}/{move}", options={"expose"=true}, name="nav.admin_toc_doc")
+     * @param integer $id
+     * @param integer $move
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminEditDocumentationAction($id, $move = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var DocumentationRepository $repo */
+        $repo = $em->getRepository(Documentation::class);
+        /** @var Documentation $doc */
+        $doc = $repo->find($id);
+
+        if ($move !== 0) {
+            try {
+                $oldOrder = $doc->getOrder();
+                $doc->setOrder($oldOrder + $move);
+                if ($move > 0) {
+                    $from = $oldOrder + 1;
+                    $until = $oldOrder + $move;
+                    $up = $repo->findByOrderBetween($from, $until, $doc->getParent());
+                    /** @var Documentation $updoc */
+                    foreach ($up as $updoc) {
+                        $updoc->setOrder($updoc->getOrder() - 1);
+                        $em->merge($updoc);
+                    }
+                    $em->merge($doc);
+                    $em->flush();
+                } else {
+                    $from = $oldOrder + $move;
+                    $until = $oldOrder - 1;
+                    $down = $repo->findByOrderBetween($from, $until, $doc->getParent());
+                    /** @var Documentation $downdoc */
+                    foreach ($down as $downdoc) {
+                        $downdoc->setOrder($downdoc->getOrder() + 1);
+                        $em->merge($downdoc);
+                    }
+                    $em->merge($doc);
+                    $em->flush();
+                }
+
+                return $request->isXmlHttpRequest() ?
+                    new JsonResponse(['status' => 'ok']) :
+                    ($doc->getParent() ?
+                        $this->render('admin/docs/toc.html.twig', [
+                            'doc' => $doc,
+                        ]) :
+                        $this->render('admin/docs/docs.html.twig')
+                    )
+                    ;
+            } catch (\Exception $e) {
+                return new JsonResponse(['status' => 'failure'], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
+        return $this->render('admin/docs/toc.html.twig', [
+            'doc' => $doc,
+        ]);
+    }
+
+    /**
+     * Shows documentation history
+     *
+     * @Route("/{_locale}/admin/doclogs/{id}", name="nav.admin_doc_logs")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDocumentationLogsAction($id, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $doc = $em->getRepository(Documentation::class)->find($id);
+
+        $form = $this->createForm(FormType::class, $doc, [
+            'attr' => ['action' => $request->getPathInfo()],
+        ])
+            ->add('close', ButtonType::class, [
+                'left_icon' => 'fa-chevron-left',
+                'right_icon' => 'fa-close',
+                'label' => 'label.close',
+                'attr' => [
+                    'class' => 'btn-default',
+                    'data-dismiss' => 'modal',
+                ],
+            ]);
+
+        $formView = $form->createView();
+        return $this->render('admin/docs/logs.html.twig', [
+            'doc' => $doc,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' => [$formView->offsetGet('close')],
+        ]);
+    }
+
+    /**
+     * Shows documentation history
+     *
+     * @Route("/{_locale}/admin/doclog/{id}/{log}", name="nav.admin_doc_log")
+     * @param integer $id
+     * @param integer $log
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDocumentationLogAction($id, $log, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var Documentation $doc */
+        $doc = $em->getRepository(Documentation::class)->find($id);
+        /** @var LogEntry $log */
+        $log = $em->getRepository(LogEntry::class)->find($log);
+        $revertable = ($log->getId() != $doc->getLogs()->last()->getId());
+
+        $form = $this->createForm(FormType::class, $doc, [
+            'attr' => ['action' => $request->getPathInfo()],
+            'translation_domain' => 'documentation',
+        ])
+            ->add('close', ButtonType::class, [
+                'left_icon' => 'fa-chevron-left',
+                'right_icon' => 'fa-close',
+                'label' => 'label.close',
+                'attr' => [
+                    'class' => 'btn-default',
+                    'data-dismiss' => 'modal',
+                ],
+            ]);
+        if ($revertable)
+            $form->add('revert', SubmitType::class, [
+                'left_icon' => 'fa-history',
+                'right_icon' => 'fa-check',
+                'label' => 'label.revert',
+                'attr' => ['class' => 'btn-success form-submit']
+            ]);
+
+        $form->handleRequest($request);
+        if ($form->isSubmitted()) {
+            /** @var LogEntryRepository $repo */
+            $repo = $em->getRepository(LogEntry::class);
+            $repo->revert($doc, $log->getVersion());
+            $em->merge($doc);
+            $em->flush();
+
+            $name = $doc->getTitle();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.doc.reverted',
+                    'parameters' => [
+                        '%name%' => $name,
+                        '%version%' => $log->getVersion(),
+                        '%new%' => $doc->getLogs()->count() + 1,
+                    ]
+                ]);
+
+            // return an empty response for the modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse(['reloadPage' => 0], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_doc_logs');
+        }
+
+        $formView = $form->createView();
+        return $this->render('admin/docs/log.html.twig', [
+            'doc' => $doc,
+            'log' => $log,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' => $revertable ? [$formView->offsetGet('close'), $formView->offsetGet('revert')] : [$formView->offsetGet('close')],
+        ]);
+    }
+
+    /**
+     * Shows help in form of faqs, documentation and a file library form users
+     *
+     * @Route("/{_locale}/help/{type}", name="nav.help")
+     * @param string $type
+     * @param Request $request
+     * @return mixed
+     */
+    public function helpAction($type = null, Request $request)
+    {
+        $session = $request->getSession();
+        if ($type !== null)
+            $session->set('user_help_type', $type);
+        else
+            $type = $session->get('user_help_type', 'docs');
+
+        return $this->redirectToRoute('nav.' . $type);
+    }
+
+    /**
+     * Shows a list of all faqs
+     *
+     * @Route("/{_locale}/faqs", name="nav.faqs")
+     * @param Request $request
+     * @return mixed
+     */
+    public function faqsAction(Request $request)
+    {
+        $session = $request->getSession();
+        $em = $this->getDoctrine()->getManager();
+        $sortKey = $request->get('sort', $session->get('faqs_sort_key', 'order'));
+        $order = $request->get('order', $session->get('faqs_sort_order', 'ASC'));
+        $sort = [$sortKey => $order];
+
+        $orders = [];
+        foreach(['title', 'order', 'date'] as $key) {
+            $orders[$key] = ($sortKey == $key ? ($order == 'ASC' ? 'DESC' : 'ASC') : $order);
+        }
+        $session->set('faqs_sort_key', $sortKey);
+        $session->set('faqs_sort_order', $order);
+
+        $faqs = $em->getRepository(FAQ::class)->findBy(['isActive' => true], $sort);
+
+        return $this->render('/docs/faqs.html.twig', [
+            'faqs' => $faqs,
+            'orders' => $orders,
+            'order' => $order,
+            'sort' => $sortKey,
+        ]);
+    }
+
+    /**
+     * Creates or edits a faq
+     *
+     * @Route("/{_locale}/admin/faqs", name="nav.admin_faqs")
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminFaqsAction(Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $faqs = $em->getRepository(FAQ::class)->findBy([], ['order' => 'ASC']);
+
+        if ($id = $request->get('id')) {
+            /** @var Documentation $doc */
+            $faq = $em->getRepository(FAQ::class)->find($id);
+            $faq->setIsActive($request->get('state') ? true : false);
+            $em->merge($faq);
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add($request->get('state') ? 'success' : 'warning', [
+                    'id' => 'flash.faq.' . ($request->get('state') ? 'activated' : 'inactivated'),
+                    'parameters' => ['%name%' => $faq->getTitle()]
+                ]);
+
+            return $this->redirectToRoute('nav.admin_faqs');
+        }
+
+        return $this->render('admin/docs/faqs.html.twig', [
+            'faqs' => $faqs,
+        ]);
+    }
+
+    /**
+     * Creates or edits a faq
+     *
+     * @Route("/{_locale}/admin/faq/{id}", name="nav.admin_faq")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminFaqAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        if ($id) {
+            $faq = $em->getRepository(FAQ::class)->find($id);
+        } else {
+            $faq = new FAQ();
+            $faq->setIsActive(true)->setLocale($this->getUser()->getLocale());
+        }
+        $title = 'label.faq';
+        $faq->setOrder($faq->getSiblings($em)->count());
+
+        $form = $this->createForm(FaqEditType::class, $faq, [
+            'attr' => ['action' => $request->getPathInfo()],
+            'delete_title' => $this->get('translator')->trans('label.delete', [], 'documentation'),
+            'delete_path' => $this->generateUrl('nav.admin_doc_delete', ['id' => $id]),
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $action = $faq->getId() ? 'updated' : 'saved';
+
+            if ($faq->getId()) {
+                $em->merge($faq);
+                $em->flush();
+
+                /** @var MutableAclProviderInterface $aclProvider */
+                $aclProvider = $this->get('security.acl.provider');
+                $objectIdentity = $faq->getObjectIdentity();
+
+                try {
+                    /** @var MutableAclInterface $acl */
+                    $acl = $aclProvider->findAcl($objectIdentity);
+                    /** @var SimpleACE $ace */
+                    foreach ($faq->getObjectAces() as $ace) {
+                        if ($ace->getId()) {
+                            $acl->updateObjectAce($ace->getIndex(), $ace->getMask());
+                        } else {
+                            $acl->insertObjectAce(new RoleSecurityIdentity($ace->getRole()), $ace->getMask(), $ace->getIndex());
+                        }
+                    }
+                    $aclProvider->updateAcl($acl);
+                } catch (\Exception $e) {
+                    $acl = $aclProvider->createAcl($objectIdentity);
+                    /** @var SimpleACE $ace */
+                    foreach ($faq->getObjectAces() as $ace) {
+                        $acl->insertObjectAce(new RoleSecurityIdentity($ace->getRole()), $ace->getMask(), $ace->getIndex());
+                    }
+                    $acl->insertObjectAce($faq->getCreatedBy()->getUserSecurityIdentity(), MaskBuilder::MASK_OWNER, count($faq->getObjectAces()));
+                    $aclProvider->updateAcl($acl);
+                }
+            } else {
+                $em->persist($faq);
+                $em->flush();
+
+                /** @var MutableAclProviderInterface $aclProvider */
+                $aclProvider = $this->get('security.acl.provider');
+                $objectIdentity = $faq->getObjectIdentity();
+                /** @var MutableAclInterface $acl */
+                $acl = $aclProvider->createAcl($objectIdentity);
+                /** @var SimpleACE $ace */
+                foreach ($faq->getObjectAces() as $ace)
+                    $acl->insertObjectAce(new RoleSecurityIdentity($ace->getRole()), $ace->getMask(), $ace->getIndex());
+                $acl->insertObjectAce($faq->getCreatedBy()->getUserSecurityIdentity(), MaskBuilder::MASK_OWNER, count($faq->getObjectAces()));
+                $aclProvider->updateAcl($acl);
+            }
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.doc.' . $action,
+                    'parameters' => ['%name%' => $faq->getTitle()]
+                ]);
+            // return an empty response for the ajax modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse([], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_docs');
+        } else if ($form->isSubmitted() && !$form->isValid()){
+            $formView = $form->createView();
+            return $this->render('admin/docs/faq.html.twig', [
+                'faq' => $faq,
+                'form' => $formView,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' => $id ?
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('delete'),
+                        $formView->offsetGet('submit')
+                    ] :
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('submit')
+                    ]
+            ], new Response('', $request->isXmlHttpRequest() ?
+                Response::HTTP_BAD_REQUEST :
+                Response::HTTP_OK));
+        }
+
+        $formView = $form->createView();
+        return $this->render('admin/docs/faq.html.twig', [
+            'faq' => $faq,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'title' => $title,
+            'btns' => $id ?
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('delete'),
+                    $formView->offsetGet('submit')
+                ] :
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('submit')
+                ]
+        ]);
+    }
+
+    /**
+     * Deletes a faq
+     *
+     * @Route("/{_locale}/admin/docdel/{id}", name="nav.admin_faq_delete")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDeleteFaqAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var FAQ $doc */
+        $faq = $em->getRepository(FAQ::class)->find($id);
+
+        $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'documentation',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('yes', SubmitType::class, [
+                'left_icon' => 'fa-trash',
+                'right_icon' => 'fa-check',
+                'attr' => ['class' => 'btn-danger'],
+                'label' => 'label.yes'
+            ]);
+
+        $form = $fb->getForm();
+        $form->handleRequest($request);
+        if ($form->isSubmitted()) {
+            $name = $faq->getTitle();
+
+            $em->remove($doc);
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.faq.deleted',
+                    'parameters' => ['%name%' => $name]
+                ]);
+
+            // return an empty response for the modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse(['reloadPage' => 0], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_toc');
+        }
+
+        return $this->render('admin/docs/delete.html.twig', [
+            'faq' => $faq,
+            'form' => $form->createView(),
+            'modal' => $request->isXmlHttpRequest(),
+        ]);
+    }
+}

@@ -1,0 +1,107 @@
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="side-padding">
+        {% include 'step/step.html.twig' with { 'step':3, 'steps':3, 'title':'import.third_step' } %}
+        <div class="form bg-default">
+            <p class="all-padding">{% trans from "import" %}import.second_third_info{% endtrans %}</p>
+        </div>
+
+        <div class="form bg-default all-padding">
+            <h2>{{ app.session.get('import_data')['entity'] }}</h2>
+            <div class="container-fluid">
+                <div class="row">
+                    <dl class="col-xs-12 dl dl-horizontal">
+                        {% set custom = {
+                        '-5': 'label.skip',
+                        '-4': 'label.false',
+                        '-3': 'label.true',
+                        '-2': 'label.current_timestamp',
+                        '-1': 'label.current_user' }
+                        %}
+                        {% for key, map in mapping %}
+                            <dt>{{ key }}:</dt>
+                            <dd>
+                                {% if map >= 0 %}
+                                    <em>{% trans from "import" %}label.csv_fields{% endtrans %}</em>: {{ keys[map] }}
+                                {% else %}
+                                    <em>{% trans from "import" %}label.custom{% endtrans %}</em>: {{ custom[map]|trans({}, "import") }}
+                                {% endif %}
+                            </dd>
+                        {% endfor %}
+                    </dl>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="well well-sm">
+                            <table class="table table-condensed">
+                                <thead>
+                                    <tr>
+                                        <th class="text-left"><a id="pobject" class="btn btn-default btn-xs disabled"><i class="fa fa-chevron-left"></i></a></th>
+                                        <th class="text-center" id="wobject"></th>
+                                        <th class="text-right"><a id="nobject" class="btn btn-default btn-xs"><i class="fa fa-chevron-right"></i></a>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="3" id="object">
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{ form_start(form) }}
+            <div class="form-nav">
+                <div class="btn-group btn-group-justified" role="group">
+                    <a class="btn btn-default" href="{{ path('nav.admin_map_import') }}"><i class="fa fa-chevron-left"></i> {% trans from "import" %}label.prev{% endtrans %}</a>
+                    <div class="btn-group" role="group">
+                        {{ form_widget(form.submit) }}
+                    </div>
+                </div>
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+    <script type="text/javascript">
+        <!--
+        var json_objects = {{ json_objects|raw }};
+        var current = 0;
+
+        $(document).ready(function() {
+            $('#wobject').html((current + 1) + ' / ' + json_objects.length);
+            if (json_objects.length <= 1)
+                $('#nobject').addClass('disabled');
+            $('#object').html('<pre>' + JSON.stringify(json_objects[current], null, 2) + '</pre>');
+            console.log(json_objects[current]);
+        });
+        $('#pobject').on('click', function() {
+            if (current > 0) {
+                current--;
+                $('#wobject').html((current + 1) + ' / ' + json_objects.length);
+                if ($('#nobject').hasClass('disabled'))
+                    $('#nobject').removeClass('disabled');
+                if (current === 0)
+                    $('#pobject').addClass('disabled');
+                $('#object').html('<pre>' + JSON.stringify(json_objects[current], null, 2) + '</pre>');
+            }
+        });
+        $('#nobject').on('click', function() {
+            if (current < json_objects.length - 1) {
+                current++;
+                $('#wobject').html((current + 1) + ' / ' + json_objects.length);
+                if ($('#pobject').hasClass('disabled'))
+                    $('#pobject').removeClass('disabled');
+                if (current === json_objects.length - 1)
+                    $('#nobject').addClass('disabled');
+                $('#object').html('<pre>' + JSON.stringify(json_objects[current], null, 2) + '</pre>');
+            }
+        });
+        //-->
+    </script>
+{% endblock %}

@@ -1,0 +1,44 @@
+title: "Databasen"
+User: "User"
+action:
+    edit: "Redigera"
+    delete: "Radera"
+    search: "Sök"
+    new: "Skapa"
+    cancel: "Ångra"
+    save: "Spara"
+    list: "Tillbaka till listvisning"
+
+group:
+    application: "Tillbaka till applikationen"
+    security_main: "Primära säkerhetsobjekt"
+    security_secondary: "Sekundära säkerhetsobjekt"
+
+user:
+    title: "Användarkonton"
+    username: "Användarnamn"
+    email: "Sekundär e-postadress"
+    emailhash: "E-postnyckel"
+    phone: "Mobilnummer"
+    phonehash: "Mobilnyckel"
+    password: "Krypterat lösenord"
+    blocked: "Kontot är avspärrat"
+    passwd_valid_for: "Lösenordet är aktivt"
+    locale: "Språk"
+    logins: "Inloggningar"
+    last_login: "Senaste inloggning"
+    active: "Kontot är aktivt"
+    hidden_fields: "Dolda fält"
+    created: "Skapat"
+    firstname: "Förnamn"
+    lastname: "Efternamn"
+    roles: "Roller"
+    schools: "Skolor"
+    log_events: "Loggar"
+    messages: "Meddelanden"
+role:
+    title: "Roller"
+user_ticket:
+    title: "Användarnycklar"
+user_log_event:
+    title: "Användarloggar"

@@ -1,0 +1,39 @@
+<div class="container-fluid">
+    {% if error is defined and error %}
+        <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+    {% endif %}
+    {% if app.session.flashBag.has('ticket_login_error') %}
+        {% for msg in app.session.flashBag.get('ticket_login_error') %}
+            <div class="alert alert-danger">{{ msg|trans([], 'security') }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {{ form_start(form) }}
+    {{ form_widget(form.phase) }}
+    {% if type == 'username' %}
+        {{ form_row(form.username) }}
+    {% elseif type == 'phone'%}
+        {{ form_row(form.phone) }}
+    {% endif %}
+
+    {% if form.password is defined %}
+        <div class="form-group">
+            <label class="control-label required">{{ form.password.vars.label|transchoice(ticket.triesLeft, [], 'security') }}</label>
+            {{ form_widget(form.password) }}
+        </div>
+    {% endif %}
+
+    <div class="form-nav">
+        <div class="btn-group btn-group-justified" role="group">
+            {% if form.password is defined %}
+                <div class="btn-group" role="group">
+                    {{ form_widget(form.resend) }}
+                </div>
+            {% endif %}
+            <div class="btn-group" role="group">
+                {{ form_widget(form.submit) }}
+            </div>
+        </div>
+    </div>
+    {{ form_end(form) }}
+</div>

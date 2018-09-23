@@ -1,0 +1,28 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 05/09/2017
+ * Time: 15.52
+ */
+
+namespace App\Validator\Constraints;
+
+
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\ConstraintValidator;
+
+class StartsWithValidator extends ConstraintValidator
+{
+    public function validate($value, Constraint $constraint)
+    {
+        if ($constraint instanceof StartsWith) {
+            $func = $constraint->getIgnoreCase() ? 'strncasecmp' : 'strncmp';
+
+            if ($func($constraint->getValue(), $value, strlen($constraint->getValue()))) {
+                $this->context->buildViolation($constraint->message)->setParameter('%string%', $constraint->getValue())
+                    ->addViolation();
+            }
+        }
+    }
+}

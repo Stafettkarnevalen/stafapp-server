@@ -1,0 +1,26 @@
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="side-padding">
+        {% include 'step/step.html.twig' with { 'step':2, 'steps':3, 'title':'import.second_step' } %}
+        <div class="form bg-default">
+            <p class="all-padding">{% trans from "import" %}import.second_step_info{% endtrans %}</p>
+        </div>
+
+        <div class="form bg-default all-padding">
+            <h2>{{ app.session.get('import_data')['entity'] }}</h2>
+            {{ form_start(form) }}
+            <div class="form-nav">
+                <div class="btn-group btn-group-justified" role="group">
+                    <a class="btn btn-default" href="{{ path('nav.admin_import') }}"><i class="fa fa-chevron-left"></i> {% trans from "import" %}label.prev{% endtrans %}</a>
+                    <div class="btn-group" role="group">
+                        {{ form_widget(form.submit) }}
+                    </div>
+                </div>
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}

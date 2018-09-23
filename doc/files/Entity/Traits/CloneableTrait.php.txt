@@ -1,0 +1,68 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 03/06/2017
+ * Time: 10.37
+ */
+
+namespace App\Entity\Traits;
+
+/**
+ * Trait CloneableTrait
+ * @package App\Entity\Traits
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+trait CloneableTrait
+{
+    use FieldsTrait;
+
+    /**
+     * Fills this entity with values from an array.
+     *
+     * @param array $params
+     * @param bool $useSkip
+     * @return $this
+     */
+    public function fill(array $params, $useSkip = true)
+    {
+        foreach ($params as $key=>$val) {
+            if ($useSkip && in_array($key, $this->getSkipFill()))
+                continue;
+            if (!in_array($key, array_keys($this->getFields())))
+                continue;
+            if($val === null) {
+                // unset($this->$key);
+            } else {
+                $setter = "set" . ucfirst($key);
+                $this->$setter($val);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Gets fields that fill should skip.
+     *
+     * @return array
+     */
+    public function getSkipFill()
+    {
+        return ['id', 'createdAt', 'modified', 'skip'];
+    }
+
+
+    /**
+     * Clones this entity to another new one.
+     *
+     * @return CloneableTrait
+     */
+    public function cloneEntity()
+    {
+        $copy = new self();
+        $copy->fill($this->getFields());
+        return $copy;
+    }
+
+}

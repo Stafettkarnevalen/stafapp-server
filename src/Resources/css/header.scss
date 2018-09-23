@@ -1,0 +1,33 @@
+.bg-primary {
+    background:url(../images/staf1-error.png);
+    min-height:130px;
+    max-height:130px;
+}
+.bg-footer {
+    margin-top:20px;
+    background:rgba(0,0,0,.7);
+    padding-top:20px;
+    padding-bottom:60px;
+    color:white;
+}
+.bg-footer a {
+    color:#cccccc;
+}
+.top-bar {
+    height:32px;
+    line-height:32px;
+    background:#000000;
+    color:#ffffff;
+}
+.top-bar a {
+    color:#ffffff;
+}
+.top-bar a:hover {
+    text-decoration: none;
+}
+@media (max-width: 767px) {
+    .bg-primary {
+        background: url(../images/staf1-error.png);
+        background-size: cover;
+    }
+}

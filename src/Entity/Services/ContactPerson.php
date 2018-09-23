@@ -1,0 +1,176 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 23.55
+ */
+
+namespace App\Entity\Services;
+
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Schools\SchoolUnit;
+use App\Entity\Security\User;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\LoggableTrait;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Traits\FieldsTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use App\Entity\Traits\VersionedPersonTrait;
+use App\Entity\Traits\SeasonTrait;
+
+/**
+ * @ORM\Table(name="contact_person_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Services
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class ContactPerson implements Serializable, CreatedByUserInterface, LoggableEntity
+{
+    /** Use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use is active flaga */
+    use FieldsTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use person trait */
+    use VersionedPersonTrait;
+
+    /** Use season trait */
+    use SeasonTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="email_fld", type="string", length=60, nullable=true)
+     * @Assert\Email()
+     * @var string $email The email address
+     */
+    protected $email;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="phone_fld", type="string", length=60, nullable=true)
+     * @var string $phone The phone or cell number
+     */
+    protected $phone;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Schools\SchoolUnit", inversedBy="contactPersons")
+     * @ORM\JoinColumn(name="school_unit_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var SchoolUnit $schoolUnit The school unti that the person belongs to
+     */
+    protected $schoolUnit;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Security\User")
+     * @ORM\JoinColumn(name="user_fld", referencedColumnName="id_fld", nullable=true)
+     * @var User $user The user Entity if the person has one
+     */
+    protected $user;
+
+    /**
+     * Gets the email.
+     *
+     * @return string|null
+     */
+    public function getEmail()
+    {
+        return $this->email;
+    }
+
+    /**
+     * Sets the email.
+     *
+     * @param string|null $email
+     * @return $this
+     */
+    public function setEmail($email)
+    {
+        $this->email = $email;
+
+        return $this;
+    }
+
+    /**
+     * Gets the phone.
+     *
+     * @return string|null
+     */
+    public function getPhone()
+    {
+        return $this->phone;
+    }
+
+    /**
+     * Sets the phone.
+     *
+     * @param string|null $phone
+     * @return $this
+     */
+    public function setPhone($phone)
+    {
+        $this->phone = $phone;
+
+        return $this;
+    }
+
+    /**
+     * Gets the SchoolUnit.
+     *
+     * @return SchoolUnit
+     */
+    public function getSchoolUnit()
+    {
+        return $this->schoolUnit;
+    }
+
+    /**
+     * Sets the SchoolUnit
+     *
+     * @param SchoolUnit $schoolUnit
+     * @return $this
+     */
+    public function setSchoolUnit($schoolUnit)
+    {
+        $this->schoolUnit = $schoolUnit;
+
+        return $this;
+    }
+
+    /**
+     * Gets the user.
+     *
+     * @return User|null
+     */
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    /**
+     * Sets the user.
+     *
+     * @param User|null $user
+     * @return $this
+     */
+    public function setUser($user)
+    {
+        $this->user = $user;
+
+        return $this;
+    }
+}

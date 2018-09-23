@@ -1,0 +1,6 @@
+<div class="alert">
+    <div class="text-right">
+        <a href="{{ absolute_url(path('verify', {'id':user.id, 'field':'email', 'hash':user.emailhash})) }}" class="btn btn-primary"><i class="fa fa-check"></i> {% trans from "user" %}label.verify_email{% endtrans %}</a>
+        <a href="{{ absolute_url(path('block', {'id':user.id})) }}" class="btn btn-danger"><i class="fa fa-exclamation-circle"></i> {% trans from "user" %}label.block_account{% endtrans %}</a>
+    </div>
+</div>

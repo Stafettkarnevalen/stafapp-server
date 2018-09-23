@@ -1,0 +1,5 @@
+label.create: "New Group..."
+label.search: "Search"
+label.name: "Name"
+label.email: "E-mail"
+label.role: "Group"

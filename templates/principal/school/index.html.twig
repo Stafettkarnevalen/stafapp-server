@@ -1,0 +1,81 @@
+{# app/Resources/views/security/login.html.twig #}
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+{% macro render_nav(views, view) %}
+    <nav class="navbar navbar-default toolbar" data-spy="affix" data-offset-top="251">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="navbar-header hidden-xs col-sm-6 col-md-6 col-lg-6">
+                    {% for key, v in views %}
+                        {% if view == key %}
+                            <a class="navbar-brand active" href="{{ path('nav.principal_school', {'view': key}) }}"><i class="fa fa-{{ v[0] }}"></i> &nbsp; {{ v[1]|trans({}, "principal") }}</a>
+                        {% else %}
+                            <a class="navbar-brand" href="{{ path('nav.principal_school', {'view': key}) }}"><i class="fa fa-{{ v[0] }}"></i> &nbsp; {{ v[1]|trans({}, "principal") }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="top-padding-sm col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                    {% if view == 'NAME' %}
+                        <button class="hidden-sm hidden-md hidden-lg tool btn btn-default" type="button" data-toggle="collapse" data-target="#view-navbar-collapse" aria-expanded="false">
+                            {% trans from 'principal' %}view.school{% endtrans %} <i class="caret"></i>
+                        </button>
+                        <a title="{% trans %}action.edit{% endtrans %}" data-title="{% trans %}action.edit{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.principal_edit_school_name') }}" class="tool btn btn-default"><i class="fa fa-fw fa-edit"></i></a>
+                    {% else %}
+                        <button class="hidden-sm hidden-md hidden-lg tool btn btn-default" type="button" data-toggle="collapse" data-target="#view-navbar-collapse" aria-expanded="false">
+                            {% trans from 'principal' %}view.units{% endtrans %} <i class="caret"></i>
+                        </button>
+                        <a title="{% trans %}action.create{% endtrans %}" data-title="{% trans %}action.create{% endtrans %}" data-reload="true" data-toggle="modal" class="btn btn-default" href="{{ path('nav.principal_school_unit') }}"><i class="fa fa-fw fa-plus"></i></a>
+                        <a title="{% trans %}action.edit{% endtrans %}" data-title="{% trans %}action.edit{% endtrans %}" data-reload="true" data-toggle="modal" href="" class="tool btn btn-default btn-open disabled"><i class="fa fa-fw fa-edit"></i></a>
+                        <a title="{% trans %}action.delete{% endtrans %}" data-title="{% trans %}action.delete{% endtrans %}" data-reload="true" data-toggle="confirm" href="" class="tool btn btn-default btn-delete disabled"><i class="fa fa-fw fa-trash-o"></i></a>
+                        <a title="{% trans %}action.unselect{% endtrans %}" href="" class="tool btn btn-default btn-unselect disabled"><i class="fa fa-fw fa-times-circle-o"></i></a>
+                        <span class="divider-vertical"></span>
+                        <a title="{% trans %}action.compose{% endtrans %}" data-title="{% trans from 'nav' %}nav.message{% endtrans %}" data-reload="false" data-toggle="modal" href="" class="tool btn btn-default btn-message disabled"><i class="fa fa-fw fa-envelope-o"></i></a>
+                    {% endif %}
+
+
+                </div>
+                <div class="hidden-sm hidden-md hidden-lg collapse navbar-collapse" id="view-navbar-collapse">
+                    <ul class="hidden-sm hidden-md hidden-lg nav navbar-nav">
+                        {% for key, v in views %}
+                            {% if view == key %}
+                                <li class="active"><a href="{{ path('nav.principal_school', {'view': key}) }}"><i class="fa fa-{{ v[0] }}"></i> &nbsp; {{ v[1]|trans({}, "principal") }}</a></li>
+                            {% else %}
+                                <li><a href="{{ path('nav.principal_school', {'view': key}) }}"><i class="fa fa-{{ v[0] }}"></i> &nbsp; {{ v[1]|trans({}, "principal") }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+{% endmacro %}
+
+{% import _self as macro %}
+
+{% block body %}
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+
+        {{ macro.render_nav(views, view) }}
+
+        <div class="workspace">
+        {% for key, v in views %}
+            {% if view == key %}
+                <div class="form bg-default">
+                    <p class="all-padding">{{ v[2]|trans({}, "principal") }}</p>
+                </div>
+                {% include v[4] %}
+            {% endif %}
+        {% endfor %}
+        </div>
+
+    </div>
+{% endblock %}

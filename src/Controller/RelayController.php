@@ -1,0 +1,464 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 07/09/2017
+ * Time: 1.06
+ */
+
+namespace App\Controller;
+
+use App\Controller\Interfaces\ModalEventController;
+use App\Entity\Relays\Relay;
+use App\Entity\Relays\RelayRule;
+use App\Entity\Schools\SchoolType;
+use App\Entity\Services\ServiceCategory;
+use App\Form\Relay\EditType;
+use App\Form\Relay\RuleType;
+use App\Repository\RelayRuleRepository;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Form\Extension\Core\Type\ButtonType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+
+class RelayController extends Controller implements ModalEventController
+{
+
+    /**
+     * Controller for handling relays (admin only).
+     *
+     * @Route("/{_locale}/admin/relays/list", name="nav.admin_relays")
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminRelaysAction(Request $request)
+    {
+        $session = $request->getSession();
+        $em = $this->getDoctrine()->getManager();
+        $sortKey = $request->get('sort', $session->get('admin_relays_sort_key', 'name'));
+        $order = $request->get('order', $session->get('admin_relays_sort_order', 'ASC'));
+
+        $orders = [];
+        foreach (['name', 'gender', 'minClassOf', 'maxClassOf'] as $key) {
+            $orders[$key] = ($sortKey == $key ? ($order == 'ASC' ? 'DESC' : 'ASC') : $order);
+        }
+        $session->set('admin_relays_sort_key', $sortKey);
+        $session->set('admin_relays_sort_order', $order);
+
+        $relays = $em->getRepository(Relay::class)->findBy([], [$sortKey => $order]);
+
+        return $this->render('admin/relays/relays.html.twig', [
+            'relays' => $relays,
+            'orders' => $orders,
+            'order' => $order,
+            'sort' => $sortKey,
+        ]);
+    }
+
+    /**
+     * Controller for handling a single relay (admin only).
+     *
+     * @Route("/{_locale}/admin/relays/relay/{id}", name="nav.admin_relay")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminRelayAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var ServiceCategory $category */
+        $category = $em->getRepository(ServiceCategory::class)->find($this->getParameter('relay_category_id'));
+
+        if ($id) {
+            $relay = $em->getRepository(Relay::class)->find($id);
+        } else {
+            $relay = new Relay();
+            $relay->setServiceCategory($category);
+        }
+
+
+        $schoolTypes = $em->getRepository(SchoolType::class)->findBy([], ['name' => 'ASC']);
+
+        $form = $this->createForm(EditType::class, $relay, [
+            'available_school_types' => $schoolTypes,
+            'attr' => ['action' => $request->getPathInfo()],
+            'delete_title' => $this->get('translator')->trans('label.delete', [], 'relay'),
+            'delete_path' => $this->generateUrl('nav.admin_relay_delete', ['id' => $id]),
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $action = $relay->getId() ? 'updated' : 'saved';
+
+            if ($relay->getId())
+                $em->merge($relay);
+            else
+                $em->persist($relay);
+
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.relay.' . $action,
+                    'parameters' => ['%name%' => $relay->getName()]
+                ]);
+
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse([], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_relays');
+        } else if ($form->isSubmitted() && !$form->isValid()) {
+            // return error code for modal and ok for non-modals
+            $formView = $form->createView();
+            return $this->render('admin/relays/relay.html.twig', [
+                'relay' => $relay,
+                'form' => $formView,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' => $id ?
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('delete'),
+                        $formView->offsetGet('submit')
+                    ] :
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('submit')
+                    ]
+            ], new Response('', $request->isXmlHttpRequest() ?
+                Response::HTTP_BAD_REQUEST :
+                Response::HTTP_OK));
+        }
+
+        $formView = $form->createView();
+        return $this->render('admin/relays/relay.html.twig', [
+            'relay' => $relay,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' => $id ?
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('delete'),
+                    $formView->offsetGet('submit')
+                ] :
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('submit')
+                ]
+        ]);
+    }
+
+    /**
+     * Controller for deleting a single relay (admin only).
+     *
+     * @Route("/{_locale}/admin/relays/delete/{id}",
+     *     options={"expose" = true},
+     *     name="nav.admin_relay_delete")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDeleteRelayAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var Relay $relay */
+        $relay = $em->getRepository(Relay::class)->find($id);
+
+        $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'relay',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('yes', SubmitType::class, ['left_icon' => 'fa-trash', 'right_icon' => 'fa-check', 'attr' => ['class' => 'btn-danger'], 'label' => 'label.yes']);
+
+        $form = $fb->getForm();
+        $form->handleRequest($request);
+        if ($form->isSubmitted()) {
+            $name = $relay->getFullname();
+
+            $em->remove($relay);
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.relay.deleted',
+                    'parameters' => ['%name%' => $name]
+                ]);
+
+            // return an empty response for the modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse(['reloadPage' => 1], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_relays');
+        }
+
+        return $this->render('admin/relays/delete.html.twig', [
+            'relay' => $relay,
+            'form' => $form->createView(),
+            'modal' => $request->isXmlHttpRequest(),
+        ]);
+    }
+
+
+
+    /**
+     * Controller for handling relay rules (admin only).
+     *
+     * @Route("/{_locale}/admin/relay_rules/list/{relay}/{move}/{rule}",
+     *     options={"expose"=true}, name="nav.admin_relay_rules")
+     * @param integer $relay
+     * @param integer $move
+     * @param integer $rule
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminRelayRulesAction($relay = 0, $move = 0, $rule = 0, Request $request)
+    {
+        $session = $request->getSession();
+        $em = $this->getDoctrine()->getManager();
+        $sortKey = $request->get('sort', $session->get('admin_relayrules_sort_key', 'order'));
+        $order = $request->get('order', $session->get('admin_relayrules_sort_order', 'ASC'));
+
+        $orders = [];
+        foreach (['order', 'title', 'from', 'until'] as $key) {
+            $orders[$key] = ($sortKey == $key ? ($order == 'ASC' ? 'DESC' : 'ASC') : $order);
+        }
+        $session->set('admin_relayrules_sort_key', $sortKey);
+        $session->set('admin_relayrules_sort_order', $order);
+        /** @var Relay $relay */
+        $relay = $em->getRepository(Relay::class)->find($relay);
+
+        /** @var RelayRuleRepository $repo */
+        $repo = $em->getRepository(RelayRule::class);
+        $rules = $repo->findByRelay($relay, [$sortKey => $order]);
+
+        $fb = $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'relay',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('close', ButtonType::class, [
+                'left_icon' => 'fa-chevron-left',
+                'right_icon' => 'fa-check',
+                'attr' => [
+                    'data-dismiss' => 'modal',
+                    'class' => 'btn-default'
+                ],
+                'label' => 'label.close',
+            ]);
+        $form = $fb->getForm();
+        $formView = $form->createView();
+
+        if ($move !== 0) {
+            /** @var RelayRuleRepository $repo */
+            $repo = $em->getRepository(RelayRule::class);
+            $rule = $repo->find($rule);
+
+            try {
+                $oldOrder = $rule->getOrder();
+                $rule->setOrder($oldOrder + $move);
+                if ($move > 0) {
+                    $from = $oldOrder + 1;
+                    $until = $oldOrder + $move;
+                    $up = $repo->findByOrderBetween($from, $until, $rule->getRelay());
+                    /** @var RelayRule $uprule */
+                    foreach ($up as $uprule) {
+                        $uprule->setOrder($uprule->getOrder() - 1);
+                        $em->merge($uprule);
+                    }
+                    $em->merge($rule);
+                    $em->flush();
+                } else {
+                    $from = $oldOrder + $move;
+                    $until = $oldOrder - 1;
+                    $down = $repo->findByOrderBetween($from, $until, $rule->getRelay());
+                    /** @var RelayRule $downrule */
+                    foreach ($down as $downrule) {
+                        $downrule->setOrder($downrule->getOrder() + 1);
+                        $em->merge($downrule);
+                    }
+                    $em->merge($rule);
+                    $em->flush();
+                }
+
+                // reload sorted list of rules
+                $rules = $em->getRepository(RelayRule::class)->findBy(['relay' => $relay], [$sortKey => $order]);
+
+                // trigger a table change in the view
+                return $request->isXmlHttpRequest() ?
+                    $this->render('admin/relays/rules.html.twig', [
+                        'relay' => $relay,
+                        'rules' => $rules,
+                        'orders' => $orders,
+                        'order' => $order,
+                        'sort' => $sortKey,
+                        'modal' => false,
+                        'form' => $formView,
+                        'btns' => [$formView->offsetGet('close')],
+                        'extend' => 'sortable-table.html.twig',
+                    ]) :
+                    $this->redirectToRoute('nav.admin_relay_rules', ['relay' => $relay ? $relay->getId() : 0]);
+            } catch (\Exception $e) {
+                return new JsonResponse(['error' => $e->getMessage(), 'status' => 'failure'], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
+
+        return $this->render('admin/relays/rules.html.twig', [
+            'relay' => $relay,
+            'rules' => $rules,
+            'orders' => $orders,
+            'order' => $order,
+            'sort' => $sortKey,
+            'modal' => $request->isXmlHttpRequest(),
+            'form' => $formView,
+            'btns' => [$formView->offsetGet('close')],
+        ]);
+    }
+
+    /**
+     * Controller for handling a relay rule (admin only).
+     *
+     * @Route("/{_locale}/admin/relay_rules/rule/{relay}/{id}", name="nav.admin_relay_rule")
+     * @param integer $relay
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminRelayRuleAction($relay = 0, $id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var Relay $relay */
+        $relay = $em->getRepository(Relay::class)->find($relay);
+        $rules = $em->getRepository(RelayRule::class)->findBy(['relay' => $relay]);
+
+        if ($id) {
+            $rule = $em->getRepository(RelayRule::class)->find($id);
+        } else {
+            $rule = new RelayRule();
+            $rule->setOrder(count($rules))->setMajorVersion(1)->setIsActive(true)->setRelay($relay);
+        }
+        $form = $this->createForm(RuleType::class, $rule, [
+            'attr' => ['action' => $request->getPathInfo()],
+            'delete_title' => $this->get('translator')->trans('label.delete', [], 'relay'),
+            'delete_path' => $this->generateUrl('nav.admin_relay_rule_delete', ['id' => $id]),
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $action = $rule->getId() ? 'updated' : 'saved';
+
+            if ($rule->getId())
+                $em->merge($rule);
+            else
+                $em->persist($rule);
+
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.rule.' . $action,
+                    'parameters' => ['%name%' => $rule->getTitle()]
+                ]);
+
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse([], Response::HTTP_OK) :
+
+                $this->redirectToRoute('nav.admin_relay_rules', ['relay' => $relay]);
+        } else if ($form->isSubmitted() && !$form->isValid()) {
+            // return error code for modal and ok for non-modals
+
+            print_r($form->getErrors()->current()->getMessage());
+
+            $formView = $form->createView();
+            return $this->render('admin/relays/rule.html.twig', [
+                'rule' => $rule,
+                'form' => $formView,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' => $id ?
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('delete'),
+                        $formView->offsetGet('submit')
+                    ] :
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('submit')
+                    ]
+            ], new Response('', $request->isXmlHttpRequest() ?
+                Response::HTTP_BAD_REQUEST :
+                Response::HTTP_OK));
+        }
+
+        $formView = $form->createView();
+        return $this->render('admin/relays/rule.html.twig', [
+            'rule' => $rule,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' => $id ?
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('delete'),
+                    $formView->offsetGet('submit')
+                ] :
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('submit')
+                ]
+        ]);
+    }
+
+    /**
+     * Controller for deleting a single rule (admin only).
+     *
+     * @Route("/{_locale}/admin/relay_rules/delete/{id}",
+     *     options={"expose" = true},
+     *     name="nav.admin_relay_rule_delete")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDeleteRelayRuleAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var RelayRule $rule */
+        $rule = $em->getRepository(RelayRule::class)->find($id);
+        /** @var Relay $relay */
+        $relay = $rule->getRelay();
+
+        $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'relay',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('yes', SubmitType::class, ['left_icon' => 'fa-trash', 'right_icon' => 'fa-check', 'attr' => ['class' => 'btn-danger'], 'label' => 'label.yes']);
+
+        $form = $fb->getForm();
+        $form->handleRequest($request);
+        if ($form->isSubmitted()) {
+            $name = $rule->getTitle();
+
+            $em->remove($rule);
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.rule.deleted',
+                    'parameters' => ['%name%' => $name]
+                ]);
+
+            // return an empty response for the modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse(['reloadPage' => 1], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_relay_rules', ['relay' => $relay ? $relay->getId() : 0]);
+        }
+
+        return $this->render('admin/relays/delete.html.twig', [
+            'rule' => $rule,
+            'form' => $form->createView(),
+            'modal' => $request->isXmlHttpRequest(),
+        ]);
+    }
+}

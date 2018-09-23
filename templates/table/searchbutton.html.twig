@@ -1,0 +1,45 @@
+{% set default = {(domain): {'in': false}} %}
+    <button data-helpmode data-content="{% trans %}help.action.search{% endtrans %}" title="{% trans %}action.toggle_search{% endtrans %}" class="navbar-btn btn btn-default btn-search{% if app.user.data('search', default)[domain]['in'] %} active{% endif %}" data-domain="{{ domain }}" data-toggle="button" aria-pressed="false"><i class="fa fa-search"></i> <span class="fa fa-fw fa-caret-{% if app.user.data('search', default)[domain]['in'] %}up{% else %}down{% endif %} toggle-icon" data-toggleicon="fa-caret-down,fa-caret-up"></span></button>
+<script type="text/javascript">
+    <!--
+    $(document).ready(function() {
+        $('.searchbar')
+            .on('show.bs.collapse', function() {
+                $url = Routing.generate('nav.authuser_merge_profile_data', {
+                    '_locale': '{{ app.request.locale }}',
+                    'path': 'search.{{ domain }}.in',
+                    'value': 1
+                });
+                $.ajax({
+                    'url': $url
+                });
+            })
+            .on('hide.bs.collapse', function() {
+                $url = Routing.generate('nav.authuser_merge_profile_data', {
+                    '_locale': '{{ app.request.locale }}',
+                    'path': 'search.{{ domain }}.in',
+                    'value': 0
+                });
+                $.ajax({
+                    'url': $url
+                });
+            });
+        $('#{{ request_id()|html_id }} ')
+            .on('click', function (e) {
+                var $this = $(this);
+
+                // if clicking the search toggle
+                var $search = $(e.target).closest('.btn-search');
+                if ($search.length) {
+                    console.log('toggle search');
+                    {% if modal is defined and modal == true %}
+                    $this.find('.searchbar').collapse('toggle');//.parent().toggleClass('affix-search');
+                    $this.parent().toggleClass('affix-search');
+                    {% else %}
+                    $this.find('.searchbar').collapse('toggle').parent().toggleClass('affix-search');
+                    {% endif %}
+                }
+            });
+    });
+    //-->
+</script>

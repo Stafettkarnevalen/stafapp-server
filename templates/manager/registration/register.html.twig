@@ -1,0 +1,15 @@
+{# app/Resources/views/manager/registration/register.html.twig #}
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+
+{% block body %}
+    <div class="side-padding">
+        {% include 'step/step.html.twig' with { 'step':1, 'steps':3, 'title':'register.manager_step' } %}
+        <div class="form bg-default">
+            <p class="all-padding">{% trans from "messages" %}register.manager_info{% endtrans %}</p>
+            {% include 'manager/registration/form.html.twig' %}
+        </div>
+    </div>
+{% endblock %}

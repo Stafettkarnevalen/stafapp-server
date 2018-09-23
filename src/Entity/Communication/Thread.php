@@ -1,0 +1,99 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 05/06/2017
+ * Time: 11.30
+ */
+
+namespace App\Entity\Communication;
+
+use App\Entity\Interfaces\Serializable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use App\Entity\Traits\FieldsTrait;
+use FOS\CommentBundle\Entity\Thread as BaseThread;
+
+/**
+ * @ORM\Table(name="thread_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\ChangeTrackingPolicy("DEFERRED_EXPLICIT")
+ * @ORM\HasLifecycleCallbacks
+ * @package App\Entity\Communication
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class Thread extends BaseThread implements Serializable
+{
+    /** use fields trait */
+    use FieldsTrait;
+
+    /**
+     * @ORM\Id
+     * @ORM\Column(name="id_fld", type="string")
+     * @var string $id The id of the thread
+     */
+    protected $id;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Comment",
+     *     mappedBy="thread", cascade={"persist", "merge", "remove"})
+     * @ORM\OrderBy({"createdAt" = "DESC"})
+     * @var ArrayCollection Comments in this thread
+     */
+    protected $comments;
+
+    /**
+     * Message constructor.
+     */
+    public function __construct()
+    {
+        $this->comments = new ArrayCollection();
+    }
+
+    /**
+     * Gets the id.
+     *
+     * @return string
+     */
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    /**
+     * Sets the id.
+     *
+     * @param string $id
+     * @return $this
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
+    /**
+     * Gets the comments.
+     *
+     * @return ArrayCollection
+     */
+    public function getComments()
+    {
+        return $this->comments;
+    }
+
+    /**
+     * Sets the comments.
+     *
+     * @param ArrayCollection $comments
+     * @return $this
+     */
+    public function setComments(ArrayCollection $comments)
+    {
+        $this->comments = $comments;
+
+        return $this;
+    }
+}

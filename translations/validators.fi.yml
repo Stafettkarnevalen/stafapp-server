@@ -1,0 +1,5 @@
+email.reserved: "Kyseinen sähköpostiosoite on jo käytössä"
+phone.reserved: "Kyseinen puhelinnumero on jo käytössä"
+invalid.emailhash: "Sähköpostiosoitteen vahvistuskoodi on virheellinen"
+invalid.phonehash: "Puhelinnumeron vahvistuskoodi on virheellinen"
+password.missmatch: "Salasanat eivät täsmää"

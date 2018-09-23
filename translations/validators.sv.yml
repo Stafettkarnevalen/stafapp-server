@@ -1,0 +1,6 @@
+email.reserved: "Denna e-postadress är redan i bruk"
+phone.reserved: "Detta mobiltelefonnummer är redan i bruk"
+invalid.emailhash: "Den angivna bekräftelsekoden för e-postadressen stämmer inte"
+invalid.phonehash: "Den angivna bekräftelsekoden för mobiltelefonnumret stämmer inte"
+password.missmatch: "Lösenorden stämmer inte överens"
+does.not.start.with: "Värdet börjar inte med %string%"

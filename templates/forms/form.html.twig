@@ -1,0 +1,59 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="side-padding">
+        <h1>{{ myForm.title }}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="form bg-default all-padding">
+            {{ form_start(form) }}
+
+            <div class="form-nav">
+                <div class="btn-group btn-group-justified" role="group">
+                    <div class="btn-group" role="group">
+                        {{ form_widget(form.submit) }}
+                    </div>
+                </div>
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+    <script type="text/javascript">
+        <!--
+        {% for source,targets in myForm.formFieldDependencies %}
+            $('[name="{{ source }}"]').on('change', function() {
+                console.log($(this).val());
+                {% for t in targets %}
+                if ($(this).val() {{ t.operator|raw }} {{ t.value(true)|raw }}) {
+                    console.log('show');
+                    {% if t.target.required %}
+                    $('#client_form_answers_{{ t.target.order }}').find('.control-label').addClass('required');
+                    $('#client_form_answers_{{ t.target.order }}').find('{{ t.target.getHTMLFormElements()|join(', ') }}').attr('required', 'required');
+                    {% endif %}
+                    $('#client_form_answers_{{ t.target.order }}').find('.hidden').removeClass('hidden').addClass('visible');
+                } else {
+                    console.log('hide');
+                    {% if t.target.required %}
+                    $('#client_form_answers_{{ t.target.order }}').find('.control-label').removeClass('required');
+                    $('#client_form_answers_{{ t.target.order }}').find('{{ t.target.getHTMLFormElements()|join(', ') }}').removeAttr('required');
+                    {% endif %}
+                    $('#client_form_answers_{{ t.target.order }}').find('.visible').removeClass('visible').addClass('hidden');
+                    $('#client_form_answers_{{ t.target.order }}').find('{{ t.target.getHTMLFormElements()|join(', ') }}').val(null);
+                }
+                {% endfor %}
+            });
+
+        {% endfor %}
+        //-->
+    </script>
+{% endblock %}

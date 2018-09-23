@@ -1,0 +1,34 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 14/12/2016
+ * Time: 21.34
+ */
+
+namespace App\Repository;
+
+
+use Doctrine\ORM\EntityRepository;
+
+
+
+class RelayRepository extends EntityRepository
+{
+    public function findActive($when = null, array $orderBy = [])
+    {
+        if ($when === null)
+            $when = new \DateTime('now');
+
+        $qb = $this->createQueryBuilder('r')
+            ->where('r.from < :when AND (r.until IS NULL OR r.until > :when) AND r.isActive = 1')
+            ->setParameter('when', $when);
+
+        foreach ($orderBy as $key => $val)
+            $qb->addOrderBy('r.' . $key, $val);
+
+        $result = $qb->getQuery()->getResult();
+
+        return $result;
+    }
+}

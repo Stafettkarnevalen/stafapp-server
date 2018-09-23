@@ -1,0 +1,54 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 14.20
+ */
+
+namespace App\Entity\Traits;
+
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+
+/**
+ * Trait TitleAndTextTrait
+ * @package App\Entity\Traits
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+trait TitleAndTextTrait
+{
+    /** use title trait*/
+    use TitleTrait;
+
+    /**
+     * @ORM\Column(name="text_fld", type="text", nullable=false)
+     * @Assert\NotBlank()
+     * @var string $text The text
+     */
+    protected $text;
+
+    /**
+     * Gets the text.
+     *
+     * @return string
+     */
+    public function getText()
+    {
+        return $this->text;
+    }
+
+    /**
+     * Sets the text.
+     *
+     * @param string $text
+     * @return $this
+     */
+    public function setText($text)
+    {
+        $this->text = $text;
+
+        return $this;
+    }
+}

@@ -1,0 +1,28 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+{% set no_toolbar = true %}
+{% block body %}
+    <div class="side-padding">
+        <h1>{% if account.id != 0 %}{{ account.name }}{% else %}{% trans from "nav" %}nav.admin_invoice_recipient_account{% endtrans %}{% endif %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="form bg-default all-padding">
+            {{ form_row(form.name) }}
+            {{ form_row(form.iban) }}
+            {{ form_row(form.bic) }}
+            {{ form_row(form.isActive) }}
+        </div>
+    </div>
+{% endblock %}

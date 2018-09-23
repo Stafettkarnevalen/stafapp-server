@@ -1,0 +1,38 @@
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="form bg-default all-padding">
+            {{ form_start(form) }}
+            {{ form_row(form.attachments) }}
+            {{ form_row(form.distribution) }}
+            {{ form_row(form.type) }}
+            {{ form_row(form.title) }}
+            {{ form_row(form.text) }}
+            <div class="form-nav text-right">
+                {% if modal is defined and modal == true %}
+                <a class="btn btn-default" data-dismiss="modal" aria-label="Close"><i class="fa fa-chevron-left"></i> {% trans from 'communication' %}label.close{% endtrans %} <i class="fa fa-close"></i></a>
+                {% else %}
+                <a class="btn btn-default" href="{{ path('nav.messages') }}"><i class="fa fa-trash"></i> {% trans from 'communication' %}message.cancel{% endtrans %} <i class="fa fa-remove"></i></a>
+                {% endif %}
+                {{ form_widget(form.submit) }}
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+
+
+{% endblock %}

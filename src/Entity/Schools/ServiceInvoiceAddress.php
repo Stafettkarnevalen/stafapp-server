@@ -1,0 +1,642 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 13/12/2016
+ * Time: 9.45
+ */
+
+namespace App\Entity\Schools;
+
+
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Services\Service;
+use App\Entity\Traits\LoggableTrait;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Invoicing\InvoiceAddress;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\FieldsTrait;
+use App\Entity\Traits\VersionedLifespanTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use Symfony\Component\Serializer\Annotation as Serialize;
+use JMS\Serializer\Annotation as Jms;
+
+/**
+ * @ORM\Table(name="service_invoice_address_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Schools
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class ServiceInvoiceAddress implements \Serializable, CreatedByUserInterface, LoggableEntity
+{
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use is active flaga */
+    use FieldsTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use lifespan fields */
+    use VersionedLifespanTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="SchoolUnit", inversedBy="serviceInvoiceAddresses")
+     * @ORM\JoinColumn(name="school_unit_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     */
+    protected $schoolUnit;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Invoicing\InvoiceAddress")
+     * @ORM\JoinColumn(name="address_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     */
+    protected $address;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Services\Service")
+     * @ORM\JoinColumn(name="service_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     */
+    protected $service;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="reference_fld", type="string", length=64, nullable=true)
+     */
+    protected $reference;
+
+    /**
+     * @ORM\Column(name="confirmed_fld", type="integer", nullable=true)
+     */
+    protected $confirmed;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="method_fld", type="string", columnDefinition="ENUM('LETTER', 'EMAIL', 'EINVOICE')", options={"default": "LETTER"}, nullable=false)
+     * @Assert\NotBlank()
+     * @Assert\Choice({"LETTER", "EMAIL", "EINVOICE"})
+     */
+    protected $method;
+
+    /**
+     * SchoolName constructor.
+     */
+    public function __construct()
+    {
+        $this->method = 'EMAIL';
+        $this->address = new InvoiceAddress();
+    }
+
+    /**
+     * Gets school unit
+     *
+     * @return mixed
+     */
+    public function getSchoolUnit()
+    {
+        return $this->schoolUnit;
+    }
+
+    /**
+     * Sets the school unit
+     *
+     * @param mixed $schoolUnit
+     *
+     * @return $this
+     */
+    public function setSchoolUnit($schoolUnit)
+    {
+        $this->schoolUnit = $schoolUnit;
+
+        return $this;
+    }
+
+    /**
+     * Gets address
+     *
+     * @return mixed
+     */
+    public function getAddress()
+    {
+        return $this->address;
+    }
+
+    /**
+     * Sets the school unit
+     *
+     * @param mixed $address
+     *
+     * @return $this
+     */
+    public function setAddress(InvoiceAddress $address)
+    {
+        $this->address = $address;
+
+        return $this;
+    }
+
+    /**
+     * Gets service type
+     *
+     * @return Service
+     */
+    public function getService()
+    {
+        return $this->service;
+    }
+
+    /**
+     * Sets service type
+     *
+     * @param mixed $service
+     *
+     * @return $this
+     */
+    public function setService($service)
+    {
+        $this->service = $service;
+
+        return $this;
+    }
+
+    /**
+     * Gets the name
+     *
+     * @return mixed
+     */
+    public function getName()
+    {
+        if ($this->address)
+            return $this->address->getName();
+        return null;
+    }
+
+    /**
+     * Sets the name
+     *
+     * @param mixed $name
+     *
+     * @return $this
+     */
+    public function setName($name)
+    {
+        if ($this->address)
+            $this->address->setName($name);
+
+        return $this;
+    }
+
+
+
+    /**
+     * Gets street address
+     *
+     * @return mixed
+     */
+    public function getStreetAddress()
+    {
+        if ($this->address)
+            return $this->address->getStreetAddress();
+        return null;
+    }
+
+    /**
+     * Sets street address
+     *
+     * @param mixed $streetAddress
+     *
+     * @return $this
+     */
+    public function setStreetAddress($streetAddress)
+    {
+        if ($this->address)
+            $this->address->setStreetAddress($streetAddress);
+
+        return $this;
+    }
+
+    /**
+     * Gets zipcode
+     *
+     * @return mixed
+     */
+    public function getZipcode()
+    {
+        if ($this->address)
+            return $this->address->getZipcode();
+        return null;
+    }
+
+    /**
+     * Sets zipcode
+     *
+     * @param mixed $zipcode
+     *
+     * @return $this
+     */
+    public function setZipcode($zipcode)
+    {
+        if ($this->address)
+            $this->address->setZipcode($zipcode);
+
+        return $this;
+    }
+
+    /**
+     * Gets city
+     *
+     * @return mixed
+     */
+    public function getCity()
+    {
+        if ($this->address)
+            return $this->address->getCity();
+        return null;
+    }
+
+    /**
+     * Sets city
+     *
+     * @param mixed $city
+     *
+     * @return $this
+     */
+    public function setCity($city)
+    {
+        if ($this->address)
+            $this->address->setCity($city);
+
+        return $this;
+    }
+
+    /**
+     * Gets pobox
+     *
+     * @return mixed
+     */
+    public function getPobox()
+    {
+        if ($this->address)
+            return $this->address->getPobox();
+
+        return null;
+    }
+
+    /**
+     * Sets pobox
+     *
+     * @param mixed $pobox
+     *
+     * @return $this
+     */
+    public function setPobox($pobox)
+    {
+        if ($this->address)
+            $this->address->setPobox($pobox);
+
+        return $this;
+    }
+
+    /**
+     * Gets country
+     *
+     * @return mixed
+     */
+    public function getCountry()
+    {
+        if ($this->address)
+            return $this->address->getCountry();
+
+        return null;
+    }
+
+    /**
+     * Sets country
+     *
+     * @param mixed $country
+     *
+     * @return $this
+     */
+    public function setCountry($country)
+    {
+        if ($this->address)
+            $this->address->setCountry($country);
+
+        return $this;
+    }
+
+    /**
+     * Gets email
+     *
+     * @return mixed
+     */
+    public function getEmail()
+    {
+        if ($this->address)
+            return $this->address->getEmail();
+
+        return null;
+    }
+
+    /**
+     * Sets email
+     *
+     * @param mixed $email
+     *
+     * @return $this
+     */
+    public function setEmail($email)
+    {
+        if ($this->address)
+            $this->address->setEmail($email);
+
+        return $this;
+    }
+
+    /**
+     * Gets phone
+     *
+     * @return mixed
+     */
+    public function getPhone()
+    {
+        if ($this->address)
+            return $this->address->getPhone();
+
+        return null;
+    }
+
+    /**
+     * Sets phone
+     *
+     * @param mixed $phone
+     *
+     * @return $this
+     */
+    public function setPhone($phone)
+    {
+        if ($this->address)
+            $this->address->setPhone($phone);
+
+        return $this;
+    }
+
+    /**
+     * Gets recipient EDI code
+     *
+     * @return mixed
+     */
+    public function getRecipientEDI()
+    {
+        if ($this->address)
+            return $this->address->getRecipientEDI();
+
+        return null;
+    }
+
+    /**
+     * Sets recipient EDI code
+     *
+     * @param mixed $recipientEDI
+     *
+     * @return $this
+     */
+    public function setRecipientEDI($recipientEDI)
+    {
+        if ($this->address)
+            $this->address->setRecipientEDI($recipientEDI);
+
+        return $this;
+    }
+
+    /**
+     * Gets operator
+     *
+     * @return mixed
+     */
+    public function getOperator()
+    {
+        if ($this->address)
+            return $this->address->getOperator();
+
+        return null;
+    }
+
+    /**
+     * Sets operator
+     *
+     * @param mixed $operator
+     *
+     * @return $this
+     */
+    public function setOperator($operator)
+    {
+        if ($this->address)
+            $this->address->setOperator($operator);
+
+        return $this;
+    }
+
+    /**
+     * Gets operator EDI code
+     *
+     * @return mixed
+     */
+    public function getOperatorEDI()
+    {
+        if ($this->address)
+            return $this->address->getOperatorEDI();
+
+        return null;
+    }
+
+    /**
+     * Sets operator EDI code
+     *
+     * @param mixed $operatorEDI
+     *
+     * @return $this
+     */
+    public function setOperatorEDI($operatorEDI)
+    {
+        if ($this->address)
+            $this->address->setOperatorEDI($operatorEDI);
+
+        return $this;
+    }
+
+    /**
+     * Gets operator BIC code
+     *
+     * @return mixed
+     */
+    public function getOperatorBIC()
+    {
+        if ($this->address)
+            return $this->address->getOperatorBIC();
+
+        return null;
+    }
+
+    /**
+     * Sets operator BIC code
+     *
+     * @param mixed $operatorBIC
+     *
+     * @return $this
+     */
+    public function setOperatorBIC($operatorBIC)
+    {
+        if ($this->address)
+            $this->address->setOperatorBIC($operatorBIC);
+
+        return $this;
+    }
+
+    /**
+     * Gets reference
+     *
+     * @return mixed
+     */
+    public function getReference()
+    {
+        return $this->reference;
+    }
+
+    /**
+     * Sets reference
+     *
+     * @param mixed $reference
+     *
+     * @return $this
+     */
+    public function setReference($reference)
+    {
+        $this->reference = $reference;
+
+        return $this;
+    }
+
+    /**
+     * Gets confirmed
+     *
+     * @return mixed
+     */
+    public function getConfirmed()
+    {
+        return $this->confirmed;
+    }
+
+    /**
+     * Sets confirmed
+     *
+     * @param mixed $confirmed
+     *
+     * @return $this
+     */
+    public function setConfirmed($confirmed)
+    {
+        $this->confirmed = $confirmed;
+
+        return $this;
+    }
+
+    /**
+     * Gets method
+     *
+     * @return mixed
+     */
+    public function getMethod()
+    {
+        return $this->method;
+    }
+
+    /**
+     * Sets method
+     *
+     * @param mixed $method
+     *
+     * @return $this
+     */
+    public function setMethod($method)
+    {
+        $this->method = $method;
+
+        return $this;
+    }
+
+
+    /**
+     * Gets fields that fill should skip
+     *
+     * @return array
+     */
+    protected function getSkipFill()
+    {
+        return ['id', 'created', 'modified'];
+    }
+
+    /**
+     * Fills this entity with values from an array.
+     *
+     * @param array $params
+     *
+     * @return $this
+     */
+    public function fill(array $params)
+    {
+        foreach ($params as $key=>$val) {
+            if (in_array($key, $this->getSkipFill()))
+                continue;
+            if (!in_array($key, array_keys($this->getFields())) && !in_array($key, array_keys($this->address->getFields())))
+                continue;
+            if (in_array($key, array_keys($this->getFields()))) {
+                $setter = "set{$key}";
+                $this->$setter($val);
+            } else if (in_array($key, array_keys($this->address->getFields()))) {
+                $setter = "set{$key}";
+                $this->address->$setter($val);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Copies this entity to another new one
+     *
+     * @return InvoiceAddress
+     */
+    public function copy()
+    {
+        $copy = new InvoiceAddress();
+        $copy->fill(get_object_vars($this));
+        return $copy;
+    }
+
+    public function getFields()
+    {
+        return get_object_vars($this);
+    }
+
+    /**
+     * Gets a string representation of this object.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->getService()->getTitle();
+    }
+}

@@ -1,0 +1,30 @@
+{# app/Resources/views/manager/verification/form.html.twig #}
+
+<div class="container-fluid">
+    {% for flash_message in app.session.flashBag.get('message_sent') %}
+        <div class="alert alert-info flash-notice">
+            <h3><i class="fa fa-info-circle"></i> {{ 'flash.info'|trans }}</h3>
+            {{ flash_message|trans }}
+        </div>
+    {% endfor %}
+    {{ form_start(form) }}
+        {{ form_errors(form) }}
+        {% if field == 'email' %}
+            {{ form_row(form.username) }}
+            {{ form_row(form.emailhash) }}
+        {% elseif field == 'phone' %}
+            {{ form_row(form.phone) }}
+            {{ form_row(form.phonehash) }}
+        {% endif %}
+        <div class="form-nav">
+            <div class="btn-group btn-group-justified" role="group">
+                <div class="btn-group" role="group">
+                    {{ form_widget(form.resend)  }}
+                </div>
+                <div class="btn-group" role="group">
+                    {{ form_widget(form.submit)  }}
+                </div>
+            </div>
+        </div>
+    {{ form_end(form) }}
+</div>

@@ -1,0 +1,171 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+    {% if  modal is not defined or modal == false %}
+    {{ form_start(form) }}
+    {% endif %}
+    <div class="side-padding">
+        <h1>{% if formField.id != 0 %}{{ formField.title }}{% else %}{% trans from "form" %}label.create{% endtrans %}{% endif %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="form bg-default all-padding">
+            {{ form_row(form.title) }}
+            {{ form_row(form.text) }}
+            {{ form_row(form.required) }}
+            {{ form_row(form.type) }}
+            <div id="options" class="form-group{%
+            if form.type.vars.value != 'SELECT'
+            and form.type.vars.value != 'CHECKBOX'
+            and form.type.vars.value != 'RADIO' %} hidden{% endif %}">
+                {{ form_label(form.options) }}
+                {{ form_widget(form.options) }}
+            </div>
+            <div id="dependencies"{% if formField.order == 0 %} class="hidden"{% endif %}>
+                <div class="form-group">
+                    <a href="#" class="btn btn-default add-dependency"><i class="fa fa-plus"></i> {% trans from 'form' %}label.add_dependency{% endtrans %} <i class="fa fa-sitemap"></i></a>
+                </div>
+                <div class="dependencies">
+                    {{ form_widget(form.dependsOn) }}
+                </div>
+            </div>
+            <div id="field_dependsOn_prototype" data-prototype="{{ form_row(form.dependsOn.vars.prototype)|e }}"></div>
+
+            {% if modal is not defined or modal == false %}
+                <div class="form-nav">
+                    <div class="btn-group btn-group-justified" role="group">
+                        <a class="btn btn-default" href="{{ path('nav.admin_form_fields', {'form': formField.form.id}) }}"><i class="fa fa-chevron-left"></i> {% trans from 'form' %}label.close{% endtrans %} <i class="fa fa-undo"></i></a>
+                        {% if formField.id %}
+                            <a class="btn btn-danger" href="{{ path('nav.admin_form_field_delete', {'id': formField.id}) }}"><i class="fa fa-trash"></i> {% trans from 'form' %}label.delete{% endtrans %} <i class="fa fa-minus"></i></a>
+                        {% endif %}
+                        <div class="btn-group" role="group">
+                            {{ form_widget(form.submit) }}
+                        </div>
+                    </div>
+                </div>
+                {{ form_end(form) }}
+            {% endif %}
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        <!--
+        {% set fieldsBefore = [] %}
+        {% for field in formField.siblingsBefore %}
+        {% set fieldsBefore = fieldsBefore|merge([{ 'title' : field.title, 'id' : field.id, 'operators': field.dependencyOperators}]) %}
+        {% endfor %}
+        var fieldsBefore = {{ fieldsBefore|json_encode|raw }};
+
+        function selectedDependency(field) {
+            var select = $(field);
+            var val = select.val();
+            var index = select.attr('data-index');
+            var html = '';
+
+            for (var i in fieldsBefore) {
+                if ('' + fieldsBefore[i].id === '' + val)
+                    html = buildDependencyOperators(i);
+            }
+            $('#field_dependsOn_' + index + '_operator').html(html);
+        }
+
+        function selectedType(field) {
+            var select = $(field);
+            var val = select.val();
+            if (val === 'SELECT' || val === 'CHECKBOX' || val === 'RADIO') {
+                $('#options').removeClass('hidden');
+            } else {
+                $('#options').addClass('hidden');
+            }
+        }
+
+        function buildDependencySources()
+        {
+            var html = '';
+            for (var i = 0; i < fieldsBefore.length; i++)
+                html += '<option value="' + fieldsBefore[i].id + '">' + fieldsBefore[i].title + '</option>';
+            return html;
+        }
+        function buildDependencyTarget()
+        {
+            return '<option value="{{ formField.id }}">{{ formField.title }}</option>';
+
+        }
+        function buildDependencyOperators(order)
+        {
+            console.log('build: ' + order);
+            var html = '';
+            var operators = fieldsBefore[order].operators;
+            for (var i in operators)
+                html += '<option value="' + operators[i] + '">' + operators[i] + '</option>';
+            return html;
+        }
+
+        $(document).ready(function() {
+            var depList = $('#field_dependsOn');
+            depList.children().each(function() {
+                var dep = $(this);
+                var label = $(this).children(':first-child');
+                var delLink = $('<a class="btn btn-xs btn-danger pull-right" href=""></a>');
+                delLink.append($('<i class="fa fa-remove"></i>'));
+                label.html((parseInt(label.html()) + 1));
+                label.append(delLink);
+                delLink.on('click', function(e) {
+                    e.preventDefault();
+                    console.log('delete');
+                    dep.remove();
+                });
+            });
+
+        });
+
+        $('body').on('click', '.add-dependency', function() {
+            var newWidget = $('#field_dependsOn_prototype').attr('data-prototype');
+            var depList = $('.dependencies');
+            var depCount = depList.find('#field_dependsOn').children().length;
+
+            console.log(depList.find('#field_dependsOn'));
+
+            newWidget = newWidget.replace(/<label class="control-label">Name<\/label>/g, '<label class="control-label dependency">' + (depCount + 1) + '</label>');
+            newWidget = newWidget.replace(/<label class="control-label"/g, '<label class="control-label required"');
+
+
+            newWidget = newWidget.replace(/__name__/g, depCount);
+
+
+            newWidget = $(newWidget);
+            newWidget.find('#field_dependsOn_' + depCount + '_source').attr('data-index', depCount);
+            newWidget.find('#field_dependsOn_' + depCount + '_source').html(buildDependencySources());
+            newWidget.find('#field_dependsOn_' + depCount + '_operator').html(buildDependencyOperators(0));
+            newWidget.find('#field_dependsOn_' + depCount + '_target').html(buildDependencyTarget());
+
+            var delLink = $('<a class="btn btn-xs btn-danger pull-right" href=""></a>');
+            delLink.append($('<i class="fa fa-remove"></i>'));
+            newWidget.find('.dependency').append(delLink);
+            delLink.on('click', function(e) {
+                e.preventDefault();
+                console.log('delete');
+                newWidget.remove();
+            });
+
+            console.log(newWidget.html());
+
+            newWidget.appendTo(depList);
+
+            return false;
+        });
+        //-->
+    </script>
+{% endblock %}

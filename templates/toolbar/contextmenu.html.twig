@@ -1,0 +1,24 @@
+{% macro render_menu_item(config) %}
+    {% if config.separator is defined and config.separator %}
+        <li class="divider"></li>
+    {% else %}
+        {% set target = config.class|split(' ')[0] %}
+        <li><a tabindex="-1" data-trigger=".{{ target }}" href="#"><i class="fa fa-{{ config.icon }}"></i> {{ config.title.key|trans({}, config.title.domain is defined ? config.title.domain : 'messages') }}</a></li>
+    {% endif %}
+{% endmacro %}
+
+{% macro render_context_menu(config) %}
+    <ul id="{{ config.id }}" class="dropdown-menu" role="menu">
+        {% import _self as macro %}
+        {% for item in config.items %}
+            {% if item.group is defined %}
+                {% for i in item.buttons %}
+                    {{ macro.render_menu_item(i) }}
+                {% endfor %}
+            {% else %}
+                {{ macro.render_menu_item(item) }}
+            {% endif %}
+        {% endfor %}
+    </ul>
+{% endmacro %}
+

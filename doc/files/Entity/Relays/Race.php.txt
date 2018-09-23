@@ -1,0 +1,377 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 03/06/2017
+ * Time: 17.35
+ */
+
+namespace App\Entity\Relays;
+
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Traits\LoggableTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Traits\CloneableTrait;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\NotesTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use App\Entity\Traits\VersionedPriceTrait;
+use App\Entity\Services\Service;
+use Gedmo\Mapping\Annotation as Gedmo;
+
+/**
+ * @ORM\Table(name="race_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @UniqueEntity(fields={"relay","service"}, message="race.exists")
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Relays
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class Race implements \Serializable, CreatedByUserInterface, LoggableEntity
+{
+    /** Use clone functions */
+    use CloneableTrait;
+
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use notes field */
+    use NotesTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /** Use price field */
+    use VersionedPriceTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="cup_name_fld", type="string", length=64, nullable=true)
+     * @var string $cupName The name of the cup of this race
+     */
+    protected $cupName;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="background_color_fld", type="string", length=32, nullable=true)
+     * @var string $backgroundColor The background color for the confirmation paper
+     */
+    protected $backgroundColor;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="text_color_fld", type="string", length=32, nullable=true)
+     * @var string $textColor The text color for the confirmation paper
+     */
+    protected $textColor;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Relays\Relay", inversedBy="races")
+     * @ORM\JoinColumn(name="relay_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var Relay $relay The Relay that this race is based upon
+     */
+    protected $relay;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Services\Service", inversedBy="races")
+     * @ORM\JoinColumn(name="service_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var Service $service The service type providing the season for this race
+     */
+    protected $service;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Round", mappedBy="race", cascade={"persist", "merge", "remove"})
+     * @ORM\OrderBy({"starts" = "ASC"})
+     * @var ArrayCollection $rounds The rounds of this race
+     */
+    protected $rounds;
+
+    /**
+     * Gets the cupName.
+     *
+     * @return string
+     */
+    public function getCupName()
+    {
+        return $this->cupName;
+    }
+
+    /**
+     * Sets the cupName.
+     *
+     * @param string $cupName
+     * @return $this
+     */
+    public function setCupName($cupName)
+    {
+        $this->cupName = $cupName;
+
+        return $this;
+    }
+
+    /**
+     * Gets the backgroundColor.
+     *
+     * @return string
+     */
+    public function getBackgroundColor()
+    {
+        return $this->backgroundColor;
+    }
+
+    /**
+     * Sets the backgroundColor.
+     *
+     * @param string $backgroundColor
+     * @return $this
+     */
+    public function setBackgroundColor($backgroundColor)
+    {
+        $this->backgroundColor = $backgroundColor;
+
+        return $this;
+    }
+
+    /**
+     * Gets the textColor.
+     *
+     * @return string
+     */
+    public function getTextColor()
+    {
+        return $this->textColor;
+    }
+
+    /**
+     * Sets the textColor.
+     *
+     * @param string $textColor
+     * @return $this
+     */
+    public function setTextColor($textColor)
+    {
+        $this->textColor = $textColor;
+
+        return $this;
+    }
+
+    /**
+     * Gets the relay.
+     *
+     * @return Relay
+     */
+    public function getRelay()
+    {
+        return $this->relay;
+    }
+
+    /**
+     * Sets the relay.
+     *
+     * @param Relay $relay
+     * @return $this
+     */
+    public function setRelay($relay)
+    {
+        $this->relay = $relay;
+
+        return $this;
+    }
+
+    /**
+     * Gets the service.
+     *
+     * @return Service
+     */
+    public function getService()
+    {
+        return $this->service;
+    }
+
+    /**
+     * Sets the service.
+     *
+     * @param Service $service
+     * @return $this
+     */
+    public function setService($service)
+    {
+        $this->service = $service;
+
+        return $this;
+    }
+
+    /**
+     * Gets the rounds.
+     *
+     * @return ArrayCollection
+     */
+    public function getRounds()
+    {
+        return $this->rounds;
+    }
+
+    /**
+     * Sets the rounds.
+     *
+     * @param ArrayCollection $rounds
+     * @return $this
+     */
+    public function setRounds($rounds)
+    {
+        $this->rounds = $rounds;
+
+        return $this;
+    }
+
+    /**
+     * Checks if this race contains a specific round.
+     *
+     * @param mixed $round
+     * @return boolean
+     */
+    public function hasRound($round)
+    {
+        /** @var Round $r */
+        foreach ($this->rounds as $r) {
+            if ($round !== null && is_string($round) && $r->getName() === $round)
+                return true;
+            else if ($round !== null && is_integer($round) && $r->getOrder() === $round)
+                return true;
+            else if ($round !== null && $round instanceof Round && $r == $round)
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Gets the season.
+     *
+     * @return integer
+     */
+    public function getSeason()
+    {
+        return $this->getService()->getSeason();
+    }
+
+    /**
+     * Gets a string representation of this object.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->getRelay()->__toString();
+    }
+
+    /**
+     * Race constructor.
+     */
+    public function __construct()
+    {
+        $this->rounds = new ArrayCollection([]);
+    }
+
+    /**
+     * Gets the heats of a targeted round or for all rounds.
+     *
+     * @param mixed $round If null return heats of all rounds, otherwise return heats of targeted round
+     * @return ArrayCollection
+     */
+    public function getHeats($round = null)
+    {
+        $heats = new ArrayCollection([]);
+        /** @var Round $r */
+
+        foreach ($this->getRounds()->toArray() as $r) {
+            if ($round !== null && is_integer($round) && $round !== $r->getOrder())
+                continue;
+            else if ($round !== null && is_string($round) && $round !== $r->getName())
+                continue;
+            else if ($round !== null && $round instanceof Round && $round != $r)
+                continue;
+
+            /** @var Heat $heat */
+            foreach ($r->getHeats() as $heat) {
+                $heats->add($heat);
+            }
+        }
+        return $heats;
+    }
+
+    /**
+     * Gets the teams of a targeted round or for all rounds.
+     *
+     * @param Round|null $round If null return teams of all rounds, otherwise return temas of targeted round
+     * @return ArrayCollection
+     */
+    public function getTeams($round = null)
+    {
+        $teams = new ArrayCollection([]);
+        /** @var Heat $heat */
+        foreach ($this->getHeats($round) as $heat) {
+            /** @var RaceResult $result */
+            foreach ($heat->getResults() as $result) {
+                $team = $result->getTeam();
+                if (!$teams->contains($team))
+                    $teams->add($team);
+            }
+        }
+        return $teams;
+    }
+
+    /**
+     * Gets the school units of a targeted round or for all rounds.
+     * @param mixed $round If null return school units of all rounds, otherwise return school units of targeted round
+     * @return ArrayCollection
+     */
+    public function getSchoolUnits($round = null)
+    {
+        $schoolUnits = new ArrayCollection([]);
+        /** @var Team $team */
+        foreach ($this->getTeams($round) as $team) {
+            $schoolUnit = $team->getSchoolUnit();
+            if (!$schoolUnits->contains($schoolUnit))
+                $schoolUnits->add($schoolUnit);
+        }
+        return $schoolUnits;
+    }
+
+    /**
+     * Gets the schools of a targeted round or for all rounds.
+     * @param mixed $round If null return schools of all rounds, otherwise return schools of targeted round
+     * @return ArrayCollection
+     */
+    public function getSchools($round = null)
+    {
+        $schools = new ArrayCollection([]);
+        /** @var Team $team */
+        foreach ($this->getTeams($round) as $team) {
+            $school = $team->getSchool();
+            if (!$schools->contains($school))
+                $schools->add($school);
+        }
+        return $schools;
+    }
+
+    /**
+     * Gets the name of the race.
+     *
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->getRelay()->getName();
+    }
+}

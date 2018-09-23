@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>owner</key>
+	<string>Super Admin &lt;webmaster@stafettkarnevalen.fi&gt;</string>
+	<key>password</key>
+	<string>24280309</string>
+	<key>secret</key>
+	<string>$2y$13$WGmx7LdmGqvDO3.hFgMq0uboQzK7wPrcatEHEqZ5pHfGBLknSHSgW</string>
+	<key>number</key>
+	<string>00001</string>
+</dict>
+</plist>

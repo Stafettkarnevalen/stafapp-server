@@ -1,0 +1,68 @@
+framework:
+    secret: '%env(APP_SECRET)%'
+    default_locale: sv
+    csrf_protection: true
+    http_method_override: true
+    translator: ~
+
+    # Enables session support. Note that the session will ONLY be started if you read or write from it.
+    # Remove or comment this section to explicitly disable session support.
+    session:
+        handler_id: ~
+
+    #esi: true
+    #fragments: true
+    php_errors:
+        log: true
+
+    cache:
+        # Put the unique name of your app here: the prefix seed
+        # is used to compute stable namespaces for cache keys.
+        #prefix_seed: your_vendor_name/app_name
+
+        # The app cache caches to the filesystem by default.
+        # Other options include:
+
+        # Redis
+        #app: cache.adapter.redis
+        #default_redis_provider: redis://localhost
+
+        # APCu (not recommended with heavy random-write workloads as memory fragmentation can cause perf issues)
+        #app: cache.adapter.apcu
+
+    templating:
+        engines: ['twig']
+
+    assets:
+        json_manifest_path: '%kernel.project_dir%/public/build/manifest.json'
+
+chrisguitarguy_request_id:
+    # The header which the bundle inspects for the incoming request ID
+    # if this is not set an ID will be generated and set at this header
+    request_header: Request-Id
+
+    # Whether or not to trust the incoming request header. This is turned
+    # on by default. If true a value in the `Request-Id` header in the request
+    # will be used as the request ID for the rest of the request. If false
+    # those values are ignored.
+    trust_request_header: true
+
+    # The header which the bundle will set the request ID to on
+    # the response
+    response_header: Request-Id
+
+    # The service key of an object that implements
+    # Chrisguitarguy\RequestId\RequestIdStorage
+    # optional, defaults to `SimpleIdStorage`
+    storage_service: ~
+
+    # The service key of an object that implements
+    # Chrisguitarguy\RequestId\RequestIdGenerator
+    # optional, defaults to a UUID v4 based generator
+    generator_service: ~
+
+    # Whether or not to add the monolog process (see below), defaults to true
+    enable_monolog: true
+
+    # Whether or not to add the twig extension (see below), defaults to true
+    enable_twig: true

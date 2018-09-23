@@ -1,0 +1,136 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 22/11/2016
+ * Time: 21.45
+ */
+namespace App\Form\Relay;
+
+
+use App\Entity\Services\ServiceCategory;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ButtonType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+
+
+class EditType extends AbstractType
+{
+    const CLASS_OF_SET = [1,2,3,4,5,6,7,8,9,10,11,12];
+
+    /**
+     * {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $rid = $builder->getData()->getId();
+        $nonDel = $builder->getData()->getRaces()->count();
+        $builder
+            ->add('name', TextType::class, ['label' => 'label.name'])
+            ->add('abbreviation', TextType::class, [
+                'label' => 'label.abbreviation',
+                'required' => false,
+            ])
+            ->add('serviceCategory', EntityType::class, [
+                'class' => ServiceCategory::class,
+                'expanded' => false,
+                'multiple' => false,
+                'choice_label' => 'title',
+                'label' => 'label.service_category',
+                'choice_translation_domain' => false,
+            ])
+            ->add('gender', GenderChoiceType::class, ['label' => 'label.gender'])
+            ->add('startGender', GenderChoiceType::class, [
+                'label' => 'label.start_gender',
+                'context' => GenderChoiceType::CONTEXT_START_GENDER,
+            ])
+            ->add('minClassOf', ChoiceType::class, [
+                'label' => 'label.min_class_of',
+                'choices' => array_combine(self::CLASS_OF_SET,self::CLASS_OF_SET),
+            ])
+            ->add('maxClassOf', ChoiceType::class, [
+                'label' => 'label.max_class_of',
+                'choices' => array_combine(self::CLASS_OF_SET,self::CLASS_OF_SET),
+            ])
+            ->add('legs', IntegerType::class, ['label' => 'label.legs'])
+            ->add('lanes', IntegerType::class, ['label' => 'label.lanes'])
+            ->add('from', DateTimeType::class, [
+                'label' => 'label.from',
+                'years' => range(1960, date("Y") + 5),
+            ])
+            ->add('until', DateTimeType::class, [
+                'label' => 'label.until',
+                'years' => range(1960, date("Y") + 5),
+                'required' => false,
+            ])
+            ->add('isActive', ChoiceType::class, [
+                'label' => 'label.status',
+                'expanded' => true,
+                'choice_attr' => function () { return ['class' => 'inline']; },
+                'label_attr' => ['class' => 'radio-inline'],
+                'choices' => ['label.inactive' => 0, 'label.active' => 1],
+            ])
+            ->add('schoolTypes', ChoiceType::class, [
+                'choices' => $options['available_school_types'],
+                'expanded' => true,
+                'multiple' => true,
+                'choice_label' => 'name',
+                'choice_attr' => function () { return ['class' => 'inline']; },
+                'label_attr' => ['class' => 'checkbox'],
+                'label' => 'label.school_types',
+                'choice_translation_domain' => false,
+            ])
+            ->add('submit', SubmitType::class, [
+                'left_icon' => 'fa-save',
+                'right_icon' => 'fa-check',
+                'attr' => ['class' => 'btn-success form-submit'],
+                'label' => 'label.save',
+            ])
+            ->add('close', ButtonType::class, [
+                'left_icon' => 'fa-chevron-left',
+                'right_icon' => 'fa-close',
+                'attr' => [
+                    'class' => 'btn-default',
+                    'data-dismiss' => 'modal',
+                ],
+                'label' => 'label.close',
+            ])
+        ;
+
+        if ($rid) $builder->add('delete', ButtonType::class, [
+            'left_icon' => 'fa-trash',
+            'right_icon' => 'fa-minus',
+            'attr' => [
+                'class' => 'btn-danger',
+                'data-toggle' => 'confirm',
+                'data-reload' => 'true',
+                'data-title' => $options['delete_title'],
+                'value' => $options['delete_path'],
+            ],
+            'label' => 'label.delete',
+            'disabled' => $nonDel,
+        ]);
+
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults([
+            'data_class' => 'App\Entity\Relays\Relay',
+            'translation_domain' => 'relay',
+            'available_school_types' => [],
+            'delete_title' => '',
+            'delete_path' => '',
+        ]);
+    }
+}

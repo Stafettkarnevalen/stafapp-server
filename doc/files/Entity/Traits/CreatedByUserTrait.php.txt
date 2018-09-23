@@ -1,0 +1,58 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 05/06/2017
+ * Time: 11.37
+ */
+
+namespace App\Entity\Traits;
+
+use App\Entity\Security\User;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation as Serialize;
+use JMS\Serializer\Annotation as Jms;
+
+/**
+ * Trait CreatedByUserTrait
+ * @package App\Entity\Traits
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+trait CreatedByUserTrait
+{
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Security\User")
+     * @ORM\JoinColumn(name="created_by_fld", referencedColumnName="id_fld", nullable=false)
+     * @Serialize\Groups({"for_api"})
+     * @Serialize\MaxDepth(1)
+     * @Jms\Groups({"for_api"})
+     * @Jms\MaxDepth(1)
+     * @var User $createdBy The user who created this entity
+     */
+    protected $createdBy;
+
+    /**
+     * Gets the User who created this entity.
+     *
+     * @return User
+     */
+    public function getCreatedBy()
+    {
+        return $this->createdBy;
+    }
+
+    /**
+     * Sets the User who created this entity.
+     *
+     * @param User $createdBy
+     * @return $this;
+     */
+    public function setCreatedBy(User $createdBy)
+    {
+        $this->createdBy = $createdBy;
+
+        return $this;
+    }
+}

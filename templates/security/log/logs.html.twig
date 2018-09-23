@@ -1,0 +1,84 @@
+{# app/Resources/views/security/login.html.twig #}
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+{% macro render_nav(types, type) %}
+    <nav class="navbar navbar-default toolbar" data-spy="affix" data-offset-top="251">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="navbar-header col-xs-10 col-sm-10 col-md-10 col-lg-10">
+                    {% for key, t in types %}
+                        {% if type == key %}
+                            <a class="navbar-brand active" href="{{ path('nav.user_logs', {'type': key}) }}"><i class="fa fa-{{ t[0] }}"></i> &nbsp; {{ t[1]|trans({}, "security") }}</a>
+                        {% else %}
+                            <a class="navbar-brand" href="{{ path('nav.user_logs', {'type': key}) }}"><i class="fa fa-{{ t[0] }}"></i> &nbsp; {{ t[1]|trans({}, "security") }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="top-padding-sm col-xs-2 col-sm-2 col-md-2 col-lg-2">
+                    <button title="{% trans from "form" %}label.toggle_search{% endtrans %}" class="pull-right btn btn-default btn-search" data-toggle="button" aria-pressed="false"><i class="fa fa-search"></i> <span class="caret"></span></button>
+                </div>
+            </div>
+        </div>
+        <div class="searchbar hidden">
+            <hr class="no-padding no-margin"/>
+            <div class="input-group toolbar-padding" data-target=".table-forms">
+                <span class="input-group-addon">{% trans from "form" %}label.search{% endtrans %}</span>
+                <input class="search input-md form-control" type="text"/>
+                <a title="{% trans from "form" %}label.clear{% endtrans %}" class="clear_search disabled input-group-addon btn"><i class="fa fa-times-circle-o"></i></a>
+            </div>
+        </div>
+    </nav>
+{% endmacro %}
+
+{% import _self as macro %}
+
+{% block body %}
+    {% set levels = {'INFO': 'info-circle', 'SUCCESS': 'check-circle', 'WARNING': 'exclamation-triangle', 'DANGER': 'exclamation-circle'} %}
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+
+        {{ macro.render_nav(types, type) }}
+
+        {% for key, t in types %}
+        {% if type == key %}
+        <div class="form bg-default">
+            <p class="all-padding">{{ t[2]|trans({}, "security") }}</p>
+            {% include t[4] %}
+        </div>
+        {% endif %}
+        {% endfor %}
+
+        <script type="text/javascript">
+            <!--
+            $(document).ready(function() {
+
+                $('#{{ request_id()|html_id }} ')
+                    .on('click', function (e) {
+                        var $this = $(this);
+
+                        // if clicking the search toggle
+                        var $search = $(e.target).closest('.btn-search');
+                        if ($search.length) {
+                            {% if modal is defined and modal == true %}
+                            $this.find('.searchbar').toggleClass('hidden');
+                            $this.parent().toggleClass('affix-search');
+                            {% else %}
+                            $this.find('.searchbar').toggleClass('hidden').parent().toggleClass('affix-search');
+                            {% endif %}
+                        }
+                    })
+                ;
+            });
+            //-->
+        </script>
+
+    </div>
+{% endblock %}

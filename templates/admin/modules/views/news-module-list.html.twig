@@ -1,0 +1,15 @@
+{% if module.data['showTitle'] is defined and module.data['showTitle'] %}
+<h1>{{ module.title }}</h1>
+{% endif %}
+{% for child in module.children %}
+    <div class="row">
+        <div class="col-xs-12"><h2><a data-toggle="modal" data-title="{{ module.title }}" data-reload="false" href="{{ path('nav.view_module', {'id': child.id}) }}">{{ child.title }}</a></h2></div>
+        <div class="col-xs-12">
+            {{ child.introduction }}
+            {% if module.more is defined and module.more %}
+                <p><a data-toggle="modal" data-title="{{ module.title }}" data-reload="false" href="{{ path('nav.view_module', {'id': child.id}) }}">{{ module.more|trans({}, 'module') }} &raquo;</a></p>
+            {% endif %}
+        </div>
+
+    </div>
+{% endfor %}

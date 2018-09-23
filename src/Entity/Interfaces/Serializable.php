@@ -1,0 +1,20 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 03/11/2017
+ * Time: 14.54
+ */
+
+namespace App\Entity\Interfaces;
+
+/**
+ * Interface Serializable
+ * @package App\Entity\Interfaces
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+interface Serializable extends \Serializable, \JsonSerializable
+{
+
+}

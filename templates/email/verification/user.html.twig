@@ -1,0 +1,17 @@
+<div class="alert">
+    <div class="panel panel-default">
+        <div class="panel-heading">{{ user.fullname }}</div>
+        <div class="panel-body">
+            <dl class="dl dl-horizontal">
+                <dt>{% trans from "user" %}label.username{% endtrans %}</dt>
+                <dd>{{ user.username }}</dd>
+                <dt>{% trans from "user" %}label.emailhash{% endtrans %}</dt>
+                <dd>{{ user.emailhash }}</dd>
+                <dt>{% trans from "user" %}label.phone{% endtrans %}</dt>
+                <dd>{{ user.phone }}</dd>
+                <dt>{% trans from "user" %}label.phonehash{% endtrans %}</dt>
+                <dd>{% trans from "user" %}label.phonehash_sms{% endtrans %}</dd>
+            </dl>
+        </div>
+    </div>
+</div>

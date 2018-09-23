@@ -1,0 +1,61 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 22/11/2016
+ * Time: 21.45
+ */
+namespace App\Form\User;
+
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
+use Symfony\Component\Form\Extension\Core\Type\PasswordType;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use App\Form\PhoneNumber\PhoneNumberType;
+
+class UserRegistrationType extends AbstractType
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $builder
+            ->add('username', EmailType::class, ['label' => 'label.username', 'attr' =>['autofocus' => true]])
+            ->add('email', EmailType::class, ['label' => 'label.email', 'required' => false])
+            ->add('firstname', TextType::class, ['label' => 'label.firstname'])
+            ->add('lastname', TextType::class, ['label' => 'label.lastname'])
+            ->add('phone', PhoneNumberType::class, [
+                'label' => 'label.phone',
+                'defaultArea' => '+358',
+                'constraints' => new NotBlank(),
+            ])
+            ->add('plainPassword', RepeatedType::class, [
+                    'type' => PasswordType::class,
+                    'first_options'  => ['block_name' => 'first', 'attr' => ['pattern' => '.{4,64}'], 'label' => 'label.password1', 'error_bubbling' => false],
+                    'second_options' => ['block_name' => 'second', 'attr' => ['pattern' => '.{4,64}'], 'label' => 'label.password2', 'error_bubbling' => false],
+                    'invalid_message' => 'password.missmatch',
+                    'error_bubbling' => false,
+                    'error_mapping' => ['.' => 'second'],
+                ]
+            )
+            ->add('submit', SubmitType::class, ['left_icon' => 'fa-check', 'right_icon' => 'fa-chevron-right', 'attr' => ['class' => 'btn-success'], 'label' => 'label.register'])
+        ;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults([
+            'data_class' => 'App\Entity\Security\User',
+            'translation_domain' => 'user',
+        ]);
+    }
+}

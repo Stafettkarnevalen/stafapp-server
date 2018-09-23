@@ -1,0 +1,344 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends (app.request.get('sort') is null and app.request.get('type') == 0) ? extends  : 'sortable-table.html.twig' %}
+
+{% set buttons = [{
+    'modal': {
+        'title': {
+            'key': 'action.create',
+        },
+        'reload': true,
+    },
+    'title': {
+        'key': 'action.create',
+    },
+    'class': 'hidden-sm hidden-md hidden-lg',
+    'icon': 'plus',
+    'href': path('nav.admin_create_school_type')
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.list.subtypes',
+            'domain': 'school'
+        }
+    },
+    'modal': {
+        'title': {
+            'key': 'nav.admin_list_school_types',
+            'domain': 'nav'
+        },
+        'reload': true,
+    },
+    'title': {
+        'key': 'action.units',
+        'domain': 'school'
+    },
+    'class': 'btn-sub disabled',
+    'icon': 'sitemap'
+},{
+    'separator': true
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.edit.school_type',
+            'domain': 'school'
+        }
+    },
+    'modal': {
+        'title': {
+            'key': 'nav.admin_list_school_types',
+            'domain': 'nav'
+        },
+        'reload': true,
+    },
+    'title': {
+        'key': 'action.edit'
+    },
+    'class': 'btn-open disabled',
+    'icon': 'edit'
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.delete.school_type',
+            'domain': 'school'
+        }
+    },
+    'modal': {
+        'title': {
+            'key': 'action.delete',
+        },
+        'reload': 'true',
+        'type': 'confirm'
+    },
+    'title': {
+        'key': 'action.delete'
+    },
+    'class': 'btn-delete disabled',
+    'icon': 'trash-o'
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.toggle-active',
+            'domain': 'school'
+        }
+    },
+    'title': {
+        'key': 'action.toggle_active',
+    },
+    'class': 'btn-toggle-active disabled',
+    'icon': 'power-off',
+    'target': '.table-school-types-' ~ (group ? group.id : '0')
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.unselect.school_type',
+            'domain': 'school'
+        }
+    },
+    'title': {
+        'key': 'action.unselect'
+    },
+    'class': 'btn-unselect disabled',
+    'icon': 'times-circle-o'
+},{
+    'separator': true
+},{
+    'group': true,
+    'buttons': [{
+        'helpmode': {
+            'content': {
+                'key': 'help.action.move.up'
+            }
+        },
+        'title': {
+            'key': 'action.up'
+        },
+        'class': 'btn-up ajax-sort disabled',
+        'icon': 'caret-up',
+        'target': '.table-school-types-' ~ (group ? group.id : '0')
+    },{
+        'helpmode': {
+            'content': {
+                'key': 'help.action.move.down'
+            }
+        },
+        'title': {
+            'key': 'action.down'
+        },
+        'class': 'btn-down ajax-sort disabled',
+        'icon': 'caret-down',
+        'target': '.table-school-types-' ~ (group ? group.id : '0')
+    }]
+},{
+    'separator': true
+},{
+    'helpmode': {
+        'content': {
+            'key': 'help.action.message.school_type',
+            'domain': 'school'
+        }
+    },
+    'modal': {
+        'title': {
+            'key': 'nav.message',
+            'domain': 'nav'
+        }
+    },
+    'title': {
+        'key': 'action.compose'
+    },
+    'class': 'btn-message disabled',
+    'icon': 'envelope-o'
+}] %}
+
+{% if group and group.id %}
+    {% set buttons = (buttons|slice(0, 1))|merge(buttons|slice(2)) %}
+{% endif %}
+
+{% import 'admin/schools/types/table.html.twig' as table %}
+{% import 'admin/schools/types/toolbar.html.twig' as toolBar %}
+{% import 'toolbar/contextmenu.html.twig' as contextMenu %}
+
+{% if (app.request.get('sort') is null and app.request.get('type') == 0) %}
+    {% block body %}
+        <div class="side-padding">
+            {% if group %}
+                <h1>{% trans from 'nav' %}nav.admin_list_school_subtypes{% endtrans %} - {{ group.name }}</h1>
+            {% else %}
+                <h1>{% trans from 'nav' %}nav.admin_list_school_types{% endtrans %}</h1>
+            {% endif %}
+        </div>
+
+        <div class="all-padding">
+            <table class="stepper">
+                <tbody>
+                <tr>
+                    <td class="bg-primary"></td>
+                </tr>
+                </tbody>
+            </table>
+            {{ toolBar.render_nav(buttons, group) }}
+            <div class="workspace">
+                <div class="dropdown" style="position:absolute!important; top:0!important; left:0!important;">
+                    {% import 'toolbar/contextmenu.html.twig' as contextMenu %}
+                    {{ contextMenu.render_context_menu({'id': 'school_types_context_menu_' ~ (group ? group.id : '0'), 'items': buttons|slice(group ? 2 : 1)}) }}
+                </div>
+
+                {{ table.render_sorted_table(schoolTypes, orders, order, sort, group) }}
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            <!--
+            $(document).ready(function() {
+
+                $('#{{ request_id()|html_id }} .table-school-types-{{ group ? group.id : "0"}}')
+                    .on('change', function (e) {
+                        console.log('table-change');
+                        $(this).find('td').contextMenu({
+                            menuSelector: "#school_types_context_menu_{{ group ? group.id : '0' }}",
+                            menuActivated: function (e) {
+                                // select row on context menu
+                                if (!$(e.target).parent().hasClass('selected'))
+                                    $(e.target).trigger('click');
+
+                                if ($(e.target).closest('td').parent().data('index') > 0) {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-up"]').parent().removeClass('disabled');
+                                } else {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-up"]').parent().addClass('disabled');
+                                }
+
+                                if ($(e.target).closest('td').parent().data('index') !== {{ schoolTypes|length }} - 1) {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-down"]').parent().removeClass('disabled');
+                                } else {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-down"]').parent().addClass('disabled');
+                                }
+                            },
+                            menuSelected: function (source, e) {
+                                // simulate toolbar button click on selected row
+                                $($(e.target).data('trigger')).trigger('click');
+
+                            }
+                        });
+
+                        $selected = $(this).find('tr.selected');
+
+                        if ($selected.length && $selected.data('index') === 0) {
+                            console.log('dis first');
+                            $('.btn-up').addClass('disabled');
+                        } else if ($selected.length && $selected.data('index') === {{ schoolTypes|length }} - 1) {
+                            console.log('dis last');
+                            $('.btn-down').addClass('disabled');
+                        } else if ($selected.length){
+                            console.log('ena');
+                            $('.btn-up').removeClass('disabled');
+                            $('.btn-down').removeClass('disabled');
+                        }
+                    })
+                    .trigger('change')
+                ;
+
+                $('#{{ request_id()|html_id }} ')
+                    .on('click', function (e) {
+                        var $this = $(this);
+
+                        // if clicking a table row
+                        var $td = $(e.target);
+                        if ($td.closest('.table-school-types-{{ group ? group.id : "0"}} tbody').length > 0) {
+                            console.log('select/unselect table row');
+
+                            if (!$td.parent().hasClass('selected')) {
+                                console.log('select');
+
+                                // unselect all other rows
+                                $this.find('.selected').removeClass('selected');
+
+                                // select this row
+                                $td.parent().addClass('selected');
+
+                                // enable tool buttons
+                                $this.find('.navbar.toolbar').find('.tool.disabled').removeClass('disabled');
+
+                                // assign correct urls to buttons
+                                $this.find('.btn-open').attr('href', $td.parent().data('href'));
+
+                                var $route = Routing.generate('nav.admin_delete_school_type', {
+                                    '_locale': '{{ app.request.locale }}',
+                                    'id': $td.parent().data('id')
+                                });
+                                $this.find('.btn-delete').attr('href', $route);
+
+                                $route = Routing.generate('nav.admin_list_school_types', {
+                                    '_locale': '{{ app.request.locale }}',
+                                    'group': $td.parent().data('id')
+                                });
+                                $this.find('.btn-sub').attr('href', $route);
+
+                                $this.find('.btn-unselect').off().click(function() {
+                                    $this.find('.table-school-types-{{ group ? group.id : "0"}} tr').removeClass('selected');
+                                    $this.find('.navbar.toolbar').find('.tool').addClass('disabled');
+                                    return false;
+                                });
+
+                                $route = Routing.generate('nav.message', {
+                                    '_locale': '{{ app.request.locale }}',
+                                    'action': 'compose',
+                                    'rcptType': 'schoolType',
+                                    'rcptId': $td.parent().data('id'),
+                                    'msgTypes': 'EMAIL,INTERNAL'
+                                });
+                                $this.find('.btn-message').attr('href', $route);
+
+                                $route = Routing.generate('nav.admin_toggle_school_type', {
+                                    '_locale': '{{ app.request.locale }}',
+                                    'type': $td.parent().data('id')
+                                });
+                                $this.find('.btn-toggle-active').attr('href', $route);
+
+                                if ($td.parent().data('index') > 0) {
+                                    console.log('enable up');
+                                    $route = Routing.generate('nav.admin_move_school_type', {
+                                        '_locale': '{{ app.request.locale }}',
+                                        'type': $td.parent().data('id'),
+                                        'move': -1,
+                                        'group': {{ group ? group.id : 0 }}
+                                    });
+                                    $this.find('.btn-up').attr('href', $route).removeClass('disabled');
+                                } else {
+                                    console.log('disable up');
+                                    $this.find('.btn-up').attr('href', '').addClass('disabled');
+                                }
+                                if ($td.parent().data('index') < {{ schoolTypes|length - 1 }}) {
+                                    console.log('enable down');
+                                    $route = Routing.generate('nav.admin_move_school_type', {
+                                        '_locale': '{{ app.request.locale }}',
+                                        'type': $td.parent().data('id'),
+                                        'move': 1,
+                                        'group': {{ group ? group.id : 0 }}
+                                    });
+                                    $this.find('.btn-down').attr('href', $route).removeClass('disabled');
+                                } else {
+                                    console.log('disable down');
+                                    $this.find('.btn-down').attr('href', '').addClass('disabled');
+                                }
+
+                            }
+                        }
+                    })
+                    .on('dblclick', '.table-school-types-{{ group ? group.id : "0"}} td', function (e) {
+                        $('#{{ request_id()|html_id }} ').find('.btn-open').trigger('click');
+                    })
+                ;
+            });
+            //-->
+        </script>
+    {% endblock %}
+{% else %}
+    {% block table %}
+        {{ table.render_sorted_table(schoolTypes, orders, order, sort, group) }}
+    {% endblock %}
+{% endif %}

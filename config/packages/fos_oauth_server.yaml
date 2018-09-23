@@ -1,0 +1,11 @@
+fos_oauth_server:
+    db_driver: orm
+    client_class: App\Entity\Security\OAuthClient
+    access_token_class: App\Entity\Security\OAuthAccessToken
+    refresh_token_class: App\Entity\Security\OAuthRefreshToken
+    auth_code_class: App\Entity\Security\OAuthAuthCode
+    service:
+        user_provider: fos_user.user_provider.username
+        options:
+            access_token_lifetime: 86400 # 24 h
+            refresh_token_lifetime: 630720000 # ~20 y

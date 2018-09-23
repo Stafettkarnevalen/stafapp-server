@@ -1,0 +1,53 @@
+{% set use_heading = false %}
+{% set body_class = 'body-narrow' %}
+{% extends 'base.html.twig' %}
+
+
+{% block body %}
+    <div class="all-padding register-type">
+        <div class="all-margin">
+            <h1 class="text-center bottom-padding kanit">{{ 'nav.register'|trans({}, 'nav')|upper }}</h1>
+        </div>
+    </div>
+    {{ form_start(form) }}
+    <div class="all-margin form bg-default">
+        <div class="container-fluid top-padding">
+            {% set serviceName = {'googleplus': 'google', 'facebook': 'facebook', 'twitter': 'twitter', 'instagram': 'instagram'} %}
+
+            <h1><i class="fa fa-{{ serviceName[service] }}"></i> {{ serviceName[service]|capitalize }}{% trans from 'security' %}label.some_connection{% endtrans %}</h1>
+            {% if user.id %}
+                <p class="top-bottom-padding">{% trans from 'security' %}info.oauth_connect{% endtrans %}</p>
+            {% else %}
+                <p class="top-bottom-padding">{% trans from 'security' %}info.oauth_register{% endtrans %}</p>
+            {% endif %}
+
+            {{ form_row(form.username) }}
+            {{ form_row(form.firstname) }}
+            {{ form_row(form.lastname) }}
+            {{ form_row(form.phone) }}
+            {{ form_row(typeId) }}
+            {{ form_row(typeAccessToken) }}
+            {% if user.id %}
+                <div class="alert alert-info">
+                    {% trans from 'security' %}info.oauth_password_required{% endtrans %}
+                </div>
+                {{ form_row(form.plainPassword) }}
+            {% else %}
+                <div class="form-group">
+                    <label class="control-label">{% trans from 'security' %}info.gdpr{% endtrans %}</label>
+                    {{ form_widget(form.consented) }}
+                </div>
+            {% endif %}
+            {{ form_errors(form) }}
+        </div>
+    </div>
+    <div class="form-nav all-padding-sm margin-bottom">
+        <div class="btn-group btn-group-justified" role="group">
+            <div class="btn-group" role="group">
+                {{ form_widget(form.submit)  }}
+            </div>
+        </div>
+    </div>
+    {{ form_end(form) }}
+    <br/>
+{% endblock %}

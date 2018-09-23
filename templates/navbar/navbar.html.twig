@@ -1,0 +1,232 @@
+<nav id="main_nav" class="navbar navbar-inverse navbar-fixed-top" data-spy="affix" data-offset-top="162">
+    <div class="container-fluid">
+        <div class="navbar-header navbar-header--double-btn">
+            <a class="pull-left navbar-brand navbar-brand--center" href="/{{ app.request.locale }}/">
+                <img class="img img-responsive" src="{{ asset('build/images/i<3staf1-nav-2.png') }}" alt=""/>
+            </a>
+            <button class="navbar-toggle navbar-toggle--right" type="button" data-toggle="offcanvas" data-target="right" aria-expanded="false">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="navbar-offcanvas offcanvas__content offcanvas__content--right">
+            <div class="offcanvas__content--right-inner">
+                <ul class="hidden-sm hidden-md hidden-lg nav navbar-nav navbar-left">
+                    <li><a role="button" data-target="right" aria-expanded="true" data-toggle="offcanvas"><h1 class="no-margin no-padding fa fa-fw fa-close"></h1></a><hr class="no-padding no-margin"/></li>
+                </ul>
+                {% if  is_granted('IS_AUTHENTICATED_FULLY') %}
+                    <ul class="nav navbar-nav">
+                        {% if app.user and (app.user.isGranted('ROLE_PRINCIPAL')) %}
+                            <li class="dropdown">
+                                <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="hidden-sm"><i class="fa fa-fw fa-cog"></i> </span>{% trans from "nav" %}nav.principal{% endtrans %} <span class="caret"></span></a>
+                                <ul class="dropdown-menu">
+                                    <li><a><i class="fa fa-fw fa-home"></i> {% trans from "nav" %}nav.principal_home{% endtrans %}</a></li>
+                                    <li class="divider"></li>
+                                    <li><a><i class="fa fa-fw fa-user"></i> {% trans from "nav" %}nav.principal_user{% endtrans %}</a></li>
+                                    <li><a href="{{ path('nav.principal_school') }}"><i class="fa fa-fw fa-university"></i> {% trans from "nav" %}nav.principal_school{% endtrans %}</a></li>
+                                    <li><a href="{{ path('nav.principal_managers') }}"><i class="fa fa-fw fa-users"></i> {% trans from "nav" %}nav.principal_managers{% endtrans %}</a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                        {% if app.user and (app.user.isGranted('ROLE_ADMIN') or app.user.isGranted('ROLE_MANAGER')) %}
+                            <li class="dropdown">
+                                <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="hidden-sm"><i class="fa fa-fw fa-id-badge"></i> </span>{% trans from "nav" %}nav.manager{% endtrans %} <span class="caret"></span></a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="{{ path('nav.manager_home') }}"><i class="fa fa-fw fa-home"></i> {% trans from "nav" %}nav.manager_home{% endtrans %}</a></li>
+                                    <li class="divider"></li>
+                                    <li><a href="{{ path('nav.schools') }}"><i class="fa fa-fw fa-university"></i> {% trans from "nav" %}nav.schools{% endtrans %}</a></li>
+                                    <li><a><i class="fa fa-fw fa-money"></i> {% trans from "nav" %}nav.bill{% endtrans %}</a></li>
+                                    <li class="divider"></li>
+                                    <li><a><i class="fa fa-fw fa-list-ol"></i> {% trans from "nav" %}nav.teams{% endtrans %}</a></li>
+                                    <li><a><i class="fa fa-fw fa-user-plus"></i> {% trans from "nav" %}nav.compositions{% endtrans %}</a></li>
+                                    <li><a><i class="fa fa-fw fa-bullhorn"></i> {% trans from "nav" %}nav.cheerleading{% endtrans %}</a></li>
+                                    <li><a><i class="fa fa-fw fa-music"></i> {% trans from "nav" %}nav.jingles{% endtrans %}</a></li>
+                                    <li><a><i class="fa fa-fw fa-flag"></i> {% trans from "nav" %}nav.marchin{% endtrans %}</a></li>
+                                    <li><a><i class="fa fa-fw fa-github-alt"></i> {% trans from "nav" %}nav.mascot{% endtrans %}</a></li>
+                                    <li><a><i class="fa fa-fw fa-cutlery"></i> {% trans from "nav" %}nav.dining{% endtrans %}</a></li>
+                                    <li><a><i class="fa fa-fw fa-bed"></i> {% trans from "nav" %}nav.lodging{% endtrans %}</a></li>
+                                    <li class="divider"></li>
+                                    <li><a><i class="fa fa-fw fa-eye"></i> {% trans from "nav" %}nav.summary{% endtrans %}</a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                        <li class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="hidden-sm"><i class="fa fa-fw fa-list"></i> </span>{% trans from "nav" %}nav.schedules{% endtrans %} <span class="caret"></span></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="{{ path('nav.schedule') }}"><i class="fa fa-fw fa-clock-o"></i> {% trans from "nav" %}nav.schedule{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-list-alt"></i> {% trans from "nav" %}nav.heats{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-calendar"></i> {% trans from "nav" %}nav.dates{% endtrans %}</a></li>
+                            </ul>
+                        </li>
+                        <li class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="hidden-sm"><i class="fa fa-fw fa-list-ol"></i> </span>{% trans from "nav" %}nav.results{% endtrans %} <span class="caret"></span></a>
+                            <ul class="dropdown-menu">
+                                <li><a><i class="fa fa-fw fa-trophy"></i> {% trans from "nav" %}nav.relays{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-bullhorn"></i> {% trans from "nav" %}nav.cheerleading{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-music"></i> {% trans from "nav" %}nav.jingles{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-github-alt"></i> {% trans from "nav" %}nav.mascot{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-certificate"></i> {% trans from "nav" %}nav.rewards{% endtrans %}</a></li>
+                            </ul>
+                        </li>
+                        {% if app.user and app.user.isGranted('ROLE_ADMIN') %}
+                            <li class="dropdown">
+                                <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="hidden-sm"><i class="fa fa-fw fa-cog"></i> </span>{% trans from "nav" %}nav.admin{% endtrans %} <span class="caret"></span></a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="{{ path('nav.admin_home') }}"><i class="fa fa-fw fa-home"></i> {% trans from "nav" %}nav.admin_home{% endtrans %}</a></li>
+                                    <li><a><i class="fa fa-fw fa-eye"></i> {% trans from "nav" %}nav.admin_summary{% endtrans %}</a></li>
+                                    <li class="divider"></li>
+
+                                    <li class="dropdown dropdown-submenu">
+                                        <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="hidden-sm"><i class="fa fa-fw fa-calendar-plus-o"></i> </span>{% trans from "nav" %}nav.admin_yearly{% endtrans %}</a>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="{{ path('nav.admin_yearly') }}"><i class="fa fa-fw fa-calendar-plus-o"></i> {% trans from "nav" %}nav.admin_yearly{% endtrans %}</a></li>
+                                            <li><a><i class="fa fa-fw fa-list"></i> {% trans from "nav" %}nav.admin_reports{% endtrans %}</a></li>
+                                            <li><a><i class="fa fa-fw fa-sort-numeric-asc"></i> {% trans from "nav" %}nav.admin_team_numbering{% endtrans %}</a></li>
+                                            <li><a><i class="fa fa-fw fa-share-alt"></i> {% trans from "nav" %}nav.admin_heat_allocation{% endtrans %}</a></li>
+                                        </ul>
+                                    </li>
+                                    <li class="dropdown dropdown-submenu">
+                                        <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="hidden-sm"><i class="fa fa-fw fa-lock"></i> </span>{% trans from "nav" %}nav.admin_security{% endtrans %}</a>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="{{ path('nav.admin_list_users') }}"><i class="fa fa-fw fa-user"></i> {% trans from "nav" %}nav.admin_list_users{% endtrans %}</a></li>
+                                            <li><a href="{{ path('nav.admin_list_groups') }}"><i class="fa fa-fw fa-users"></i> {% trans from "nav" %}nav.admin_list_groups{% endtrans %}</a></li>
+                                        </ul>
+                                    </li>
+                                    <li class="dropdown dropdown-submenu">
+                                        <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="hidden-sm"><i class="fa fa-fw fa-university"></i> </span>{% trans from "nav" %}nav.admin_list_schools{% endtrans %}</a>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="{{ path('nav.admin_list_school_types') }}"><i class="fa fa-cogs"></i> {% trans from "nav" %}nav.admin_list_school_types{% endtrans %}</a></li>
+                                            <li><a href="{{ path('nav.admin_list_schools') }}"><i class="fa fa-fw fa-university"></i> {% trans from "nav" %}nav.admin_list_schools{% endtrans %}</a></li>
+                                        </ul>
+                                    </li>
+                                    <li class="dropdown dropdown-submenu">
+                                        <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="hidden-sm"><i class="fa fa-fw fa-list"></i> </span>{% trans from "nav" %}nav.admin_events{% endtrans %}</a>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="{{ path('nav.admin_relays') }}"><i class="fa fa-fw fa-trophy"></i> {% trans from "nav" %}nav.admin_relays{% endtrans %}</a></li>
+                                            <li><a href="{{ path('nav.admin_cheerleading_events') }}"><i class="fa fa-fw fa-bullhorn"></i> {% trans from "nav" %}nav.admin_cheerleading_events{% endtrans %}</a></li>
+                                            <li><a><i class="fa fa-fw fa-music"></i> {% trans from "nav" %}nav.admin_jingles{% endtrans %}</a></li>
+                                            <li><a><i class="fa fa-fw fa-github-alt"></i> {% trans from "nav" %}nav.admin_mascot{% endtrans %}</a></li>
+                                            <li><a><i class="fa fa-fw fa-certificate"></i> {% trans from "nav" %}nav.admin_rewards{% endtrans %}</a></li>
+                                            <li><a><i class="fa fa-fw fa-cutlery"></i> {% trans from "nav" %}nav.admin_dining{% endtrans %}</a></li>
+                                            <li><a><i class="fa fa-fw fa-bed"></i> {% trans from "nav" %}nav.admin_lodging{% endtrans %}</a></li>
+                                            <li><a><i class="fa fa-fw fa-microphone"></i> {% trans from "nav" %}nav.admin_shows{% endtrans %}</a></li>
+                                        </ul>
+                                    </li>
+
+                                    <li class="dropdown dropdown-submenu">
+                                        <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="hidden-sm"><i class="fa fa-fw fa-wrench"></i> </span>{% trans from "nav" %}nav.admin_form_builder{% endtrans %}</a>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="{{ path('nav.admin_forms') }}"><i class="fa fa-fw fa-list-alt"></i> {% trans from "nav" %}nav.admin_forms{% endtrans %}</a></li>
+                                        </ul>
+                                    </li>
+
+                                    <li class="dropdown dropdown-submenu">
+                                        <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="hidden-sm"><i class="fa fa-fw fa-cogs"></i> </span>{% trans from "nav" %}nav.admin_settings{% endtrans %}</a>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="{{ path('nav.admin_service_categories') }}"><i class="fa fa-th"></i> {% trans from "nav" %}nav.admin_service_categories{% endtrans %}</a></li>
+                                            <li><a href="{{ path('nav.admin_invoice_recipients') }}"><i class="fa fa-eur"></i> {% trans from "nav" %}nav.admin_invoice_recipients{% endtrans %}</a></li>
+                                        </ul>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li><a href="{{ path('nav.admin_docs') }}"><i class="fa fa-fw fa-book"></i> {% trans from "nav" %}nav.admin_docs{% endtrans %}</a></li>
+                                    <li><a href="{{ path('nav.admin_faqs') }}"><i class="fa fa-fw fa-question-circle"></i> {% trans from "nav" %}nav.admin_faqs{% endtrans %}</a></li>
+                                    <li class="divider"></li>
+                                    <li><a href="{{ path('nav.admin_import') }}"><i class="fa fa-fw fa-download"></i> {% trans from "nav" %}nav.admin_import{% endtrans %}</a></li>
+                                    <li><a href="{{ path('easyadmin') }}"><i class="fa fa-fw fa-database"></i> {% trans from "easyadmin" %}title{% endtrans %}</a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-fw fa-cog"></i> <span class="caret"></span></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="" class="set-help-mode" data-mode="0"><i class="help-mode-status fa fa-fw{{ profile_data('tooltips.mode', 0) == 0 ? ' fa-check' : '' }}"></i> <i class="fa fa-fw fa-times-circle"></i> {% trans from "nav" %}nav.helpmode_0{% endtrans %}</a></li>
+                                <li><a href="" class="set-help-mode" data-mode="1"><i class="help-mode-status fa fa-fw{{ profile_data('tooltips.mode', 0) == 1 ? ' fa-check' : '' }}"></i> <i class="fa fa-fw fa-question-circle"></i> {% trans from "nav" %}nav.helpmode_1{% endtrans %}</a></li>
+                                <li><a href="" class="set-help-mode" data-mode="2"><i class="help-mode-status fa fa-fw{{ profile_data('tooltips.mode', 0) == 2 ? ' fa-check' : '' }}"></i> <i class="fa fa-fw fa-comment"></i> {% trans from "nav" %}nav.helpmode_2{% endtrans %}</a></li>
+                                {% if app.user and app.user.isGranted('ROLE_ADMIN') %}
+                                    <li class="divider"></li>
+                                    <li><a href="" class="set-edit-mode" data-mode="0"><i class="edit-mode-status fa fa-fw{{ profile_data('modules.tools', 0) == 0 ? ' fa-check' : '' }}"></i> <i class="fa fa-fw fa-times-circle"></i> {% trans from "nav" %}nav.editable_0{% endtrans %}</a></li>
+                                    <li><a href="" class="set-edit-mode" data-mode="1"><i class="edit-mode-status fa fa-fw{{ profile_data('modules.tools', 0) == 1 ? ' fa-check' : '' }}"></i> <i class="fa fa-fw fa-eye"></i> {% trans from "nav" %}nav.editable_1{% endtrans %}</a></li>
+                                {% endif %}
+                            </ul>
+                        </li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right ">
+                        <li class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="hidden-sm"><i class="fa fa-fw fa-user"></i> </span><span class="hidden-sm">{{ app.user.fullname }}</span><span class="hidden-xs hidden-md hidden-lg">{{ app.user.fDotLDot }}</span> {% if app.user.badges.count() > 0 %} &nbsp; <span class="label label-danger">{{ app.user.badges.count() }}</span> {% endif %}<span class="caret"></span></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="{{ path('logout') }}"><i class="fa fa-fw fa-sign-out"></i> {% trans from "nav" %}nav.logout{% endtrans %}</a></li>
+                                <li class="divider"></li>
+                                <li><a href="{{ path('nav.authuser_view_profile') }}"><i class="fa fa-fw fa-cog"></i> {% trans from "nav" %}nav.profile{% endtrans %}</a></li>
+                                <li><a href="{{ path('nav.authuser_chpasswd') }}"><i class="fa fa-fw fa-lock"></i> {% trans from "nav" %}nav.password{% endtrans %}{% if app.user.passwordValidFor == 0 %} &nbsp; <span class="label label-danger">{{ '1' }}</span> {% endif %}</a></li>
+                                <li><a href="{{ path('nav.messages') }}"><i class="fa fa-fw fa-comments"></i> {% trans from "nav" %}nav.messages{% endtrans %}{% if app.user.unreadMessages.count() > 0 %} &nbsp; <span class="label label-danger">{{ app.user.unreadMessages.count() }}</span> {% endif %}</a></li>
+                                <li><a href="{{ path('nav.authuser_list_user_logs') }}"><i class="fa fa-fw fa-history"></i> {% trans from "nav" %}nav.history{% endtrans %}</a></li>
+                                <li class="divider"></li>
+                                {% set locales = {'sv':'sv', 'fi':'fi', 'en':'en'} %}
+                                {% for locale in locales %}
+                                    {% if app.request.locale != locale %}
+                                        {% set label = 'nav.' ~ locale %}
+                                        <li><a href="{{ path('locale_change', { '_locale' : app.request.locale,  'locale' : locale } ) }}"><i class="fa fa-fw fa-language"></i> {{ ('nav.' ~ locale) | trans({}, 'nav') }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+                                <li class="divider"></li>
+                                <li><a><i class="fa fa-fw fa-info-circle"></i> {% trans from "nav" %}nav.privacy_policy{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-user-circle"></i> {% trans from "nav" %}nav.gdpr{% endtrans %}</a></li>
+                                <li><a href="{{ path('nav.help') }}"><i class="fa fa-fw fa-question-circle"></i> {% trans from "nav" %}nav.help{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-exclamation-circle"></i> {% trans from "nav" %}nav.report{% endtrans %}</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                {% else %}
+                    <ul class="nav navbar-nav">
+                        <li class="dropdwon">
+                            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-fw fa-id-badge"></i> &nbsp; {% trans from "nav" %}nav.manager{% endtrans %} <span class="caret"></span></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="{{ path('nav.login') }}"><i class="fa fa-fw fa-sign-in"></i> &nbsp; {% trans from "nav" %}nav.login{% endtrans %}</a></li>
+                                <li><a href="{{ path('nav.register_manager') }}"><i class="fa fa-fw fa-check-square-o"></i> &nbsp; {% trans from "nav" %}nav.register{% endtrans %}</a></li>
+                            </ul>
+                        </li>
+                        <li class="dropdwon">
+                            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-fw fa-list-ol"></i> &nbsp; {% trans from "nav" %}nav.results{% endtrans %} <span class="caret"></span></a>
+                            <ul class="dropdown-menu">
+                                <li><a><i class="fa fa-fw fa-trophy"></i> &nbsp; {% trans from "nav" %}nav.relays{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-bullhorn"></i> &nbsp; {% trans from "nav" %}nav.cheerleading{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-music"></i> &nbsp; {% trans from "nav" %}nav.jingles{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-github-alt"></i> &nbsp; {% trans from "nav" %}nav.mascot{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-certificate"></i> &nbsp; {% trans from "nav" %}nav.rewards{% endtrans %}</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right ">
+                        <li class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-fw fa-user"></i> &nbsp; {% trans from "nav" %}nav.anon{% endtrans %} <span class="caret"></span></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="{{ path('nav.login') }}"><i class="fa fa-fw fa-sign-in"></i> &nbsp; {% trans from "nav" %}nav.login{% endtrans %}</a></li>
+                                <li class="divider"></li>
+                                {% set locales = {'sv':'sv', 'fi':'fi', 'en':'en'} %}
+                                {% for locale in locales %}
+                                    {% if app.request.locale != locale %}
+                                        {% set label = 'nav.' ~ locale %}
+                                        <li><a href="{{ path('locale_change', { '_locale' : app.request.locale,  'locale' : locale } ) }}"><i class="fa fa-fw fa-language"></i> &nbsp; {{ ('nav.' ~ locale) | trans({}, 'nav') }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+                                <li class="divider"></li>
+                                <li><a><i class="fa fa-fw fa-info-circle"></i> &nbsp; {% trans from "nav" %}nav.privacy_policy{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-user-circle"></i> &nbsp; {% trans from "nav" %}nav.gdpr{% endtrans %}</a></li>
+                                <li><a href="{{ path('nav.help') }}"><i class="fa fa-fw fa-question-circle"></i> &nbsp; {% trans from "nav" %}nav.help{% endtrans %}</a></li>
+                                <li><a><i class="fa fa-fw fa-exclamation-circle"></i> &nbsp; {% trans from "nav" %}nav.report{% endtrans %}</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                {% endif %}
+                <ul class="hidden-sm hidden-md hidden-lg nav navbar-nav navbar-right ">
+                    <li class="divider"></li>
+                    <li><a class="side-padding" href=""><i class="fa fa-fw fa-globe"></i> &nbsp; Våra webbsidor hittar du här</a></li>
+                    <li><a class="side-padding" href=""><i class="fa fa-fw fa-facebook-square"></i> &nbsp; Vi finns även på facebook</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>

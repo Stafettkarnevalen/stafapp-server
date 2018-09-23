@@ -1,0 +1,26 @@
+{{ form_row(form.showTitle) }}
+{{ form_row(form.renderType) }}
+<div id="news-module-list" class="form-part hidden">
+    {{ form_row(form.listLimit) }}
+    {{ form_row(form.showListPager) }}
+</div>
+<div id="news-module-carousel" class="form-part hidden">
+    {{ form_row(form.showCarouselIndicators) }}
+    {{ form_row(form.showCarouselNavigation) }}
+</div>
+{{ form_row(form.more) }}
+<script type="text/javascript">
+    <!--
+    $(document).ready(function() {
+       $('#news-module-{{ form.renderType.vars.value }}').removeClass('hidden');
+
+       $('#news_module_renderType')
+           .on('change', function() {
+               $('.form-part').addClass('hidden')
+               $('#news-module-' + $(this).val()).removeClass('hidden');
+           });
+
+    });
+
+    //-->
+</script>

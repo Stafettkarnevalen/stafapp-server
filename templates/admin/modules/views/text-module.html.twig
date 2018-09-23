@@ -1,0 +1,7 @@
+{% if module.text is not null %}
+    {{ module.text|raw }}
+{% elseif is_granted('EDIT', module) %}
+    <div class="alert alert-info mod_hide">
+        <h2><i class="fa fa-info-circle"></i> {% trans from 'module' %}label.module.text_module.no_content{% endtrans %}</h2>
+    </div>
+{% endif %}

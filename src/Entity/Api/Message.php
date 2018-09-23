@@ -1,0 +1,120 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 11/06/2018
+ * Time: 5.19
+ */
+
+namespace App\Entity\Api;
+
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Security\User;
+use App\Entity\Traits\FieldsTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use Symfony\Component\Serializer\Annotation as Serialize;
+use JMS\Serializer\Annotation as Jms;
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * @ORM\Table(name="api_log_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @Jms\ExclusionPolicy("ALL")
+ * @package App\Entity\Api
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class Message implements Serializable
+{
+
+    const STATUS_ERROR = 'error';
+
+    const STATUS_SUCCESS = 'success';
+
+    /** use fields trait */
+    use FieldsTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /**
+     * @ORM\Column(name="messages_fld", type="array", nullable=false)
+     * @Serialize\Groups({"SchoolAPI", "Default"})
+     * @Jms\Groups({"SchoolAPI", "Default"})
+     * @Jms\Expose(true)
+     * @var array|null $messages
+     */
+    protected $messages = [];
+
+    /**
+     * @ORM\Column(name="status_fld", type="string", length=16, nullable=false)
+     * @Serialize\Groups({"SchoolAPI", "Default"})
+     * @Jms\Groups({"SchoolAPI", "Default"})
+     * @Jms\Expose(true)
+     * @var string $status
+     */
+    protected $status = self::STATUS_ERROR;
+
+    /**
+     * Message constructor.
+     */
+    public function __construct()
+    {
+        $this->status = self::STATUS_ERROR;
+        $this->messages = [];
+    }
+
+    /**
+     * Gets the messages.
+     *
+     * @return array|null
+     */
+    public function getMessages(): ?array
+    {
+        return $this->messages;
+    }
+
+    /**
+     * Sets the messages.
+     *
+     * @param array|null $messages
+     * @return $this
+     */
+    public function setMessages(?array $messages)
+    {
+        $this->messages = $messages;
+
+        return $this;
+    }
+
+    public function addMessage(array $parts)
+    {
+        if (!in_array($parts, $this->messages))
+            $this->messages[] = $parts;
+
+        return $this;
+    }
+
+    /**
+     * Gets the status.
+     *
+     * @return string
+     */
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    /**
+     * Sets the status.
+     *
+     * @param string $status
+     * @return $this
+     */
+    public function setStatus(string $status)
+    {
+        $this->status = $status;
+
+        return $this;
+    }
+}

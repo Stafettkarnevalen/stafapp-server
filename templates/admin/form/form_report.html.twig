@@ -1,0 +1,51 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+    <div class="side-padding">
+        <h1>{% if formReport.id != 0 %}{{ formReport.title }}{% else %}{% trans from 'form' %}label.builtin_report_title{% endtrans %}{% endif %}</h1>
+        <p>{% if formReport.id != 0 %}{{ formReport.description }}{% else %}{% trans from 'form' %}label.builtin_report_description{% endtrans %}{% endif %}</p>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <nav class="navbar navbar-default toolbar">
+            <div class="container-fluid">
+                <div class="navbar-header pull-left">
+                    <a class="navbar-brand" href=""><i class="fa fa-file-excel-o"></i> &nbsp;{% trans from 'form' %}label.export_excel{% endtrans %}</a>
+                    <a class="navbar-brand" href=""><i class="fa fa-file-pdf-o"></i> &nbsp;{% trans from 'form' %}label.export_pdf{% endtrans %}</a>
+                </div>
+            </div>
+        </nav>
+        <table class="table table-bordered table-responsive table-condensed table-striped table-scrollable table-form-report">
+            <thead>
+            <tr>
+                <th>{% trans from "form" %}label.date{% endtrans %}</th>
+                {% for th in formReport.formFields %}
+                    <th>{{ th.title }}</th>
+                {% endfor %}
+            </tr>
+            </thead>
+            <tbody>
+            {% for submission in formReport.submissions %}
+                <tr>
+                    <td>{{ submission.createdAt|date('d.m.Y H:i:s') }}</td>
+                    {% for answer in submission.answers %}
+                        <td>{{ answer.answer }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

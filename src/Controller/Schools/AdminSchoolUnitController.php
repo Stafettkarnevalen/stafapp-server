@@ -1,0 +1,575 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 31/12/2017
+ * Time: 21.49
+ */
+
+namespace App\Controller\Schools;
+
+use App\Controller\Interfaces\ModalEventController;
+use App\Controller\Traits\RESTFulControllerTrait;
+use App\Controller\Traits\TableSortingControllerTrait;
+use App\Entity\Communication\Message;
+use App\Entity\Communication\SchoolUnitDistribution;
+use App\Entity\Schools\School;
+use App\Entity\Schools\SchoolUnit;
+use App\Form\School\EditUnitType as SchoolUnitEditType;
+use App\Form\School\EditUnitNameType as SchoolUnitNameEditType;
+use FOS\RestBundle\Controller\FOSRestController;
+use Symfony\Component\Form\Extension\Core\Type\ButtonType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Swagger\Annotations as SWG;
+use Nelmio\ApiDocBundle\Annotation as Nelmio;
+use App\Entity\Api\Message as ApiMessage;
+
+/**
+ * Class AdminSchoolUnitController
+ * - Handles SchoolUnit entities connected to a School entity.
+ * - API calls for admin.
+ * - Admin funtionality for UI.
+ *
+ * @package App\Controller\Schools
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class AdminSchoolUnitController extends FOSRestController implements ModalEventController
+{
+    /** Use some REST methods */
+    use RESTFulControllerTrait;
+
+    /** Use table sorting */
+    use TableSortingControllerTrait;
+
+    /**
+     * Controller for listing school units  (admin only).
+     *
+     * @Route("/api/v2/admin/schools/{school}/units/list",
+     *     name="api.admin_list_school_units",
+     *     methods={"GET"})
+     * @Route("/{_locale}/admin/schools/{schoo}/units/list",
+     *     options={"expose"=true},
+     *     name="nav.admin_list_school_units")
+     *
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns a list of school units",
+     *     @SWG\Schema(
+     *         type="array",
+     *         @SWG\Items(ref=@Nelmio\Model(type=SchoolUnit::class, groups={"SchoolApi","Default"}))
+     *     )
+     * )
+     * @SWG\Parameter(
+     *     name="school",
+     *     in="path",
+     *     type="integer",
+     *     description="The id of the owning school"
+     * )
+     *
+     * @param integer $school
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminListSchoolUnitsAction($school = 0, $id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $ctx = $this->getContext(['SchoolAPI', 'Default']);
+
+        /** @var School $school */
+        $school = $em->getRepository(School::class)->find($school);
+
+        if (!$id && !$school)
+            return $this->notFoundError('school', $school, Response::HTTP_NOT_FOUND);
+
+        // toggle active / inactive state
+        if ($id) {
+            /** @var SchoolUnit $unit */
+            $unit = $em->getRepository(SchoolUnit::class)->find($id);
+
+            if (!$unit)
+                return $this->notFoundError('id', $id);
+
+            $unit->setIsActive(!$unit->getIsActive());
+            $em->merge($unit);
+            $em->flush();
+
+            if ($this->isRestfulRequest($request))
+                return $this->readEntity(SchoolUnit::class, $id, ['SchoolAPI', 'Default']);
+
+            $school = $unit->getSchool();
+        }
+
+        // handle sorting
+        list($sort, $sortKey,$order, $orders) = $this->handleSorting(
+            $request,
+            ['name', 'schoolType', 'group', 'isActive'],
+            'admin_school_units',
+            'name',
+            'ASC'
+        );
+
+        // fetch
+        $schoolUnits = $em->getRepository(SchoolUnit::class)->findBy(['school' => $school], $sort);
+
+        // close for modal
+        $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'school',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('close', ButtonType::class, [
+                'translation_domain' => 'messages',
+                'left_icon' => 'fa-chevron-left',
+                'right_icon' => 'fa-close',
+                'attr' => [
+                    'class' => 'btn-default',
+                    'data-dismiss' => 'modal',
+                    'data-helpmode' => null,
+                    'data-placement' => 'top',
+                    'title' => 'action.close',
+                    'data-content' => 'help.action.close.window',
+                ],
+                'label' => 'action.close',
+            ]);
+
+        $form = $fb->getForm();
+
+        // Return a RESTful JSON response or HTML
+        $view = $this->view($schoolUnits, Response::HTTP_OK)
+            ->setTemplate('admin/schools/units/list.html.twig')
+            ->setTemplateVar('schoolUnits')
+            ->setTemplateData([
+                'school' => $school,
+                'orders' => $orders,
+                'order' => $order,
+                'sort' => $sortKey,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' => [$form->createView()->offsetGet('close')],
+            ])
+            ->setContext($ctx)
+        ;
+        return $this->handleView($view);
+    }
+
+    /**
+     * Controller for toggling active / inactive state of one school unit (admin only).
+     *
+     * @Route("/api/v2/admin/schools/units/{id}/toggle",
+     *     name="api.admin_toggle_school_unit",
+     *     methods={"GET"})
+     * @Route("/{_locale}/admin/schools/units/{id}/toggle",
+     *     options={"expose"=true},
+     *     name="nav.admin_toggle_school_unit")
+     *
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns the school unit",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=SchoolUnit::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=400,
+     *     description="No school unit was found with id",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     *
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminToggleSchoolUnitAction($id = 0, Request $request)
+    {
+        return $this->adminListSchoolUnitsAction(0, $id, $request);
+    }
+
+    /**
+     * Controller for reading a single school unit (admin only).
+     * RESTful API only (GET).
+     *
+     * @Route("/api/v2/admin/schools/units/{id}/read",
+     *     name="api.admin_read_school_unit",
+     *     methods={"GET"})
+     *
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns the school unit",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=SchoolUnit::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=400,
+     *     description="No school unit was found with id",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Parameter(
+     *     name="id",
+     *     in="path",
+     *     type="integer",
+     *     description="The id of the school unit"
+     * )
+     *
+     * @param integer $id
+     * @return mixed
+     */
+    public function adminReadSchoolUnitRESTAction($id)
+    {
+        return $this->readEntity(SchoolUnit::class, $id, ['SchoolAPI', 'Default']);
+    }
+
+    /**
+     * Controller for editing a single school unit (admin only).
+     * RESTful API only (POST).
+     *
+     * @Route("/api/v2/admin/schools/units/{id}/edit",
+     *     name="api.admin_edit_school_unit",
+     *     methods={"POST"})
+     *
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns the school unit",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=SchoolUnit::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=400,
+     *     description="No school unit was found with the id",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=409,
+     *     description="The query paramters were not valid",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Parameter(
+     *     name="id",
+     *     in="path",
+     *     type="integer",
+     *     description="The id of the school unit"
+     * )
+     *
+     * @param integer $id
+     * @param integer $school
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminEditSchoolUnitRESTAction($id = 0, $school = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $ctx = $this->getContext(['SchoolAPI', 'Default']);
+
+        // Fetch or create the entity
+        if ($id) {
+            $unit = $em->getRepository(SchoolUnit::class)->find($id);
+            if (!$unit) {
+                return $this->notFoundError('id', $id);
+            }
+        } else {
+            $unit = new SchoolUnit();
+            $unit->setIsActive(true)->setPassword(rand(1000000, 99999999));
+            /** @var School $school */
+            $school = $em->getRepository(School::class)->find($school);
+            if (!$school)
+                return $this->notFoundError('school', $school, Response::HTTP_NOT_FOUND);
+            $unit->setSchool($school);
+            $unit->getName()->fill($school->getName()->getFields(['id', 'school']));
+        }
+
+        $form = $this->createForm(SchoolUnitEditType::class, $unit, [
+            'csrf_protection' => false,
+            'is_api' => true,
+        ]);
+
+        $nameForm = $this->createForm(SchoolUnitNameEditType::class, $unit->getName(), [
+            'csrf_protection' => false,
+            'embedded' => true,
+            'is_api' => true,
+        ]);
+
+        $form->submit($request->request->all());
+        $nameForm->submit($request->request->get('name'));
+
+        if ($form->isValid() && $form->isSubmitted() && $nameForm->isValid() && $nameForm->isSubmitted()) {
+            if ($unit->getId())
+                $em->merge($unit);
+            else
+                $em->persist($unit);
+            $em->flush();
+
+            return $this->readEntity(SchoolUnit::class, $unit->getId(), $ctx->getGroups());
+        } else if (!$form->isSubmitted() || !$nameForm->isSubmitted()) {
+            return $this->notValidError();
+        }
+
+        $err = $form->getErrors(true, true);
+        $nameErr = $nameForm->getErrors(true, true);
+        $errorsList = [];
+        foreach ($err as $it) {
+            $errorsList[(string)$it->getOrigin()->getPropertyPath()] = $it->getMessage();
+        }
+        foreach ($nameErr as $it) {
+            $errorsList[(string)$it->getOrigin()->getPropertyPath()] = $it->getMessage();
+        }
+        return $this->errors($errorsList);
+    }
+
+    /**
+     * Controller for creating a single school unit (admin only).
+     * RESTful API only (POST).
+     *
+     * @Route("/api/v2/admin/schools/{school}/units/create",
+     *     name="api.admin_create_school_unit",
+     *     methods={"POST"})
+     *
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns the school unit",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=SchoolUnit::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=400,
+     *     description="No school was found with the school parameter",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=409,
+     *     description="The query paramters were not valid",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Parameter(
+     *     name="school",
+     *     in="path",
+     *     type="integer",
+     *     description="The id of the owning school"
+     * )
+     *
+     * @param integer $school
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminCreateSchoolUnitRESTAction($school = 0, Request $request)
+    {
+        return $this->adminEditSchoolUnitRESTAction(0, $school, $request);
+    }
+
+    /**
+     * Controller for creating or editing a single school unit (admin only).
+     * RESTful API separate (adminCreateOrEditSchoolUnitRESTAction).
+     *
+     * @Route("/{_locale}/admin/schools/{school}/units/create",
+     *     options={"expose"=true},
+     *     name="nav.admin_create_school_unit")
+     * @Route("/{_locale}/admin/schools/units/{id}/edit",
+     *     options={"expose"=true},
+     *     name="nav.admin_edit_school_unit")
+     * @param integer $id
+     * @param integer $school
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminCreateOrEditSchoolUnitAction($id = 0, $school = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        if ($id) {
+            /** @var SchoolUnit $schoolUnit */
+            $schoolUnit = $em->getRepository(SchoolUnit::class)->find($id);
+        } else {
+            $schoolUnit = new SchoolUnit();
+            $schoolUnit->setIsActive(true)->setPassword(rand(1000000, 99999999));
+            $school = $em->getRepository(School::class)->find($school);
+            $schoolUnit->setSchool($school);
+            $schoolUnit->getName()->fill($school->getName()->getFields(['id', 'school']));
+        }
+        $school = $schoolUnit->getSchool();
+
+        $form = $this->createForm(SchoolUnitEditType::class, $schoolUnit, [
+            'attr' => ['action' => $request->getPathInfo()],
+            'delete_title' => $this->get('translator')->trans('label.delete', [], 'school'),
+            'delete_path' => $this->generateUrl('nav.admin_delete_school_unit', ['id' => $id]),
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            /** @var Message $message */
+            $message = null;
+            if (($message = $schoolUnit->getMessage()) && $message->getText() && $message->getTitle() && count($message->getType())) {
+                $message->setCreatedBy($this->getUser());
+                $message->setDistribution(new SchoolUnitDistribution($schoolUnit));
+            } else {
+                $message = null;
+            }
+
+            $action = $schoolUnit->getId() ? 'updated' : 'saved';
+
+            if ($schoolUnit->getId())
+                $em->merge($schoolUnit);
+            else
+                $em->persist($schoolUnit);
+
+            if ($message) {
+                $em->persist($message);
+            }
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.school_unit.' . $action,
+                    'parameters' => ['%name%' => $schoolUnit->getName()->getName()]
+                ]);
+            // return an empty response for the ajax modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse([], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_list_school_units', ['school' => $school->getId()]);
+
+        } else if ($form->isSubmitted() && !$form->isValid()) {
+            // return error code for modal and ok for non-modals
+            $formView = $form->createView();
+            return $this->render('admin/schools/units/form.html.twig', [
+                'schoolUnit' => $schoolUnit,
+                'form' => $formView,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' => $id ?
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('delete'),
+                        $formView->offsetGet('submit')
+                    ] :
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('submit')
+                    ]
+            ], new Response('', $request->isXmlHttpRequest() ?
+                Response::HTTP_BAD_REQUEST :
+                Response::HTTP_OK));
+        }
+
+        $formView = $form->createView();
+        return $this->render('admin/schools/units/form.html.twig', [
+            'schoolUnit' => $schoolUnit,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' => $id ?
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('delete'),
+                    $formView->offsetGet('submit')
+                ] :
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('submit')
+                ]
+        ]);
+    }
+
+    /**
+     * Controller for deleting a single school unit (admin only).
+     *
+     * @Route("/api/v2/admin/schools/units/{id}/delete",
+     *     name="api.admin_delete_school_unit",
+     *     methods={"DELETE"})
+     * @Route("/{_locale}/admin/schools/units/{id}/delete",
+     *     options={"expose" = true},
+     *     name="nav.admin_delete_school_unit")
+     *
+     * @SWG\Response(
+     *     response=200,
+     *     description="School unit was deleted",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=400,
+     *     description="No school unit was found with id",
+     *     @SWG\Schema(
+     *         @Nelmio\Model(type=ApiMessage::class, groups={"SchoolApi","Default"})
+     *     )
+     * )
+     * @SWG\Parameter(
+     *     name="id",
+     *     in="path",
+     *     type="integer",
+     *     description="The id of the school unit"
+     * )
+     *
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDeleteSchoolUnitAction($id, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /** @var SchoolUnit $schoolUnit */
+        $schoolUnit = $em->getRepository(SchoolUnit::class)->find($id);
+
+        // handle rest calls
+        if ($schoolUnit && $this->isRestfulRequest($request)) {
+            $em->remove($schoolUnit);
+            $em->flush();
+
+            return $this->ok();
+
+        } else if ($this->isRestfulRequest($request)) {
+            return $this->notFoundError('id', $id);
+        }
+
+        $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'school',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('yes', SubmitType::class, ['left_icon' => 'fa-trash', 'right_icon' => 'fa-check', 'attr' => ['class' => 'btn-danger'], 'label' => 'action.yes']);
+
+        $form = $fb->getForm();
+        $form->handleRequest($request);
+        if ($form->isSubmitted()) {
+            $name = $schoolUnit->getName()->getName();
+
+            $em->remove($schoolUnit);
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.school_unit.deleted',
+                    'parameters' => ['%name%' => $name]
+                ]);
+
+            // return an empty response for the modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse(['reloadPage' => 1], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_list_school_units');
+        }
+
+        return $this->render('admin/schools/units/delete.html.twig', [
+            'schoolUnit' => $schoolUnit,
+            'form' => $form->createView(),
+            'modal' => $request->isXmlHttpRequest(),
+        ]);
+    }
+
+}

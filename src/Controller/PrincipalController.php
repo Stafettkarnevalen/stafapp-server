@@ -1,0 +1,415 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 01/01/2018
+ * Time: 1.24
+ */
+
+namespace App\Controller;
+
+use App\Controller\Interfaces\ModalEventController;
+use App\Entity\Schools\SchoolName;
+use App\Entity\Schools\SchoolType;
+use App\Entity\Schools\SchoolUnit;
+use App\Entity\Schools\SchoolUnitName;
+use App\Entity\Security\SchoolAdministrator;
+use App\Entity\Security\SchoolManager;
+use App\Entity\Security\SchoolManagerPosition;
+use App\Entity\Security\User;
+use App\Entity\Security\UserTicket;
+use App\Form\School\EditNameType;
+use App\Form\School\EditUnitType;
+use App\Form\SchoolManager\InvitationType;
+use App\Repository\SchoolTypeRepository;
+use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
+use Symfony\Component\Security\Http\Event\InteractiveLoginEvent;
+use Symfony\Component\Validator\Constraints\DateTime;
+
+/**
+ * Class PrincipalController
+ *
+ * @package App\Controller
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class PrincipalController extends Controller implements ModalEventController
+{
+    /**
+     * @var array Manager types provided by the service.
+     */
+    private $managerTypes = [
+        'MANAGERS' => ['user-circle-o', 'type.managers', 'info.managers', 'nav.principal_managers', 'principal/managers/managers.html.twig'],
+        'INVITATIONS' => ['user-plus', 'type.invitations', 'info.invitations', 'nav.principal_invitations', 'principal/managers/invitations.html.twig']
+    ];
+
+    private $schoolViews = [
+        'NAME' => ['list', 'view.school', 'info.school', 'nav.principal_school', 'principal/school/name.html.twig'],
+        'UNITS' => ['sitemap', 'view.units', 'info.units', 'nav.principal_school_units', 'principal/school/units.html.twig'],
+    ];
+
+    /**
+     * Controller for login in principals via usb drive.
+     *
+     * @Route("/{_locale}/principal/login/{user}/{usbkey}", name="nav.principal_login")
+     * @param Request $request
+     * @return mixed
+     */
+    public function principalLoginAction(Request $request, $user, $usbkey)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $user = $em->getRepository(User::class)->findOneBy([
+            'username' => $user,
+            'isActive' => true
+        ]);
+        $ticket = $em->getRepository(UserTicket::class)->findOneBy([
+            'user' => $user,
+            'type' => UserTicket::TYPE_USB,
+            'isActive' => true,
+            'for' => UserTicket::FOR_LOGIN
+        ]);
+        if ($user && $ticket && $this->get('security.password_encoder')->isPasswordValid($ticket, $usbkey)) {
+            // login user
+            $token = new UsernamePasswordToken(
+                $user,
+                $user->getPassword(),
+                'dev',
+                $user->getRoles()
+            );
+
+            // login the user
+            $this->get('security.token_storage')->setToken($token);
+
+            // fire login event
+            $event = new InteractiveLoginEvent($request, $token);
+            $this->get("event_dispatcher")->dispatch("security.interactive_login", $event);
+
+            return $this->redirectToRoute('root');
+
+        } else {
+            print_r("NOT OK");
+        }
+
+        return $this->render('principal/index.html.twig', [
+
+        ]);
+    }
+
+    /**
+     * Controller for handling basic school functions (principals and admins only).
+     *
+     * @Route("/{_locale}/principal/home", name="nav.principal_home")
+     * @param Request $request
+     * @return mixed
+     */
+    public function principalHomeAction(Request $request)
+    {
+        return $this->render('principal/index.html.twig', [
+
+        ]);
+    }
+
+    /**
+     * Controller for editing school info.
+     *
+     * @Route("/{_locale}/principal/school/view/{view}", name="nav.principal_school")
+     * @param string $view
+     * @param Request $request
+     * @return mixed
+     */
+    public function principalSchoolAction($view = 'NAME', Request $request)
+    {
+        /** @var SchoolAdministrator $user */
+        $user = $this->getUser();
+
+        $school = $user->getSchool();
+        return $this->render('principal/school/index.html.twig', [
+            'school' => $school,
+            'view' => $view,
+            'views' => $this->schoolViews,
+        ]);
+    }
+
+    /**
+     * Controller for editing school units.
+     *
+     * @Route("/{_locale}/principal/school/unit/{id}", name="nav.principal_school_unit")
+     * @param string $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function principalSchoolUnitAction($id = null, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /** @var SchoolAdministrator $user */
+        $user = $this->getUser();
+        $school = $user->getSchool();
+
+        if ($id) {
+            $unit = $em->getRepository(SchoolUnit::class)->find($id);
+        } else {
+            $unit = new SchoolUnit();
+            $unit->setSchool($school)->setPassword(rand(1000000, 99999999))->setIsActive(true);
+            $unitName = new SchoolUnitName();
+            $unitName->setSchoolUnit($unit)->fill($school->getName()->getFields(), ['roleSlug, emailSlug', 'school']);
+            $unit->addName($unitName);
+        }
+
+        /** @var SchoolTypeRepository $srepo */
+        $srepo = $em->getRepository(SchoolType::class);
+        $stypes = $srepo->findAvailableForSchool($school);
+
+        $form = $this->createForm(EditUnitType::class, $unit, [
+            'attr' => ['action' => $request->getPathInfo()],
+            'availableTypes' => $stypes,
+        ]);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse([], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.principal_school', ['view' => 'UNITS']);
+        } else if ($form->isSubmitted() && !$form->isValid()) {
+            $formView = $form->createView();
+            return $this->render('principal/school/edit_unit.html.twig', [
+                'school' => $school,
+                'unit' => $unit,
+                'form' => $formView,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' =>
+                    [
+                        $formView->offsetGet('cancel'),
+                        $formView->offsetGet('save')
+                    ]
+            ]);
+        }
+        $formView = $form->createView();
+        return $this->render('principal/school/edit_unit.html.twig', [
+            'school' => $school,
+            'unit' => $unit,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' =>
+                [
+                    $formView->offsetGet('cancel'),
+                    $formView->offsetGet('save')
+                ]
+        ]);
+    }
+
+    /**
+     * Controller for editing school name.
+     *
+     * @Route("/{_locale}/principal/school/edit/name", name="nav.principal_edit_school_name")
+     * @param Request $request
+     * @return mixed
+     */
+    public function principalEditSchoolNameAction(Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /** @var SchoolAdministrator $user */
+        $user = $this->getUser();
+
+        $school = $user->getSchool();
+        $curName = $school->getName();
+        /** @var SchoolName $newName */
+        $newName = $curName->cloneEntity();
+
+        $form = $this->createForm(EditNameType::class, $newName, [
+            'attr' => ['action' => $request->getPathInfo()],
+        ]);
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            if ($curName->getName() === $newName->getName()) {
+                $curName->fill($newName->getFields());
+                $em->merge($curName);
+            } else {
+                $em->merge($curName->setUntil(new \DateTime())->setIsActive(false));
+                $em->merge($newName);
+            }
+            $em->flush();
+
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse([], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.principal_school');
+        } else if ($form->isSubmitted() && !$form->isValid()) {
+            $formView = $form->createView();
+            return $this->render('principal/school/edit_name.html.twig', [
+                'school' => $school,
+                'name' => $newName,
+                'form' => $formView,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' =>
+                    [
+                        $formView->offsetGet('cancel'),
+                        $formView->offsetGet('save')
+                    ]
+            ]);
+        }
+        $formView = $form->createView();
+        return $this->render('principal/school/edit_name.html.twig', [
+            'school' => $school,
+            'name' => $newName,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' =>
+                [
+                    $formView->offsetGet('cancel'),
+                    $formView->offsetGet('save')
+                ]
+        ]);
+    }
+
+    /**
+     * Controller for deleting an invitation
+     *
+     * @Route("/{_locale}/principal/managers/delete_invitation/{id}", name="nav.principal_invitation_delete")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function principalInvitationDeleteAction($id = 0, Request $request)
+    {
+
+    }
+
+    /**
+     * Controller for handling an invitation
+     *
+     * @Route("/{_locale}/principal/managers/invitation/{id}", name="nav.principal_manager_invitation")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function principalManagerInvitationAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        if ($id) {
+            $invitation = $em->getRepository(SchoolManagerPosition::class)->find($id);
+        } else {
+            $invitation = new SchoolManagerPosition();
+        }
+        /** @var SchoolAdministrator $user */
+        $user = $this->getUser();
+
+        $school = $user->getSchool();
+        $schoolUnits = $school->getSchoolUnits();
+
+        $form = $this->createForm(InvitationType::class, $invitation, [
+            'available_units' => $schoolUnits,
+            'attr' => ['action' => $request->getPathInfo()],
+            'delete_title' => $this->get('translator')->trans('label.delete', [], 'principal'),
+            'delete_path' => $this->generateUrl('nav.principal_invitation_delete', ['id' => $id]),
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse([], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.principal_managers', ['type' => 'INVITATIONS']);
+        } else if ($form->isSubmitted() && !$form->isValid()) {
+            // return error code for modal and ok for non-modals
+            $formView = $form->createView();
+            return $this->render('principal/managers/invitation.html.twig', [
+                'invitation' => $invitation,
+                'form' => $formView,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' => $id ?
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('delete'),
+                        $formView->offsetGet('submit')
+                    ] :
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('submit')
+                    ]
+            ], new Response('', $request->isXmlHttpRequest() ?
+                Response::HTTP_BAD_REQUEST :
+                Response::HTTP_OK));
+        }
+
+        $formView = $form->createView();
+        return $this->render('principal/managers/invitation.html.twig', [
+            'invitation' => $invitation,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' => $id ?
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('delete'),
+                    $formView->offsetGet('submit')
+                ] :
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('submit')
+                ]
+        ]);
+    }
+
+    /**
+     * Controller for handling managers and invitations
+     *
+     * @Route("/{_locale}/principal/managers/list/{type}", name="nav.principal_managers")
+     * @param string $type
+     * @param Request $request
+     * @return mixed
+     */
+    public function principalManagersAction($type = 'MANAGERS', Request $request)
+    {
+        $session = $request->getSession();
+
+        $sortKey = $request->get('sort', $session->get('managers_sort_key', 'username'));
+        $order = $request->get('order', $session->get('managers_sort_order', 'DESC'));
+
+        if ($sortKey == 'username') {
+            $sort = [$sortKey => $order];
+        } else {
+            $sort = [$sortKey => $order, 'username' => $order];
+        }
+
+        $orders = [];
+        foreach(['username'] as $key) {
+            $orders[$key] = ($sortKey == $key ? ($order == 'ASC' ? 'DESC' : 'ASC') : $order);
+        }
+
+        $session->set('managers_sort_key', $sortKey);
+        $session->set('managers_sort_order', $order);
+
+        $em = $this->getDoctrine()->getManager();
+        /** @var SchoolAdministrator $user */
+        $user = $this->getUser();
+
+        $school = $user->getSchool();
+
+        /** @var ArrayCollection $schoolUnits */
+        $schoolUnits = $em->getRepository(SchoolUnit::class)->findBy(['school' => $school]);
+
+        /** @var UserRepository $repo */
+        $repo = $em->getRepository(SchoolManager::class);
+        $managers = $repo->findManagers($schoolUnits, $sort);
+
+        return $this->render('principal/managers/index.html.twig', [
+            'managers' => $managers,
+            'type' => $type,
+            'types' => $this->managerTypes,
+            'orders' => $orders,
+            'order' => $order,
+            'sort' => $sortKey,
+        ]);
+    }
+}

@@ -1,0 +1,41 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 27/05/2018
+ * Time: 16.27
+ */
+
+namespace App\Entity\Traits;
+
+use App\Entity\Communication\Message;
+use JMS\Serializer\Annotation as Jms;
+
+/**
+ * Trait ContainsMessageTrait
+ * @package App\Entity\Traits
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+trait ContainsMessageTrait
+{
+    /**
+     * @Jms\Exclude(true)
+     * @var Message $message A message can be created at the time the user is persisted into the database
+     */
+    protected $message = null;
+
+    /**
+     * A message can be created at the time the user is persisted into the database.
+     * @return Message
+     */
+    public function getMessage()
+    {
+        if ($this->message == null) {
+            $this->message = new Message();
+            $this->message->setType([Message::TYPE_INTERNAL]);
+        }
+        return $this->message;
+    }
+
+}

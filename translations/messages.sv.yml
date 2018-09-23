@@ -1,0 +1,208 @@
+# Cookie policy
+cookie:
+    compiance: "Denna webbplats använder kakor för att garantera att du får den bästa servicen."
+    got_it: "Ok, jag förstår"
+    learn_more: "Mera information"
+
+# Labels
+label:
+    yes: "Ja"
+    no: "Nej"
+    sv: "Svenska"
+    fi: "Finska"
+    en: "Engelska"
+    active: "Aktiverat"
+    inactive: "Inaktiverat"
+    order:
+        asc: 'stigande'
+        desc: 'sjunkande'
+
+# Actions
+action:
+    add: "Lägg till"
+    clear: "Töm"
+    save: "Spara"
+    delete: "Radera"
+    close: "Stäng"
+    back: "Tillbaka"
+    prev: "Föregående"
+    next: "Nästa"
+    yes: "Ja"
+    no: "Nej"
+    cancel: "Annulera"
+    create: "Skapa ny"
+    copy: "Kopiera"
+    edit: "Redigera"
+    toggle_search: "Sökning..."
+    up: "Flytta uppåt"
+    down: "Flytta nedåt"
+    unselect: "Avmarkera"
+    compose: "Meddelande"
+    paste: "Klistra in"
+    register: 'Registrera'
+    search_by_category: 'Sök enligt kolumn'
+    toggle_active: 'Växla  aktiv/inaktiv'
+    login: 'Logga in'
+    refresh: 'Nollställ tiden'
+
+step:
+    next: 'Nästa steg'
+    prev: 'Föregående steg'
+    of: 'av'
+    step: 'Steg'
+
+error:
+    heading: 'Hoppsan - ett fel uppstod'
+
+footer:
+    powered_by: 'Denna tjänst erbjuds och upprätthålls av <a href="http://www.stafettkarnevalen.fi/">Skolornas Stafettkarneval</a> tillsammans med <a href="http://www.jurgens.fi/">Fma J&uuml;rgens</a>.'
+
+flash:
+    locale:
+        changed: 'Ditt språk har bytts till svenska.'
+    emailhash:
+        sent: 'Bekräftelsekoden skickades till din e-postadress.'
+    add_to_school:
+        added: 'Skolan kopplad till användarkontot'
+        already_manages_school: 'Lagledaren är redan kopplad till denna skola'
+        invalid_password: 'Fel säkerhetskod för skolan'
+        school_not_found: 'Ingen skola med angivet nummer kunde hittas'
+    edit_school:
+        number_taken: 'Det 5-siffriga numret är i bruk i en annan skola.'
+    info: 'Informationsmeddelande'
+    password:
+        changed: 'Lösenordet byttes.'
+        reset: 'Lösenordet byttes. Du kan nu logga in med det nya lösenordet.'
+    ticket:
+        invalid_ticket: 'Felaktiga uppgifter.'
+        invalid_usbkey: "Ogiltiga inloggningsuppgifter på USB-nyckeln."
+        expired: 'Koden är inte längre i kraft.'
+        not_found: 'Felaktiga uppgifter.'
+        too_many_tries: 'Koden har annulerats på grund av för många felaktiga försök.'
+    group:
+        saved: 'Gruppen <em>%name%</em> sparad'
+        updated: 'Gruppen <em>%name%</em> uppdaterad'
+        deleted: 'Gruppen <em>%name%</em> raderad'
+    user:
+        invalid_email: 'Felaktiga uppgifter.'
+        saved: 'Användaren <em>%name%</em> sparad'
+        updated: 'Användaren <em>%name%</em> uppdaterad'
+        activated: 'Användaren <em>%name%</em> ändrad till aktiv'
+        inactivated: 'Användaren <em>%name%</em> ändrad till inaktiv'
+        deleted: 'Användaren <em>%name%</em> raderad'
+        welcome_back: 'Välkommen tillbaka %name%'
+        welcome: 'Välkommen %name%'
+    relay:
+        saved: "Grenen <em>%name%</em> sparad"
+        updated: "Grenen <em>%name%</em> uppdaterad"
+        deleted: "Grenen <em>%name%</em> raderad"
+    rule:
+        saved: "Regeln <em>%name%</em> sparad"
+        updated: "Regeln <em>%name%</em> uppdaterad"
+        deleted: "Regeln <em>%name%</em> raderad"
+    security:
+        password_must_change: 'Lösenordet bör bytas innan du kan gå vidare'
+    races:
+        copied: "Schemat kopierades från år %year%"
+    form:
+        saved: "Formuläret <em>%name%</em> sparat"
+        updated: "Formuläret <em>%name%</em> uppdaterat"
+        deleted: "Formuläret <em>%name%</em> raderat"
+    module:
+        deleted: "Modulen <em>%name%</em> raderad"
+    doc:
+        saved: "Dokumnetationen <em>%name%</em> sparad"
+        deleted: "Dokumentationen <em>%name%</em> raderad"
+        updated: "Dokumentationen <em>%name%</em> uppdaterad"
+        reverted: "Dokumentation version %version% av <em>%name%</em> återupptagen som ny version %new%"
+    school_type:
+        updated: "Skoltypen <em>%name%</em> uppdaterad"
+        saved:  "Skoltypen <em>%name%</em> sparad"
+        deleted: "Skoltypen <em>%name%</em> raderad"
+    school:
+        updated: "Skolan <em>%name%</em> uppdaterad"
+        saved:  "Skolan <em>%name%</em> sparad"
+        deleted: "Skolan <em>%name%</em> raderad"
+message:
+    success: "Åtgärden lyckades"
+    error: "Åtgärden misslyckades"
+    info: "Information"
+    warning: "Varning"
+
+add_to_school:
+    number_info: 'Varje skola har ett unik 5-siffrig nummer som Statistikcentralen upprätthåller. Vänligen ange detta nummer för att identifiera vilken skola skall kopplas till användarkontot.'
+    number_step: 'Skolans 5-siffriga nummer'
+    password_info: 'Skolans åtkomst skyddas med en 8-siffrig säkerhetskod. Ifall du inte vet denna kod, får du den eventuellt av dina kollegor eller genom att kontakta vårt kansli.'
+    password_step: 'Skolans 8-siffriga säkerhetskod'
+    summary_info: 'Skolans 5-siffriga nummer och 8-siffriga säkerhetskod är korrekt inmatade. Du kan nu slutföra kopplingen.'
+    summary_step: 'Överblick'
+
+current: 'tillsvidare'
+
+import:
+    first_step: 'Välj datatyp och CSV'
+    second_step: 'Kartlägg data som skall importeras'
+    third_step: 'Bekräfta importering av data'
+
+invite: 'Skicka inbjudan'
+
+register:
+    done_step: 'Färdigt'
+    manager_heading: 'Lagledarregistrering'
+    manager_info: 'Du måste ha ett personlig användarkonto för att hantera din egen skolas anmälningar. Var vänlig och registrera ett konto nedan. Obligatoriska fält är markerade med <label style="display:inline-block" class="required">fet stil och</label>'
+    manager_step: 'Användarinformation'
+    welcome_message: "Bästa %name%, tack för att du registrerat dig och välkommen till Stafettkarnevalens anmälningstjänst.\nInnan du går vidare, rekommenderar vi att du läser vår extensiva användarmanual för att bekanta dig med denna tjänst. Du hittar alltid manualen enklast i menyn:<p><span class=\"btn btn-xs btn-success\"><i class=\"fa fa-user\"></i> %name% <i class=\"fa fa-caret-down\"></i></span> &nbsp; i den nedre delen under &nbsp; <span class=\"btn btn-xs btn-success\"><i class=\"fa fa-question-circle\"></i> Hjälp</span></p>\n<h2><i class='fa fa-arrow-circle-o-right'></i> Nästa steg</h2><p>Som en ny användare, har du inte ännu kopplat en skola till ditt konto. Vi rekommenderar att du med hjälp av manualen gör detta till följande.</p>"
+    welcome_title: 'Ditt användarkonto har sparats och aktiverats'
+revert: 'Återta'
+
+text:
+    user_not_found: 'Med respektive id hittades ingen inaktiv användare.'
+    verifiable_manager_not_found: 'Med respektive egenskaper hittades ingen inaktiv användare som kräver bekräftelse av e-postadress eller mobilnummer.'
+title:
+    admin: 'Administratör'
+    login: 'Logga in'
+    manager: 'Lagledare'
+    user_not_found: 'En användare med respektive id hittades ej'
+    verifiable_manager_not_found: 'En användare med respektive egenskaper hittades ej'
+    stafapp: "StafApp"
+verify:
+    manager_email_body_html: '<h4>Välkommen till Stafettkarnevalens virtuella tävlingskansli och resultatservice.</h4><p>Du har just registrerat ett personligt användarkonto och nu återstår det att bekräfta att denna e-postadress samt att det angivna telefonnumret tillhör dig.</p><p>För att göra det första steget, kan du använda länken nedan eller mata in bekräftelsekoden i formuläret på vår webbplats dit du blivit styrd. Vi har även skickat ett SMS med en annan kod till din telefon för att bekräfta att du givit oss ett fungerande telefonnummer. Den kod som du fått i SMS:et fungerar inte här utan först i steg 3.</p><p>Ifall detta konto registrerats utan din tillåtelse, kan du spärra det nedan och samtidigt meddelas vi om missbruket av din e-postadress.</p><p>Du har använt följande uppgifter då du registrerade kontot:</p>'
+    manager_email_body_txt: "Välkommen till Stafettkarnevalens virtuella tävlingskansli och resultatservice.\n\nDu har just registrerat ett personligt användarkonto och nu återstår det att bekräfta att denna e-postadress samt att det angivna telefonnumret tillhör dig.\n\nFör att göra det första steget, kan du använda länken nedan eller mata in bekräftelsekoden i formuläret på vår webbplats dit du blivit styrd. Vi har även skickat ett SMS med en annan kod till din telefon för att bekräfta att du givit oss ett fungerande telefonnummer. Den kod som du fått i SMS:et fungerar inte här utan först i steg 3.\n\nIfall detta konto registrerats utan din tillåtelse, kan du spärra det nedan och samtidigt meddelas vi om missbruket av din e-postadress.\n\nDu har använt följande uppgifter då du registrerade kontot:"
+    manager_email_info: 'Ditt användarkonto är sparat och nu bör du endast bekräfta din e-postadress och ditt mobiltelefonnummer. Vi har skickat dig ett e-postbrev som innehåller en bekräftelsekod. Vänligen mata in koden i fältet nedan eller klicka på länken i mailet för att bekräfta att e-postadressen hör till rätt person. Ifall du inte fått brevet, kan du försöka beställa ett nytt nedan.'
+    manager_email_step: 'Bekräfta e-postadressen'
+    manager_phone_info: 'Din e-postadress är bekräftad. Nu återstår det att bekräfta att mobiltelefonnumret tillhör dig. Vänligen slutför detta steg för att aktivera ditt konto.'
+    manager_phone_step: 'Bekräfta mobilnumret'
+
+help:
+    action:
+        search: '<u>Sök</u> i tabellen'
+        search_categories: "<u>Sök</u> i <em class='text-primary'>specifika kolumner</em>"
+        search_clear: '<u>Töm</u> sökfältet och visa alla rader'
+        sort: "<u>Sortera</u> tabellen i <em class='text-primary'>%order%</em> ordning enligt kolumnen <em class='text-primary'>%column%</em>"
+        sort_title: "%column%, %order%"
+        enable:
+            help: "<u>Aktivera</u> <em class='text-primary'>hjälpbubblor</em> som visas då musen förs över en knapp eller en länk"
+            admin_edit: "<u>Aktivera</u> <em class='text-primary'>modulers redigering</em> på sidorna"
+        disable:
+            help: "<u>Inaktivera</u> alla <em class='text-primary'>hjälpbubblor</em> som visas då musen förs över en knapp eller en länk"
+            admin_edit: "<u>Inktivera</u> <em class='text-primary'>modulers redigering</em> på sidorna"
+        close:
+            window: '<u>Stäng</u> fönstret utan vidare åtgärder'
+        save: '<u>Spara</u> objektet och <u>stäng</u> fönstret'
+        delete: '<u>Radera</u> objektet'
+        toggle-active: "<u>Växla</u> mellan <em class='text-primary'>aktivt</em> och <em class='text-primary'>inaktivt</em> läge."
+        move:
+            up: "<u>Flytta</u> ett steg <em class='text-primary'>uppåt</em> i hierarkin."
+            down: "<u>Flytta</u> ett steg <em class='text-primary'>nedåt</em> i hierarkin."
+
+
+# ACLS
+acl: "Rättigheter"
+view: 'Visa'
+create: 'Skapa'
+edit: 'Redigera'
+delete: 'Radera'
+undelete: 'Återta'
+operator: 'Hantera'
+master: 'Hantera och bevilja'
+owner: 'Ägare'

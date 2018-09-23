@@ -1,0 +1,153 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+    <div class="side-padding">
+        <h1>{{ event.name }}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <nav class="navbar navbar-default toolbar">
+            <div class="container-fluid">
+                <div class="navbar-header pull-left">
+                    <a class="navbar-brand" data-title="{% trans from 'nav' %}nav.admin_cheerleading_rule{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_cheerleading_rule', {'event': event.id}) }}">
+                        <i class="fa fa-pencil-square-o"></i> {% trans from 'cheerleading' %}label.create_rule{% endtrans %}
+                    </a>
+                </div>
+                <div>
+                    <div class="pull-right top-padding-sm col-xs-6 col-sm-9">
+                        <div class="input-group">
+                            <span class="input-group-addon">{% trans from "cheerleading" %}label.search{% endtrans %}</span>
+                            <input id="search" class="input-sm form-control" type="text"/>
+                            <a id="clear_search" class="disabled input-group-addon btn"><i class="fa fa-times-circle-o"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        {% set icons = {'ASC': 'fa-chevron-up', 'DESC': 'fa-chevron-down'} %}
+        <table class="table table-bordered table-responsive table-condensed table-striped table-scrollable table-rules">
+            <thead>
+            <tr>
+                <th class="order"><a class="ajax" href="{{ path('nav.admin_cheerleading_rules', {'event': event.id, 'sort': 'order', 'order': orders['order']}) }}">{% trans from "cheerleading" %}label.rule_order{% endtrans %} {% if sort == 'order' %}<span class="fa {{ icons[order] }}"></span>{% endif %}</a></th>
+                <th class="title"><a class="ajax" href="{{ path('nav.admin_cheerleading_rules', {'event': event.id, 'sort': 'title', 'order': orders['title']}) }}">{% trans from "cheerleading" %}label.rule_title{% endtrans %} {% if sort == 'title' %}<span class="fa {{ icons[order] }}"></span>{% endif %}</a></th>
+                <th class="from"><a class="ajax" href="{{ path('nav.admin_cheerleading_rules', {'event': event.id, 'sort': 'from', 'order': orders['from']}) }}">{% trans from "cheerleading" %}label.rule_from{% endtrans %} {% if sort == 'from' %}<span class="fa {{ icons[order] }}"></span>{% endif %}</a></th>
+                <th class="until"><a class="ajax" href="{{ path('nav.admin_cheerleading_rules', {'event': event.id, 'sort': 'until', 'order': orders['until']}) }}">{% trans from "cheerleading" %}label.rule_until{% endtrans %} {% if sort == 'until' %}<span class="fa {{ icons[order] }}"></span>{% endif %}</a></th>
+                <th class="version">{% trans from "cheerleading" %}label.rule_version{% endtrans %}</th>
+            </tr>
+            </thead>
+            <tbody data-sortable data-handle="td">
+            {% for rule in rules %}
+                <tr data-id="{{ rule.id }}" data-index="{{ rule.order }}">
+                    <td class="order"><a data-title="{% trans from 'nav' %}nav.admin_cheerleading_rule{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_cheerleading_rule', {'event': event.id, 'id' : rule.id}) }}">{{ rule.order + 1 }}</a></td>
+                    <td class="title"><a data-title="{% trans from 'nav' %}nav.admin_cheerleading_rule{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_cheerleading_rule', {'event': event.id, 'id' : rule.id}) }}">{{ rule.title }}</a></td>
+                    <td class="from"><a data-title="{% trans from 'nav' %}nav.admin_cheerleading_rule{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_cheerleading_rule', {'event': event.id, 'id' : rule.id}) }}">{{ rule.from|date('d.m.Y H:i:s') }}</a></td>
+                    <td class="until"><a data-title="{% trans from 'nav' %}nav.admin_cheerleading_rule{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_cheerleading_rule', {'event': event.id, 'id' : rule.id}) }}">{% if rule.until %}{{ rule.until|date('d.m.Y H:i:s') }}{% endif %}</a></td>
+                    <td class="version"><a data-title="{% trans from 'nav' %}nav.admin_cheerleading_rule{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_cheerleading_rule', {'event': event.id, 'id' : rule.id}) }}">{{ rule.fullVersion }}</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script type="text/javascript">
+        <!--
+
+        $(document).ready(function() {
+            $('tbody[data-sortable]')
+                .sortable({
+                    cursor: 'move',
+                    axis: 'y',
+                    handle: 'td',
+                    opacity: '0.6',
+                    start: function(event, ui) {
+                        $(ui.item[0]).attr('data-oldIndex', ui.item.index());
+                        // $(this).attr('data-oldindex', ui.item.index());
+                    },
+                    stop: function (event, ui) {
+                        var $element = $(ui.item[0]);
+                        var oldIndex = $element.attr('data-oldindex');
+                        $element.removeAttr('data-oldindex');
+                        var index = ui.item.index();
+                        var move = index - oldIndex;
+                        var id = ui.item.attr('data-id');
+                        console.log('move ' + id + ' ' + move);
+                        var evt = {{ event.id }};
+                        if (move !== 0) {
+                            // console.log(Routing.generate('nav.admin_cheerleading_rules', {'_locale': '{{ app.request.locale }}', 'event': evt, 'rule': id, 'move': move}));
+                            showSpinner();
+                            $.ajax({
+                                'url': Routing.generate('nav.admin_cheerleading_rules', {'_locale': '{{ app.request.locale }}', 'event': evt, 'rule': id, 'move': move}),
+                                'success': function (data) {
+                                    console.log('moved');
+                                    reorderTable();
+                                    hideSpinner();
+                                },
+                                'error': function (xhr) {
+                                    console.log('error');
+                                    revertTable();
+                                    hideSpinner();
+                                }
+                            });
+                        }
+                    }
+                });
+        });
+
+        $('#clear_search').on('click', function() {
+            $('#search').val('');
+            $(this).addClass('disabled');
+            $.each($('.table-rules tbody tr'), function() {
+                $(this).css('display', '');
+            });
+        });
+        $('#search').on('input', function() {
+            if ($(this).val().length > 0) {
+                $('#clear_search').removeClass('disabled');
+                filter = $(this).val();
+                $.each($('.table-rules tbody tr'), function() {
+                    $(this).css('display', $(this).find('td a').is(':icontains(' + filter + ')') ? '' : 'none');
+                });
+            } else {
+                $('#clear_search').trigger('click');
+            }
+        });
+
+        $.expr[":"].icontains = $.expr.createPseudo(function(arg) {
+            return function( elem ) {
+                return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
+            };
+        });
+
+        function reorderTable() {
+            var index = 0;
+            $('.table-rules > tbody > tr').each(function() {
+                $(this).attr('data-index', index++);
+                $(this).find('td.order > a').html('' + index);
+            });
+        }
+
+        function revertTable() {
+            var $tbody = $('.table-rules > tbody');
+            var $rows = $tbody.children('tr').get();
+            $rows.sort(function (a, b) {
+                return ($(a).attr('data-index') - $(b).attr('data-index'));
+            });
+            $.each($rows, function(index, item) {
+                $tbody.append(item);
+            });
+        }
+
+        //-->
+    </script>
+{% endblock %}

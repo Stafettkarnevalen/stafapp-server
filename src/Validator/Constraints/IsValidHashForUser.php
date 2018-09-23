@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Validator\Constraints;
+
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Form\FormBuilderInterface;
+
+use App\Entity\Security\User;
+
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 25/11/2016
+ * Time: 18.27
+ */
+class IsValidHashForUser  extends Constraint
+{
+    public $message = 'invalid';
+
+    private $user = null;
+    private $type = null;
+    private $builder = null;
+
+    public function __construct(User $user = null, $type = 'email', FormBuilderInterface $builder)
+    {
+        parent::__construct();
+        $this->user = $user;
+        $this->type = $type;
+        $this->builder = $builder;
+    }
+
+    /**
+     * @return User|null
+     */
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    /**
+     * @return null|string
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * @return null|FormBuilderInterface
+     */
+    public function getBuilder()
+    {
+        return $this->builder;
+    }
+
+
+}

@@ -1,0 +1,57 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 05/11/2017
+ * Time: 18.27
+ */
+
+namespace App\EventListener;
+
+use App\Entity\Security\User;
+use Doctrine\ORM\Event\LifecycleEventArgs;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+
+/**
+ * Class InjectRoleHierarchyListener
+ * @package AppBundle\EventListener
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class InjectRoleHierarchyListener
+{
+    /** @var  ContainerInterface $container The container*/
+    private $container;
+
+    /**
+     * InjectRoleHierarchyListener constructor.
+     *
+     * @param ContainerInterface $container
+     */
+    public function __construct(ContainerInterface $container)
+    {
+        $this->container = $container;
+    }
+
+    /**
+     * Performs operations  before loading entities.
+     *
+     * @param LifecycleEventArgs $event
+     */
+    public function preLoad(LifecycleEventArgs $event)
+    {
+        $this->postLoad($event);
+    }
+
+    /**
+     * Performs operations after loading entities.
+     *
+     * @param LifecycleEventArgs $event
+     */
+    public function postLoad(LifecycleEventArgs $event)
+    {
+        if ($event->getEntity() instanceof User && User::$roleHierarchy === null) {
+            User::$roleHierarchy = $this->container->get('security.role_hierarchy');
+        }
+    }
+}

@@ -1,0 +1,704 @@
+<?php
+
+namespace App\Controller\Security;
+
+use App\Controller\Interfaces\ModalEventController;
+use App\Controller\Traits\RESTFulControllerTrait;
+use App\Controller\Traits\TableSortingControllerTrait;
+use App\Entity\Security\User;
+use App\Entity\Security\UserLogEvent;
+use App\Entity\Security\UserProfile;
+use App\Entity\Security\UserTicket;
+use App\Form\User\ChangePasswordType;
+use App\Form\User\TicketPasswordType;
+use FOS\RestBundle\Controller\FOSRestController;
+use Symfony\Component\Form\FormError;
+use Symfony\Component\Form\SubmitButton;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
+use Swagger\Annotations as SWG;
+use Nelmio\ApiDocBundle\Annotation as Nelmio;
+use App\Entity\Api\Message as ApiMessage;
+
+/**
+ * Class AuthenticatedUserController
+ * - Handles logged on User entities.
+ * - API calls for authenticated users.
+ * - Authenticated user funtionality for UI.
+ *
+ * @package App\Controller\Security
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class AuthenticatedUserController extends FOSRestController implements ModalEventController
+{
+    /** Use some REST methods */
+    use RESTFulControllerTrait;
+
+    /** Use table sorting */
+    use TableSortingControllerTrait;
+
+    /**
+     * @var array Change password types provided by the service.
+     */
+    private $passwdTypes = [
+        'traditional' => ['user-o', 'passwd.w_userpass', 'passwd.info_userpass', 'nav.passwd', 'security/password/traditional_form.html.twig'],
+        'username' => ['envelope-o', 'passwd.w_email', 'passwd.info_email', 'nav.passwd_email', 'security/password/ticket_form.html.twig'],
+        'phone' => ['commenting-o', 'passwd.w_phone', 'passwd.info_phone', 'nav.passwd_phone', 'security/password/ticket_form.html.twig'],
+    ];
+
+    /**
+     * @var array Log types provided by the service.
+     */
+    private $logTypes = [
+        'LOGINS' => ['sign-in', 'log.logins', 'log.info_logins', 'nav.user_logs', 'security/log/logins.html.twig'],
+        'PASSWORD' => ['lock', 'log.password', 'log.info_password', 'nav.user_logs', 'security/log/password.html.twig']
+    ];
+
+    /**
+     * Lists security logs of the currnt user
+     *
+     * @Route("/api/v2/authenticated/users/logs/{type}",
+     *     name="api.authuser_list_user_logs_by_type",
+     *     methods={"GET"})
+     * @Route("/api/v2/authenticated/users/logs",
+     *     name="api.authuser_list_user_logs",
+     *     methods={"GET"})
+     * @Route("/{_locale}/authenticated/users/logs/{type}",
+     *     options={"expose" = true},
+     *     name="nav.authuser_list_user_logs")
+     *
+     * @SWG\Get(
+     *     path="/api/v2/authenticated/users/logs/{type}",
+     *     summary="Get user's security logs",
+     *     description="Return an array of the current logged on user's security logs",
+     *     operationId="getAuthenticatedUserLogs",
+     *     produces={"application/json"},
+     *     @SWG\Response(
+     *         response=Response::HTTP_OK,
+     *         description="Returned an array of logs",
+     *         @SWG\Schema(
+     *             type="array",
+     *             @SWG\Items(ref=@Nelmio\Model(type=UserLogEvent::class, groups={"Authenticated","Default"}))
+     *         )
+     *     ),
+     *     @SWG\Parameter(
+     *         name="type",
+     *         in="path",
+     *         type="string",
+     *         description="The type of the logs"
+     *     )
+     * )
+     *
+     * @param string $type
+     * @param Request $request
+     * @return mixed
+     */
+    public function authUserLogAction($type = null, Request $request)
+    {
+        $ctx = $this->getContext(['SecurityAPI', 'Default']);
+
+        // handle sorting
+        list($sort, $sortKey,$order, $orders) = $this->handleSorting(
+            $request,
+            ['timestamp', 'remoteIp', 'remoteHost'],
+            'user_logs',
+            'timestamp'
+        );
+
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if (!$this->isRestfulRequest($request) && $type === null)
+            $type = UserLogEvent::TYPE_LOGIN;
+
+        // fetch
+        $logs = $user->getLogEvents($type, $sort);
+
+        // Return a RESTful JSON response or HTML
+        $view = $this->view($logs, Response::HTTP_OK)
+            ->setTemplate('authenticated/users/logs/list.html.twig')
+            ->setTemplateVar('logs')
+            ->setTemplateData([
+                'type' => $type,
+                'types' => $this->logTypes,
+                'orders' => $orders,
+                'order' => $order,
+                'sort' => $sortKey,
+            ])
+            ->setContext($ctx)
+        ;
+
+        return $this->handleView($view);
+    }
+
+    /**
+     * Controller for changing credentials with a one time ticket via email.
+     * - Changes the password without knowing the current one with the help of a ticket.
+     *
+     * @Route("/{_locale}/authenticated/users/chpasswd/email",
+     *     name="nav.authuser_chpasswd_email")
+     * @return mixed
+     */
+    public function authUserChangePasswordEmailAction()
+    {
+        return $this->redirectToRoute('nav.authuser_passwd_ticket', ['type'=>'username']);
+    }
+
+    /**
+     * Controller for changing credentials with a one time ticket via SMS.
+     * - Changes the password without knowing the current one with the help of a ticket.
+     *
+     * @Route("/{_locale}/authenticated/users/chpasswd/phone",
+     *     name="nav.authuser_chpasswd_phone")
+     * @return mixed
+     */
+    public function authUserChangePasswordPhoneAction()
+    {
+        return $this->redirectToRoute('nav.passwd_ticket', ['type'=>'phone']);
+    }
+
+    /**
+     * Controller for changing credentials with a one time ticket.
+     * - Changes the password without knowing the current one with the help of a ticket.
+     *
+     * @Route("/{_locale}/authenticated/users/chpasswd/ticket/{type}",
+     *     name="nav.authuser_chpasswd_ticket")
+     * @param $type
+     * @param Request $request
+     * @return mixed
+     * @throws \Exception
+     */
+    public function changePasswordTicketAction($type, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $error = null;
+        $ticket = null;
+
+        /** @var User $user */
+        $user = $this->get('security.token_storage')->getToken()->getUser();
+        /** @var PasswordEncoderInterface $encoder */
+        $encoder = $this->get('security.password_encoder');
+
+        $ticket_type = ($type == 'username' ? UserTicket::TYPE_EMAIL : UserTicket::TYPE_SMS);
+        $ticket = UserTicket::createFor($user, $ticket_type, $encoder, UserTicket::FOR_CHANGE_PASSWORD);
+
+        $form = $this->createForm(TicketPasswordType::class, $ticket, ['type' => $type, 'allow_extra_fields' => true]);
+        $form->handleRequest($request);
+
+        // form was submitted, resolve what to do
+        if ($form->isSubmitted() && $form->isValid())
+        {
+            $phase = $form->get('phase')->getData();
+
+            // save and send the ticket, move on to the next phase
+            if ($phase == 'ticket') {
+                // Remove all active tickets before we create a new one.
+                $tickets = $em->getRepository('App:Security\UserTicket')->findBy([
+                    'user' => $user,
+                    'type' => $ticket_type,
+                    'isActive' => true,
+                    'for' => UserTicket::FOR_CHANGE_PASSWORD,
+                ]);
+                /** @var UserTicket $ticket */
+                foreach ($tickets as $ticket) {
+                    $em->merge($ticket->setIsActive(false));
+                    $em->flush();
+                }
+                $ticket = $form->getData();
+
+                // Save the new ticket
+                $em->persist($ticket);
+                $em->flush();
+
+                $trans = $this->get('translator');
+                // Send ticket to user
+                if ($type == 'username') {
+                    // send email
+
+                    $message = (new \Swift_Message())
+                        ->setSubject($trans->trans('passwd.w_email', [], 'security'))
+                        ->setFrom($this->getParameter('mailer_sender'))
+                        ->setTo($user->getUsername())
+                        ->setBody(
+                            $this->renderView(
+                            // App/Resources/views/email/verification/verify.html.twig
+                                'email/ticket/password.html.twig',
+                                [
+                                    'ticket' => $ticket,
+                                    'type' => $type
+                                ]
+                            ),
+                            'text/html'
+                        );
+                    $this->get('mailer')->send($message);
+                } else {
+                    // send sms
+                    /*$message =
+                        $trans->trans('ticket.password_with_key', [
+                            '%name%' => $user->getFullname(),
+                            '%key%' => $ticket->getPlaintextTicket()
+                        ], 'security');
+
+                    $this->get('sms')->setTo('+358505637254')->setMessage($message)->send();
+                    */
+                    print_r($ticket->getPlaintextTicket());
+                }
+
+                // Update the form
+                $form = $this->createForm(TicketPasswordType::class, $ticket, ['phase' => 'login', 'type' => $type]);
+            } else if ($phase == 'login') {
+
+                $form = $this->createForm(TicketPasswordType::class, $ticket, ['phase' => 'login', 'type' => $type]);
+                $form->handleRequest($request);
+
+                // check if the ticket needs to be recreated
+                /** @var SubmitButton $resendBtn */
+                $resendBtn = $form->get('resend');
+                if ($form->isSubmitted() && $form->isValid() && $form->has('resend') && $resendBtn->isClicked()) {
+
+                    // Remove all active tickets before we create a new one.
+                    $tickets = $em->getRepository('App:Security\UserTicket')->findBy([
+                        'user' => $user,
+                        'type' => $ticket_type,
+                        'isActive' => true,
+                        'for' => UserTicket::FOR_CHANGE_PASSWORD,
+                    ]);
+                    /** @var UserTicket $ticket */
+                    foreach ($tickets as $ticket) {
+                        $em->merge($ticket->setIsActive(false));
+                        $em->flush();
+                    }
+
+                    $ticket = UserTicket::createFor($user, $ticket_type, $encoder, UserTicket::FOR_CHANGE_PASSWORD);
+
+                    // Save the new ticket
+                    $em->persist($ticket);
+                    $em->flush();
+
+                    $trans = $this->get('translator');
+                    // Send ticket to user
+                    if ($type == 'username') {
+                        // send email
+                        $message = (new \Swift_Message())
+                            ->setSubject($trans->trans('passwd.w_email', [], 'security'))
+                            ->setFrom($this->getParameter('mailer_sender'))
+                            ->setTo($user->getUsername())
+                            ->setBody(
+                                $this->renderView(
+                                // App/Resources/views/email/verification/verify.html.twig
+                                    'email/ticket/password.html.twig',
+                                    [
+                                        'ticket' => $ticket,
+                                        'type' => $type
+                                    ]
+                                ),
+                                'text/html'
+                            );
+                        $this->get('mailer')->send($message);
+                    } else {
+                        // send sms
+                        /*$message =
+                            $trans->trans('ticket.password_with_key', [
+                                '%name%' => $user->getFullname(),
+                                '%key%' => $ticket->getPlaintextTicket()
+                            ], 'security');
+
+                        $this->get('sms')->setTo('+358505637254')->setMessage($message)->send();
+                        */
+                        print_r($ticket->getPlaintextTicket());
+                    }
+
+                    // Update the form
+                    $form = $this->createForm(TicketPasswordType::class, $ticket, ['phase' => 'login', 'type' => $type]);
+                } else if ($form->isSubmitted() && $form->isValid()) {
+
+                    /** @var UserTicket $ticket */
+                    $ticket = $em->getRepository('App:Security\UserTicket')->findOneBy([
+                        'user' => $user,
+                        'type' => $ticket_type,
+                        'isActive' => true,
+                        'for' => UserTicket::FOR_CHANGE_PASSWORD,
+                    ]);
+
+                    if (!$ticket) {
+                        $this->get('session')->getFlashBag()->add('error', 'flash.ticket.not_found');
+                        return $this->redirectToRoute('nav.passwd_ticket', ['type' => $type]);
+                    } else {
+
+                        //$form = $this->createForm(TicketPAsswordType::class, $ticket, ['phase' => 'login', 'type' => $type]);
+                        // $form->handleRequest($request);
+
+                        if ($ticket->isCurrent() && $ticket->hasTriesLeft() &&
+                            $this->get('security.password_encoder')->isPasswordValid($ticket, $form->get('password')->getData())) {
+
+                            // all ok, change the password
+                            $password = $this->get('security.password_encoder')
+                                ->encodePassword($ticket->getUser(), $ticket->getPlainPassword());
+                            $user->setPassword($password)->setPasswordValidFor(-1);
+
+                            $log = new UserLogEvent();
+                            $log->setUser($user)->setType(UserLogEvent::TYPE_PASSWORD)
+                                ->setLevel(UserLogEvent::LEVEL_SUCCESS)->setResult("password.changed")
+                                ->setRemoteHost($request->getClientIp())->setTimestamp(new \DateTime('now'));
+                            // $user->getLogEvents()->add($log);
+
+                            $em->merge($user);
+                            $em->persist($log);
+                            $em->flush();
+
+                            // set message and redirect to login page
+                            $this->get('session')->getFlashBag()->add('success', 'flash.password.changed');
+                            return $this->redirectToRoute('nav.passwd_ticket', ['type' => $type]);
+                        } else if ($ticket->isCurrent() && $ticket->hasTriesLeft()) {
+                            // password of ticket did not match
+                            $error = new CustomUserMessageAuthenticationException('Invalid credentials.');
+
+                            // decrease tries left
+                            $em->persist($ticket->failedTry($request->getClientIp()));
+                            $em->flush();
+
+                            // check if ticket is still valid
+                            if (!$ticket->getIsActive()) {
+                                // too many tries
+                                // redirect to start with error
+                                $this->get('session')->getFlashBag()->add('error', 'flash.ticket.too_many_tries');
+                                return $this->redirectToRoute('nav.passwd_ticket', ['type' => $type]);
+                            }
+                        } else if ($ticket->isCurrent()) {
+                            // too many tries, invalidate
+                            $em->persist($ticket->setIsActive(false));
+                            $em->flush();
+                            $this->get('session')->getFlashBag()->add('error', 'flash.ticket.too_many_tries');
+                            return $this->redirectToRoute('nav.passwd_ticket', ['type' => $type]);
+                        } else if ($ticket->hasTriesLeft()) {
+                            // ticket has expired, invalidate ticket
+                            $em->persist($ticket->setIsActive(false));
+                            $em->flush();
+                            $this->get('session')->getFlashBag()->add('error', 'flash.ticket.expired');
+                            return $this->redirectToRoute('nav.passwd_ticket', ['type' => $type]);
+                        } else {
+                            // should never happen but invalidate none the less
+                            $em->persist($ticket->setIsActive(false));
+                            $em->flush();
+                            $this->get('session')->getFlashBag()->add('error', 'flash.ticket.not_found');
+                            return $this->redirectToRoute('nav.passwd_ticket', ['type' => $type]);
+                        }
+                    }
+                }
+            }
+        }
+
+        $passwdTypes = $this->passwdTypes;
+        if ($this->getUser()->getPhone() === null)
+            unset($passwdTypes['phone']);
+
+        return $this->render('security/password/password.html.twig', [
+            'error' => $error,
+            'types' => $passwdTypes,
+            'type' => $type,
+            'user' => $user,
+            'form' => $form->createView(),
+            'ticket' => $ticket
+        ]);
+    }
+
+    /**
+     * Controller for changing credentials the traditional way.
+     * - Changes the password using the old one and by supplying and verifying a new one.
+     *
+     * @Route("/{_locale}/authenticated/users/chpasswd",
+     *     options={"expose"=true},
+     *     name="nav.authuser_chpasswd")
+
+     * @param Request $request
+     * @return mixed
+     */
+    public function authUserChangePasswordAction(Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $error = null;
+
+        /** @var User $user */
+        $user = $this->get('security.token_storage')->getToken()->getUser();
+
+        $form = $this->createForm(ChangePasswordType::class, $user);
+        $form->handleRequest($request);
+
+        /** @var SubmitButton $submitBtn */
+        $submitBtn = $form->get('submit');
+        if ($form->isValid() && $submitBtn->isClicked() &&
+            $this->get('security.password_encoder')->isPasswordValid($user, $form->get('current')->getData())) {
+            // all ok, change the password
+            $password = $this->get('security.password_encoder')
+                ->encodePassword($user, $user->getPlainPassword());
+            $user->setPassword($password)->setPasswordValidFor(-1);
+
+            $log = new UserLogEvent();
+            $log->setUser($user)->setType(UserLogEvent::TYPE_PASSWORD)
+                ->setLevel(UserLogEvent::LEVEL_SUCCESS)->setResult("password.changed")
+                ->setRemoteHost($request->getClientIp())->setTimestamp(new \DateTime('now'));
+            // $user->getLogEvents()->add($log);
+
+            $em->merge($user);
+            $em->persist($log);
+            $em->flush();
+
+            // set message and redirect to login page
+            $this->get('session')->getFlashBag()->add('success', 'flash.password.changed');
+
+        } else if ($form->isValid() && $submitBtn->isClicked() &&
+            !$this->get('security.password_encoder')->isPasswordValid($user, $form->get('current')->getData())) {
+            // current password was wrong
+            $trans = $this->get('translator');
+            $form->get('current')->addError(new FormError($trans->trans('label.invalid_password', [], 'user')));
+            $log = new UserLogEvent();
+            $log->setUser($user)->setType(UserLogEvent::TYPE_PASSWORD)
+                ->setLevel(UserLogEvent::LEVEL_WARNING)->setResult("label.invalid_password")
+                ->setRemoteHost($request->getClientIp())->setTimestamp(new \DateTime('now'));
+            $em->persist($log);
+            $em->flush();
+        } else if ($submitBtn->isClicked()) {
+            $log = new UserLogEvent();
+            $log->setUser($user)->setType(UserLogEvent::TYPE_PASSWORD)
+                ->setLevel(UserLogEvent::LEVEL_WARNING)->setResult("password.missmatch")
+                ->setRemoteHost($request->getClientIp())->setTimestamp(new \DateTime('now'));
+            $em->persist($log);
+            $em->flush();
+        }
+
+        $passwdTypes = $this->passwdTypes;
+        if ($this->getUser()->getPhone() === null)
+            unset($passwdTypes['phone']);
+        return $this->render('security/password/password.html.twig', [
+            'error' => $error,
+            'form' => $form->createView(),
+            'user' => $user,
+            'types' => $passwdTypes,
+            'type' => 'traditional',
+        ]);
+    }
+
+    /**
+     * Controller for fetching user profile values (authenticated users only).
+     *
+     * @Route("/api/v2/authenticated/users/profile/{path}/{default}",
+     *     methods={"GET"},
+     *     name="api.authuser_fetch_profile_data")
+     * @Route("/{_locale}/authenticated/users/profile/get/{path}/{default}",
+     *     options={"expose"=true},
+     *     name="nav.authuser_fetch_profile_data")
+     *
+     * @SWG\Get(
+     *     path="/api/v2/authenticated/users/profile/{path}/{default}",
+     *     summary="Get user's profile value",
+     *     description="Return the users profile value corresponding to a path or a default value if path was not found",
+     *     operationId="getAuthenticatedUserProfileValue",
+     *     produces={"application/json"},
+     *     @SWG\Response(
+     *         response=Response::HTTP_OK,
+     *         description="Returned the data in the profile's path",
+     *         @SWG\Schema(
+     *             type="array"
+     *         )
+     *     ),
+     *     @SWG\Response(
+     *         response=Response::HTTP_NOT_FOUND,
+     *         description="Returned the default value",
+     *         @SWG\Schema(
+     *             type="array"
+     *         )
+     *     ),
+     *     @SWG\Parameter(
+     *         name="path",
+     *         in="path",
+     *         type="string",
+     *         description="The path of the value to fetch"
+     *     ),
+     *     @SWG\Parameter(
+     *         name="default",
+     *         in="path",
+     *         type="string",
+     *         description="A default value to return if path was not found"
+     *     )
+     * )
+     *
+     * @param string $path
+     * @param string $default
+     * @param boolean $json
+     * @param Request $request
+     * @return JsonResponse|Response
+     */
+    public function authUserGetProfileValueAction($path, $default = null, $json = true, Request $request)
+    {
+        /** @var User $usr */
+        $usr = $this->getUser();
+
+        /** @var UserProfile $profile */
+        $profile = $usr->getProfile();
+
+        $data = $profile->getData();
+        if ($data === null)
+            $data = [];
+
+        foreach (explode('.', $path) as $key) {
+            if (array_key_exists($key, $data))
+                $data = $data[$key];
+            else {
+                if ($this->isRestfulRequest($request))
+                    return $this->displayData([$path => $default], ["Authenticated","Default"], Response::HTTP_NOT_FOUND);
+                return $json ?
+                    new JsonResponse([$path=> $default], Response::HTTP_OK) :
+                    new Response([$path=> $default]);
+            }
+        }
+        if ($this->isRestfulRequest($request))
+            return $this->displayData([$path => $data]);
+
+        return $json ?
+            new JsonResponse([$path=> $data], Response::HTTP_OK) :
+            new Response([$path=> $data]);
+    }
+
+    /**
+     * Controller for updating user profile values (authenticated users only).
+     *
+     * @Route("/api/v2/authenticated/users/profile/{path}/{value}",
+     *     methods={"PATCH"},
+     *     name="api.authuser_merge_profile_data")
+     * @Route("/{_locale}/authenticated/users/profile/patch/{path}/{value}",
+     *     options={"expose"=true},
+     *     name="nav.authuser_merge_profile_data")
+     *
+     * @SWG\Patch(
+     *     path="/api/v2/authenticated/users/profile/{path}/{value}",
+     *     summary="Updates a user's profile value",
+     *     description="Updates the users profile value corresponding to a path",
+     *     operationId="setAuthenticatedUserProfileValue",
+     *     produces={"application/json"},
+     *     @SWG\Response(
+     *         response=Response::HTTP_OK,
+     *         description="Returned the updated user's profile",
+     *         @SWG\Schema(
+     *             ref=@Nelmio\Model(type=UserProfile::class, groups={"Authenticated","Default"})
+     *         )
+     *     ),
+     *     @SWG\Response(
+     *         response=Response::HTTP_BAD_REQUEST,
+     *         description="The profile could not be saved.",
+     *         @SWG\Schema(
+     *             ref=@Nelmio\Model(type=ApiMessage::class, groups={"Authenticated","Default"})
+     *         )
+     *     ),
+     *     @SWG\Parameter(
+     *         name="path",
+     *         in="path",
+     *         type="string",
+     *         description="The path of the value to update"
+     *     ),
+     *     @SWG\Parameter(
+     *         name="value",
+     *         in="path",
+     *         type="string",
+     *         description="A new value for the path"
+     *     )
+     * )
+     *
+     * @param string $path
+     * @param string $value
+     * @param boolean $json
+     * @param Request $request
+     * @return JsonResponse|Response
+     */
+    public function authUserUpdateProfileValueAction($path, $value = null, $json = true, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var User $usr */
+        $usr = $this->getUser();
+
+        /** @var UserProfile $profile */
+        $profile = $usr->getProfile();
+
+        $data = $profile->getData();
+        if ($data === null)
+            $data = [];
+
+
+        $path = explode('.', $path);
+
+        $key = array_pop($path);
+        $update[$key] = $value;
+
+        while (count($path) > 0) {
+            $key = array_pop($path);
+            $arr = [$key => $update];
+            $update = $arr;
+        }
+        $data = array_replace_recursive($data, $update);
+        $profile->setData($data);
+        try {
+            $em->merge($profile);
+            $em->flush();
+        } catch (\Exception $e) {
+            if ($this->isRestfulRequest($request))
+                return $this->error($e->getMessage());
+        }
+
+        if ($this->isRestfulRequest($request))
+            return $this->readEntity(UserProfile::class, $profile->getId());
+
+        return $json ?
+            new JsonResponse(['data'=> $data], Response::HTTP_OK) :
+            new Response(['data' => $data]);
+    }
+
+    /**
+     * Controller for viewing user's profile (authenticated users only).
+     *
+     * @Route("/api/v2/authenticated/users/profile",
+     *     methods={"GET"},
+     *     name="api.authuser_fetch_profile")
+     * @Route("/{_locale}/authenticated/users/profile/view",
+     *     options={"expose"=true},
+     *     name="nav.authuser_view_profile")
+     *
+     * @SWG\Get(
+     *     path="/api/v2/authenticated/users/profile",
+     *     summary="Get user's profile",
+     *     description="Return the users profile",
+     *     operationId="getAuthenticatedUserProfile",
+     *     produces={"application/json"},
+     *     @SWG\Response(
+     *         response=Response::HTTP_OK,
+     *         description="Returned all the data in the profile",
+     *     )
+     * )
+     *
+     * @param Request $request
+     * @return JsonResponse|Response
+     */
+    public function authUserListProfileAction(Request $request)
+    {
+        /** @var User $usr */
+        $usr = $this->getUser();
+
+        /** @var UserProfile $profile */
+        $profile = $usr->getProfile();
+
+        if ($this->isRestfulRequest($request))
+            return $this->readEntity(UserProfile::class, $profile->getId());
+
+        return $this->render('security/user/profile.html.twig', [
+                'profile' => $profile,
+            ]
+        );
+    }
+
+
+}
+

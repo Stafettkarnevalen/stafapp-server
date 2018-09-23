@@ -1,0 +1,260 @@
+{% extends app.request.get('sort') is null ? 'base.html.twig' : 'sortable-table.html.twig' %}
+
+{% macro render_sorted_table(relays, orders, order, sort) %}
+    {{ table(relays, {
+        'trans_domain': 'relay',
+        'class': 'table table-bordered table-responsive table-condensed table-striped table-scrollable table-searchable table-sortable table-relays',
+        'body': {
+            'row_attrs': {
+                'data-id':  {
+                    'type': 'method',
+                    'name': 'getId'
+                }
+            },
+            'link': {
+                'url': 'nav.admin_relay',
+                'params': {
+                    'id': {
+                        'type': 'method',
+                        'name': 'getId'
+                    }
+                },
+                'attrs': {
+                    'data-reload': 'true',
+                    'data-title': 'nav.admin_relays'|trans({}, 'nav'),
+                    'data-toggle': 'modal'
+                }
+            },
+            'cols': {
+                'name': {
+                    'method': 'getName'
+                },
+                'gender': {
+                    'method': 'getGender',
+                    'filter': ['trans', [], 'relay']
+                },
+                'schoolTypes': {
+                    'method': 'getSchoolTypesAsString',
+                    'params': [
+                        true,
+                        2
+                    ]
+                },
+                'minClassOf': {
+                    'method': 'getMinClassOf'
+                },
+                'maxClassOf': {
+                    'method': 'getMaxClassOf'
+                }
+            }
+        },
+        'head': {
+            'sortable': {
+                'orders': orders,
+                'order': order,
+                'sort': sort,
+                'icons': {
+                    'ASC': 'fa-chevron-up',
+                    'DESC': 'fa-chevron-down'
+                },
+                'link': {
+                    'url': 'nav.admin_relays'
+                }
+            },
+            'cols': {
+                'name': {
+                    'label': 'label.name',
+                    'sort': 'name'
+                },
+                'gender': {
+                    'label': 'label.gender'
+                },
+                'shool_types': {
+                    'label': 'label.school_types'
+                },
+                'min_class': {
+                    'label': 'label.s_min_class_of',
+                    'sort': 'minClassOf'
+                },
+                'max_class': {
+                    'label': 'label.s_max_class_of',
+                    'sort': 'maxClassOf'
+                }
+            }
+        }
+    }) }}
+{% endmacro %}
+
+{% macro render_nav() %}
+    <nav class="navbar navbar-default toolbar" data-spy="affix" data-offset-top="251">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="hidden-xs navbar-header col-sm-6">
+                    <a class="navbar-brand" data-title="{% trans from 'nav' %}nav.admin_relays{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_relay') }}">
+                        <i class="fa fa-pencil-square-o"></i> {% trans from 'relay' %}label.create{% endtrans %}
+                    </a>
+                    <a class="navbar-brand" data-title="{% trans from 'nav' %}nav.admin_relay_rules{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_relay_rules') }}">
+                        <i class="fa fa-balance-scale"></i> {% trans from 'relay' %}label.common_rules{% endtrans %}
+                    </a>
+                </div>
+                <div class="top-padding-sm col-xs-12 col-sm-6">
+                    <a title="{% trans from 'relay' %}label.create{% endtrans %}" data-title="{% trans from 'relay' %}label.create{% endtrans %}" data-reload="true" data-toggle="modal" class="hidden-sm hidden-md hidden-lg btn btn-default" href="{{ path('nav.admin_relay') }}"><i class="fa fa-plus"></i></a>
+                    <a title="{% trans from 'relay' %}label.common_rules{% endtrans %}" data-title="{% trans from 'relay' %}label.common_rules{% endtrans %}" data-reload="true" data-toggle="modal" class="hidden-sm hidden-md hidden-lg btn btn-default" href="{{ path('nav.admin_relay_rules') }}"><i class="fa fa-balance-scale"></i></a>
+                    <a title="{% trans from "relay" %}label.edit{% endtrans %}" data-title="{% trans from 'nav' %}nav.admin_relays{% endtrans %}" data-reload="true" data-toggle="modal" href="" class="tool btn btn-default btn-open disabled"><i class="fa fa-edit"></i></a>
+                    <a title="{% trans from "relay" %}label.delete{% endtrans %}" data-title="{% trans from 'relay' %}label.delete{% endtrans %}" data-reload="true" data-toggle="confirm" href="" class="tool btn btn-default btn-delete disabled"><i class="fa fa-trash-o"></i></a>
+                    <a title="{% trans from "relay" %}label.unselect{% endtrans %}" href="" class="tool btn btn-default btn-unselect disabled"><i class="fa fa-times-circle-o"></i></a>
+                    <span class="divider-vertical"></span>
+                    <button title="{% trans from "relay" %}label.toggle_search{% endtrans %}" class="pull-right btn btn-default btn-search" data-toggle="button" aria-pressed="false"><i class="fa fa-search"></i> <span class="fa fa-caret-down toggle-icon" data-toggleicon="fa-caret-down,fa-caret-up"></span></button>
+                </div>
+            </div>
+        </div>
+        <div class="searchbar collapse">
+            <hr class="no-padding no-margin"/>
+            <div class="input-group toolbar-padding" data-target=".table-relays">
+                <span class="input-group-addon">{% trans from "relay" %}label.search{% endtrans %}</span>
+                <input class="search input-md form-control" type="text"/>
+                <a title="{% trans from "relay" %}label.clear{% endtrans %}" class="clear_search disabled input-group-addon btn"><i class="fa fa-times-circle-o"></i></a>
+            </div>
+        </div>
+    </nav>
+{% endmacro %}
+
+{% import _self as macro %}
+
+
+{% if app.request.get('sort') is null %}
+    {% set use_heading = true %}
+    {% set body_class = 'body-medium' %}
+    {% block body %}
+        <div class="all-padding">
+            <table class="stepper">
+                <tbody>
+                <tr>
+                    <td class="bg-primary"></td>
+                </tr>
+                </tbody>
+            </table>
+            {{ macro.render_nav() }}
+            <div class="workspace">
+                <div class="dropdown" style="position:absolute!important; top:0!important; left:0!important;">
+                    <ul id="relays_context_menu" class="dropdown-menu" role="menu">
+                        <li><a tabindex="-1" data-trigger=".btn-open" href="#"><i class="fa fa-edit"></i> {% trans from 'relay' %}label.edit{% endtrans %}</a></li>
+                        <li class="divider"></li>
+                        <li><a tabindex="-1" data-trigger=".btn-unselect" href="#"><i class="fa fa-close"></i> {% trans from 'relay' %}label.unselect{% endtrans %}</a></li>
+                        <li class="divider"></li>
+                        <li><a tabindex="-1" data-trigger=".btn-delete" href="#"><i class="fa fa-trash-o"></i> {% trans from 'relay' %}label.delete{% endtrans %}</a></li>
+                    </ul>
+                </div>
+                {{ macro.render_sorted_table(relays, orders, order, sort) }}
+            </div>
+        </div>
+        <script type="text/javascript">
+            <!--
+            $(document).ready(function() {
+
+                $('#{{ request_id()|html_id }} .table-relays')
+                    .on('change', function (e) {
+                        console.log('table-change');
+                        $(this).find('td').contextMenu({
+                            menuSelector: "#relays_context_menu",
+                            menuActivated: function (e) {
+                                // select row on context menu
+                                if (!$(e.target).parent().hasClass('selected'))
+                                    $(e.target).trigger('click');
+
+                                if ($(e.target).closest('td').parent().data('id') === 1 ||
+                                    $(e.target).closest('td').parent().data('id') === 2) {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-delete"]')
+                                        .parent().addClass('disabled');
+                                } else {
+                                    $(e.target).closest('.workspace').find('[data-trigger=".btn-delete"]')
+                                        .parent().removeClass('disabled');
+                                }
+                            },
+                            menuSelected: function (source, e) {
+                                // simulate toolbar button click on selected row
+                                $($(e.target).data('trigger')).trigger('click');
+
+                            }
+                        });
+                    })
+                    .trigger('change')
+                ;
+
+                $('#{{ request_id()|html_id }} ')
+                    .on('click', function (e) {
+                        var $this = $(this);
+
+                        // if clicking the search toggle
+                        var $search = $(e.target).closest('.btn-search');
+                        if ($search.length) {
+                            {% if modal is defined and modal == true %}
+                            $this.find('.searchbar').collapse('toggle');
+                            $this.parent().toggleClass('affix-search');
+                            {% else %}
+                            $this.find('.searchbar').collapse('toggle').parent().toggleClass('affix-search');
+                            {% endif %}
+                        }
+
+                        // if clicking a table row
+                        var $td = $(e.target);
+                        if ($td.closest('.table-relays tbody').length > 0) {
+                            console.log('select/unselect table row');
+
+                            if (!$td.parent().hasClass('selected')) {
+                                console.log('select');
+
+                                // unselect all other rows
+                                $this.find('.selected').removeClass('selected');
+
+                                // select this row
+                                $td.parent().addClass('selected');
+
+                                // enable tool buttons
+                                $this.find('.navbar.toolbar').find('.tool.disabled').removeClass('disabled');
+
+                                // disable if admin or guest
+                                if ($td.parent().data('id') === 1 || $td.parent().data('id') === 2) {
+                                    $this.find('.navbar.toolbar').find('.btn-delete').addClass('disabled');
+                                }
+
+                                // assign correct urls to buttons
+                                $this.find('.btn-open').attr('href', $td.parent().find('a:first').attr('href'));
+
+                                var $route = Routing.generate('nav.admin_relay_delete', {
+                                    '_locale': '{{ app.request.locale }}',
+                                    'id': $td.parent().data('id')
+                                });
+                                $this.find('.btn-delete').attr('href', $route);
+
+                                $this.find('.btn-unselect').off().click(function() {
+                                    $this.find('.table-relays tr').removeClass('selected');
+                                    $this.find('.navbar.toolbar').find('.tool').addClass('disabled');
+                                    return false;
+                                });
+
+                                $route = Routing.generate('nav.message', {
+                                    '_locale': '{{ app.request.locale }}',
+                                    'action': 'compose',
+                                    'rcptType': 'Relay',
+                                    'rcptId': $td.parent().data('id'),
+                                    'msgTypes': 'EMAIL,INTERNAL'
+                                });
+                                $this.find('.btn-message').attr('href', $route);
+                            }
+                        }
+                    })
+                    .on('dblclick', '.table-relays td', function (e) {
+                        $(this).find('a').click();
+                        $(this).parent().addClass('selected');
+                    })
+                ;
+            });
+            //-->
+        </script>
+    {% endblock %}
+{% else %}
+    {% block table %}
+        {{ macro.render_sorted_table(relays, orders, order, sort) }}
+    {% endblock %}
+{% endif %}

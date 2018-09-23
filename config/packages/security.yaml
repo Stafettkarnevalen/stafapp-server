@@ -1,0 +1,104 @@
+parameters:
+    roles: ['ROLE_USER', 'ROLE_SCHOOL_MANAGER', 'ROLE_SCHOOL_ADMIN', 'ROLE_OFFICIAL', 'ROLE_OFFICIAL_ADMIN', 'ROLE_CHEERLEADING_MANAGER', 'ROLE_MASCOT_MANAGER', 'ROLE_MARCHIN_MANAGER', 'ROLE_ADMIN', 'ROLE_SUPER_ADMIN']
+    message_files: '%kernel.project_dir%/web/files/messages'
+    admin_files: '%kernel.cache_dir%/admin'
+
+security:
+    encoders:
+        App\Entity\Security\User:
+            algorithm: bcrypt
+        App\Entity\Security\PrincipalUser:
+            algorithm: bcrypt
+        App\Entity\Security\SystemUser:
+            algorithm: bcrypt
+        App\Entity\Security\SchoolManager:
+            algorithm: bcrypt
+        App\Entity\Security\UserTicket:
+            algorithm: bcrypt
+        FOS\UserBundle\Model\UserInterface:
+            algorithm: bcrypt
+
+    role_hierarchy:
+        ROLE_CHEERLEADING_MANAGER: ROLE_USER
+        ROLE_MASCOT_MANAGER: ROLE_USER
+        ROLE_MARCHIN_MANAGER: ROLE_USER
+        ROLE_SCHOOL_ADMIN: ROLE_USER
+        ROLE_SCHOOL_MANAGER: [ROLE_CHEERLEADING_MANAGER, ROLE_MASCOT_MANAGER, ROLE_MARCHIN_MANAGER]
+        ROLE_STEWARD: ROLE_USER
+        ROLE_STEWARD_ADMIN: ROLE_STEWARD
+        ROLE_CUP_ADMIN: ROLE_USER
+        ROLE_ADMIN:       [ROLE_SCHOOL_MANAGER, ROLE_STEWARD_ADMIN, ROLE_SCHOOL_ADMIN, ROLE_CUP_ADMIN]
+        ROLE_SUPER_ADMIN: ROLE_ADMIN
+
+    # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
+    providers:
+        #in_memory: { memory: ~ }
+        our_db_provider:
+            entity:
+                class: App:Security\User
+                property: username
+        fos_userbundle:
+            id: fos_user.user_provider.username
+
+    firewalls:
+        oauth_token: # Everyone can access the access token URL.
+            pattern: ^/oauth/v2/token
+            security: false
+
+        api:
+            pattern:    ^/api
+            fos_oauth:  true
+            stateless:  true
+            anonymous:  true # can be omitted as its default value
+
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+        main:
+            anonymous: true
+            form_login:
+                login_path: nav.login
+                check_path: nav.login
+
+            logout:
+                path: logout
+                target: /
+                handlers: [App\EventListener\InteractiveLogoutListener]
+
+            oauth:
+                # Declare the OAuth Callback URLs for every resource owner
+                # They will be added in the routing.yml file too later
+                resource_owners:
+                    facebook: "/oauth/connect/check-facebook"
+                    googleplus: "/oauth/connect/check-googleplus"
+                    instagram: "/oauth/connect/check-instagram"
+                    twitter: "/oauth/connect/check-twitter"
+
+                ## Provide the original login path of your application (fosuserroute)
+                ## and the failure route when the authentication fails.
+                login_path:     /sv/login
+                failure_path:   /oauth/register
+                # Inject a service that will be created in the step #6
+                oauth_user_provider:
+                    service: App\Entity\Security\OauthUserProvider
+
+            # activate different ways to authenticate
+
+            # http_basic: true
+            # https://symfony.com/doc/current/security.html#a-configuring-how-your-users-will-authenticate
+
+            # form_login: true
+            # https://symfony.com/doc/current/security/form_login_setup.html
+
+    # Easy way to control access for large sections of your site
+    # Note: Only the *first* access control that matches will be used
+    access_control:
+        # - { path: ^/*, roles: [IS_AUTHENTICATED_ANONYMOUSLY] }
+        # - { path: ^/admin, groups: ROLE_ADMIN }
+        # - { path: ^/profile, groups: ROLE_USER }
+        - { path: ^/(sv|fi|en)/user/*, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/(sv|fi|en)/admin/*, roles: ROLE_ADMIN }
+        - { path: ^/(sv|fi|en)/manager/*, roles: [ROLE_MANAGER, ROLE_ADMIN] }
+        - { path: ^/(sv|fi|en)/register/*, roles: [IS_AUTHENTICATED_ANONYMOUSLY] }
+        - { path: ^/api/v2/admin/*, roles: ROLE_ADMIN }

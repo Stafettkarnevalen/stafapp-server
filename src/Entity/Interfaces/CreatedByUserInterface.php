@@ -1,0 +1,35 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 21.14
+ */
+
+namespace App\Entity\Interfaces;
+
+use App\Entity\Security\User;
+
+/**
+ * Interface CreatedByUserInterface
+ * @package App\Entity\Interfaces
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+interface CreatedByUserInterface
+{
+    /**
+     * Gets the User who created this object.
+     *
+     * @return User
+     */
+    public function getCreatedBy();
+
+    /**
+     * Sets the User who created this object.
+     *
+     * @param User $user
+     * @return $this
+     */
+    public function setCreatedBy(User $user);
+}

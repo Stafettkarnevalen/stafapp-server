@@ -1,0 +1,439 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 07/09/2017
+ * Time: 1.06
+ */
+
+namespace App\Controller;
+
+use App\Controller\Interfaces\ModalEventController;
+use App\Entity\Cheerleading\CheerleadingEvent;
+use App\Entity\Cheerleading\CheerleadingRule;
+use App\Entity\Schools\SchoolType;
+use App\Entity\Services\ServiceCategory;
+use App\Form\Cheerleading\EditType;
+use App\Form\Cheerleading\RuleType;
+use App\Repository\CheerleadingRuleRepository;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Form\Extension\Core\Type\ButtonType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+
+class CheerleadingController extends Controller implements ModalEventController
+{
+
+    /**
+     * Controller for handling events (admin only).
+     *
+     * @Route("/{_locale}/admin/cheerleading_events/list", name="nav.admin_cheerleading_events")
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminCheerleadingEventsAction(Request $request)
+    {
+        $session = $request->getSession();
+        $em = $this->getDoctrine()->getManager();
+        $sortKey = $request->get('sort', $session->get('admin_cheerleadingevts_sort_key', 'name'));
+        $order = $request->get('order', $session->get('admin_cheerleadingevts_sort_order', 'ASC'));
+
+        $orders = [];
+        foreach (['name', 'minClassOf', 'maxClassOf'] as $key) {
+            $orders[$key] = ($sortKey == $key ? ($order == 'ASC' ? 'DESC' : 'ASC') : $order);
+        }
+        $session->set('admin_cheerleadingevts_sort_key', $sortKey);
+        $session->set('admin_cheerleadingevts_sort_order', $order);
+
+        $events = $em->getRepository(CheerleadingEvent::class)->findBy([], [$sortKey => $order]);
+
+        return $this->render('admin/cheerleading/events.html.twig', [
+            'events' => $events,
+            'orders' => $orders,
+            'order' => $order,
+            'sort' => $sortKey,
+        ]);
+    }
+
+    /**
+     * Controller for handling a single event (admin only).
+     *
+     * @Route("/{_locale}/admin/cheerleading_events/event/{id}",
+     *     options={"expose" = true},
+     *     name="nav.admin_cheerleading_event")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminCheerleadingEventAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var ServiceCategory $category */
+        $category = $em->getRepository(ServiceCategory::class)->find($this->getParameter('cheerleading_category_id'));
+
+        if ($id) {
+            $event = $em->getRepository(CheerleadingEvent::class)->find($id);
+        } else {
+            $event = new CheerleadingEvent();
+            $event->setServiceCategory($category);
+        }
+
+        $schoolTypes = $em->getRepository(SchoolType::class)->findBy([], ['order' => 'ASC']);
+
+        $form = $this->createForm(EditType::class, $event, [
+            'available_school_types' => $schoolTypes,
+            'attr' => ['action' => $request->getPathInfo()],
+            'delete_title' => $this->get('translator')->trans('label.delete', [], 'cheerleading'),
+            'delete_path' => $this->generateUrl('nav.admin_cheerleading_event_delete', ['id' => $id]),
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $action = $event->getId() ? 'updated' : 'saved';
+
+            if ($event->getId())
+                $em->merge($event);
+            else
+                $em->persist($event);
+
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.event.' . $action,
+                    'parameters' => ['%name%' => $event->getName()]
+                ]);
+
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse([], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_cheerleading_events');
+        } else if ($form->isSubmitted() && !$form->isValid()) {
+            // return error code for modal and ok for non-modals
+            $formView = $form->createView();
+            return $this->render('admin/cheerleading/event.html.twig', [
+                'event' => $event,
+                'form' => $formView,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' => $id ?
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('delete'),
+                        $formView->offsetGet('submit')
+                    ] :
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('submit')
+                    ]
+            ], new Response('', $request->isXmlHttpRequest() ?
+                Response::HTTP_BAD_REQUEST :
+                Response::HTTP_OK));
+        }
+
+        $formView = $form->createView();
+        return $this->render('admin/cheerleading/event.html.twig', [
+            'event' => $event,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' => $id ?
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('delete'),
+                    $formView->offsetGet('submit')
+                ] :
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('submit')
+                ]
+        ]);
+    }
+
+    /**
+     * Controller for handling event rules (admin only).
+     *
+     * @Route("/{_locale}/admin/cheerleading_rules/list/{event}/{move}/{rule}",
+     *     options={"expose"=true}, name="nav.admin_cheerleading_rules")
+     * @param integer $event
+     * @param integer $move
+     * @param integer $rule
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminCheerleadingRulesAction($event, $move = 0, $rule = 0, Request $request)
+    {
+        $session = $request->getSession();
+        $em = $this->getDoctrine()->getManager();
+        $sortKey = $request->get('sort', $session->get('admin_cheerleadingrules_sort_key', 'order'));
+        $order = $request->get('order', $session->get('admin_cheerleadingrules_sort_order', 'ASC'));
+
+        $orders = [];
+        foreach (['order', 'title', 'from', 'until'] as $key) {
+            $orders[$key] = ($sortKey == $key ? ($order == 'ASC' ? 'DESC' : 'ASC') : $order);
+        }
+        $session->set('admin_cheerleadingrules_sort_key', $sortKey);
+        $session->set('admin_cheerleadingrules_sort_order', $order);
+        $evt = $em->getRepository(CheerleadingEvent::class)->find($event);
+        $rules = $em->getRepository(CheerleadingRule::class)->findBy(['event' => $evt], [$sortKey => $order]);
+
+        $fb = $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'cheerleading',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('close', ButtonType::class, [
+                'left_icon' => 'fa-chevron-left',
+                'right_icon' => 'fa-check',
+                'attr' => [
+                    'data-dismiss' => 'modal',
+                    'class' => 'btn-default'
+                ],
+                'label' => 'label.close',
+            ]);
+        $form = $fb->getForm();
+        $formView = $form->createView();
+
+        if ($move !== 0) {
+            /** @var CheerleadingRuleRepository $repo */
+            $repo = $em->getRepository(CheerleadingRule::class);
+            $rule = $repo->find($rule);
+
+            try {
+                $oldOrder = $rule->getOrder();
+                $rule->setOrder($oldOrder + $move);
+                if ($move > 0) {
+                    $from = $oldOrder + 1;
+                    $until = $oldOrder + $move;
+                    $up = $repo->findByOrderBetween($from, $until, $rule->getEvent());
+                    /** @var CheerleadingRule $uprule */
+                    foreach ($up as $uprule) {
+                        $uprule->setOrder($uprule->getOrder() - 1);
+                        $em->merge($uprule);
+                    }
+                    $em->merge($rule);
+                    $em->flush();
+                } else {
+                    $from = $oldOrder + $move;
+                    $until = $oldOrder - 1;
+                    $down = $repo->findByOrderBetween($from, $until, $rule->getEvent());
+                    /** @var CheerleadingRule $downrule */
+                    foreach ($down as $downrule) {
+                        $downrule->setOrder($downrule->getOrder() + 1);
+                        $em->merge($downrule);
+                    }
+                    $em->merge($rule);
+                    $em->flush();
+                }
+
+                return $request->isXmlHttpRequest() ?
+                    new JsonResponse(['status' => 'ok']) :
+                        $this->render('admin/cheerleading/rules.html.twig', [
+                            'event' => $event,
+                        ]);
+            } catch (\Exception $e) {
+
+                return new JsonResponse(['status' => 'failure'], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
+
+        return $this->render('admin/cheerleading/rules.html.twig', [
+            'event' => $evt,
+            'rules' => $rules,
+            'orders' => $orders,
+            'order' => $order,
+            'sort' => $sortKey,
+            'modal' => $request->isXmlHttpRequest(),
+            'form' => $formView,
+            'btns' => [$formView->offsetGet('close')],
+        ]);
+    }
+
+    /**
+     * Controller for handling an event rule (admin only).
+     *
+     * @Route("/{_locale}/admin/cheerleading_rules/rule/{event}/{id}",
+     *     options={"expose" = true},
+     *     name="nav.admin_cheerleading_rule")
+     * @param integer $event
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminCheerleadingRuleAction($event, $id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var CheerleadingEvent $evt */
+        $evt = $em->getRepository(CheerleadingEvent::class)->find($event);
+        if ($id) {
+            $rule = $em->getRepository(CheerleadingRule::class)->find($id);
+        } else {
+            $rule = new CheerleadingRule();
+            $rule->setEvent($evt)->setOrder($evt->getRules()->count())->setMajorVersion(1)->setIsActive(true);
+        }
+        $form = $this->createForm(RuleType::class, $rule, [
+            'attr' => ['action' => $request->getPathInfo()],
+            'delete_title' => $this->get('translator')->trans('label.delete', [], 'cheerleading'),
+            'delete_path' => $this->generateUrl('nav.admin_cheerleading_rule_delete', ['id' => $id]),
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $action = $rule->getId() ? 'updated' : 'saved';
+
+            if ($rule->getId())
+                $em->merge($rule);
+            else
+                $em->persist($rule);
+
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.rule.' . $action,
+                    'parameters' => ['%name%' => $rule->getTitle()]
+                ]);
+
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse([], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_cheerleading_rules');
+        } else if ($form->isSubmitted() && !$form->isValid()) {
+            // return error code for modal and ok for non-modals
+            $formView = $form->createView();
+            return $this->render('admin/cheerleading/rule.html.twig', [
+                'event' => $evt,
+                'rule' => $rule,
+                'form' => $formView,
+                'modal' => $request->isXmlHttpRequest(),
+                'btns' => $id ?
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('delete'),
+                        $formView->offsetGet('submit')
+                    ] :
+                    [
+                        $formView->offsetGet('close'),
+                        $formView->offsetGet('submit')
+                    ]
+            ], new Response('', $request->isXmlHttpRequest() ?
+                Response::HTTP_BAD_REQUEST :
+                Response::HTTP_OK));
+        }
+
+        $formView = $form->createView();
+        return $this->render('admin/cheerleading/rule.html.twig', [
+            'event' => $evt,
+            'rule' => $rule,
+            'form' => $formView,
+            'modal' => $request->isXmlHttpRequest(),
+            'btns' => $id ?
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('delete'),
+                    $formView->offsetGet('submit')
+                ] :
+                [
+                    $formView->offsetGet('close'),
+                    $formView->offsetGet('submit')
+                ]
+        ]);
+    }
+
+    /**
+     * Controller for deleting a single event (admin only).
+     *
+     * @Route("/{_locale}/admin/cheerleading_events/delete/{id}", name="nav.admin_cheerleading_event_delete")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDeleteCheerleadingEventAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        /** @var CheerleadingEvent $event */
+        $event = $em->getRepository(CheerleadingEvent::class)->find($id);
+
+        $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'cheerleading',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('yes', SubmitType::class, ['left_icon' => 'fa-trash', 'right_icon' => 'fa-check', 'attr' => ['class' => 'btn-danger'], 'label' => 'label.yes']);
+
+        $form = $fb->getForm();
+        $form->handleRequest($request);
+        if ($form->isSubmitted()) {
+            $name = $event->getName();
+
+            $em->remove($event);
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.event.deleted',
+                    'parameters' => ['%name%' => $name]
+                ]);
+
+            // return an empty response for the modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse(['reloadPage' => 1], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_cheerleading_events');
+        }
+
+        return $this->render('admin/cheerleading/delete.html.twig', [
+            'event' => $event,
+            'form' => $form->createView(),
+            'modal' => $request->isXmlHttpRequest(),
+        ]);
+    }
+
+    /**
+     * Controller for deleting a single rule (admin only).
+     *
+     * @Route("/{_locale}/admin/cheerleading_rules/delete/{id}", name="nav.admin_cheerleading_rule_delete")
+     * @param integer $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function adminDeleteCheerleadingRuleAction($id = 0, Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $rule = $em->getRepository(CheerleadingRule::class)->find($id);
+
+        $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'cheerleading',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('yes', SubmitType::class, ['left_icon' => 'fa-trash', 'right_icon' => 'fa-check', 'attr' => ['class' => 'btn-danger'], 'label' => 'label.yes']);
+
+        $form = $fb->getForm();
+        $form->handleRequest($request);
+        if ($form->isSubmitted()) {
+            $name = $rule->getTitle();
+
+            $em->remove($rule);
+            $em->flush();
+
+            $this->get('session')->getFlashBag()
+                ->add('success', [
+                    'id' => 'flash.rule.deleted',
+                    'parameters' => ['%name%' => $name]
+                ]);
+
+            // return an empty response for the modal or a full rendered view for non-modal
+            return $request->isXmlHttpRequest() ?
+                new JsonResponse(['reloadPage' => 1], Response::HTTP_OK) :
+                $this->redirectToRoute('nav.admin_cheerleading_rules');
+        }
+
+        return $this->render('admin/cheerleading/delete.html.twig', [
+            'rule' => $rule,
+            'form' => $form->createView(),
+            'modal' => $request->isXmlHttpRequest(),
+        ]);
+    }
+}

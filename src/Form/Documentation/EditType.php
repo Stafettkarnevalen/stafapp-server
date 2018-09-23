@@ -1,0 +1,115 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 22/11/2016
+ * Time: 21.45
+ */
+namespace App\Form\Documentation;
+
+use App\Form\Security\AccessControlListType;
+use FOS\CKEditorBundle\Form\Type\CKEditorType;
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ButtonType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+
+/**
+ * Class EditType
+ * @package App\Form\Documentation
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class EditType extends AbstractType
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $id = $builder->getData()->getId();
+        $parent = $builder->getData()->getParent();
+
+        $builder
+            ->add('title', TextType::class, ['label' => 'label.title'])
+            ->add('text', CKEditorType::class, [
+                'label' => 'label.text',
+                ])
+            ->add('isActive', ChoiceType::class, [
+                'label' => 'label.status',
+                'expanded' => true,
+                'choice_attr' => function () { return ['class' => 'inline']; },
+                'label_attr' => ['class' => 'radio-inline'],
+                'choices' => ['label.inactive' => 0, 'label.active' => 1],
+            ])
+            ->add('submit', SubmitType::class, [
+                'left_icon' => 'fa-save',
+                'right_icon' => 'fa-check',
+                'attr' => ['class' => 'btn-success form-submit'],
+                'label' => 'label.save',
+            ])
+            ->add('close', ButtonType::class, [
+                'left_icon' => 'fa-chevron-left',
+                'right_icon' => 'fa-close',
+                'attr' => [
+                    'class' => 'btn-default',
+                    'data-dismiss' => 'modal',
+                ],
+                'label' => 'label.close',
+            ])
+        ;
+
+        if ($id)
+            $builder->add('delete', ButtonType::class, [
+                'left_icon' => 'fa-trash',
+                'right_icon' => 'fa-minus',
+                'attr' => [
+                    'class' => 'btn-danger',
+                    'data-toggle' => 'confirm',
+                    'data-reload' => 'true',
+                    'data-title' => $options['delete_title'],
+                    'value' => $options['delete_path'],
+                ],
+                'label' => 'label.delete',
+            ]);
+
+        if (!$parent)
+            $builder
+                ->add('majorVersion', IntegerType::class, ['label' => 'label.version'])
+                ->add('objectAces', AccessControlListType::class, [
+                    'label' => 'label.acl',
+                    'ace_translation_domain' => 'messages',
+                    'aces' => $builder->getData()->getObjectAces(),
+                ])
+                ->add('from', DateTimeType::class, [
+                    'label' => 'label.from',
+
+                ])
+                ->add('until', DateTimeType::class, [
+                    'label' => 'label.until',
+                    'required' => false,
+                ])
+                ->add('locale', ChoiceType::class, [
+                'label' => 'label.locale',
+                'choices' => ['label.sv' => 'sv', 'label.fi' => 'fi', 'label.en' => 'en'],
+            ]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults([
+            'data_class' => 'App\Entity\Documentation\Documentation',
+            'translation_domain' => 'documentation',
+            'delete_title' => '',
+            'delete_path' => '',
+        ]);
+    }
+}

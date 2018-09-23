@@ -1,0 +1,11 @@
+field:
+    name: "Namn"
+    email: "E-post"
+    roles: "Roller"
+    loginRoute: "Inloggningsstig"
+    logoutRoute: "Utloggningsstig"
+    users: "Användare"
+    googleSynced: "Synkroniserad Google-grupp"
+    googleId: "Google-gruppens Id"
+
+confirm_delete: 'Är du säker att du vill radera denna grupp?'

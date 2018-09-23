@@ -1,0 +1,67 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+{% if unit.id is null %}
+    {% set no_toolbar = true %}
+{% endif %}
+{% block body %}
+    <div class="side-padding">
+        <h1>{% if unit.id != 0 %}{{ unit.name }}{% else %}{% trans from "school" %}action.create{% endtrans %}{% endif %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        {% if unit.id %}
+        <nav class="navbar navbar-default toolbar">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" data-reload="true" data-title="{% trans from 'nav' %}nav.message{% endtrans %}" data-toggle="modal" href="{{ path('nav.message', {'action': 'compose', 'id': 0, 'rcptType': 'school', 'rcptId': school.id, 'msgTypes': 'EMAIL,INTERNAL'}) }}"><i class="fa fa-envelope"></i> {% trans from 'school' %}action.send_email{% endtrans %}</a>
+                </div>
+            </div>
+        </nav>
+        {% endif %}
+        <div class="form bg-default all-padding">
+            {{ form_row(form.type) }}
+            {{ form_row(form.password) }}
+            {{ form_row(form.name) }}
+            {{ form_row(form.isActive) }}
+        </div>
+
+        {% if unit.id %}
+        <h1 class="top-bottom-padding">{% trans from 'school' %}message.title{% endtrans %}</h1>
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="alert alert-info">{% trans from 'school' %}message.text{% endtrans %}</div>
+        <div class="form bg-default all-padding">
+            {{ form_row(form.message) }}
+        </div>
+        {% endif %}
+
+        {% if modal is not defined or modal == false %}
+            <div class="form bg-default all-padding">
+                <div class="form-nav">
+                    <div class="btn-group btn-group-justified" role="group">
+                        <a class="btn btn-default" href="{{ path('nav.principal_school', {'view': 'UNITS'}) }}"><i class="fa fa-chevron-left"></i> {% trans %}action.close{% endtrans %} <i class="fa fa-undo"></i></a>
+                        <div class="btn-group" role="group">
+                            {{ form_widget(form.save) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

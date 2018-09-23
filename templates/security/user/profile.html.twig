@@ -1,0 +1,44 @@
+{# app/Resources/views/security/login.html.twig #}
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="side-margin"><h1>{% trans from 'nav' %}nav.authuser_view_profile{% endtrans %} - {{ types[type][1]|trans({}, "user") }}</h1></div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        {% for key, t in types %}
+            {% if type == key %}
+                <div class="form bg-default">
+                    <p class="all-padding">{% autoescape false %}{{ t[2]|trans({}, "user") }}{% endautoescape %}</p>
+                    {% include t[4] %}
+                </div>
+            {% endif %}
+        {% endfor %}
+        <h2>{% trans from "user" %}profile.choices{% endtrans %}</h2>
+        <div class="form bg-default all-padding">
+            <ul class="nav nav-stacked">
+                {% for key, t in types %}
+                    {% if type != key %}
+                        <li>
+                            <a href="{{ path(t[3], {'type': key}) }}" class="row">
+                                <h1 class="no-margin col-xs-2 fa fa-fw fa-{{ t[0] }}" style="padding-top:3px;"></h1>
+                                <div class="col-xs-8">
+                                    <h3 class="small no-margin top-padding-xs">{{ t[1]|trans({}, "user") }}</h3>
+                                    <h6 class="no-margin bottom-padding-xs small">{{ (t[1] ~ '_sub')|trans({}, "user") }}</h6>
+                                </div>
+                                <h1 class="no-margin top-padding-sm right-padding col-xs-2 fa fa-lg fa-angle-right text-right"></h1>
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,29 @@
+<div class="container-fluid" id="profile">
+
+    <div class="row form-group">
+        <div class="col-xs-2 col-sm-1">
+            <a href="" class="set-tooltip-mode" data-mode="0"><i class="help-mode-status fa {% if profile_data('tooltips.mode', 0) == 0 %}fa-check-square text-success{% else %}fa-square-o text-normal{% endif %}"></i></a>
+        </div>
+        <div class="col-xs-10 col-sm-11">
+            <a href="" class="set-tooltip-mode text-normal" data-mode="0"><i class="fa fa-fw fa-times-circle"></i> {% trans from "nav" %}nav.helpmode_0{% endtrans %}</a>
+        </div>
+    </div>
+
+    <div class="row form-group">
+        <div class="col-xs-2 col-sm-1">
+            <a href="" class="set-tooltip-mode" data-mode="1"><i class="help-mode-status fa {% if profile_data('tooltips.mode', 0) == 1 %}fa-check-square text-success{% else %}fa-square-o text-normal{% endif %}"></i></a>
+        </div>
+        <div class="col-xs-10 col-sm-11">
+            <a href="" data-helpmode="1" title="{% trans from "nav" %}nav.helpmode_1{% endtrans %}" class="set-tooltip-mode text-normal" data-mode="1"><i class="fa fa-fw fa-question-circle"></i> {% trans from "nav" %}nav.helpmode_1{% endtrans %}</a>
+        </div>
+    </div>
+
+    <div class="row form-group">
+        <div class="col-xs-2 col-sm-1">
+            <a href="" class="set-tooltip-mode" data-mode="2"><i class="help-mode-status fa {% if profile_data('tooltips.mode', 0) == 2 %}fa-check-square text-success{% else %}fa-square-o text-normal{% endif %}"></i></a>
+        </div>
+        <div class="col-xs-10 col-sm-11">
+            <a href="" data-helpmode="2" title="{% trans from "nav" %}nav.helpmode_2{% endtrans %}" data-content="{% trans from "user" %}profile.helpmode_2{% endtrans %}" class="set-tooltip-mode text-normal" data-mode="2"><i class="fa fa-fw fa-comment"></i> {% trans from "nav" %}nav.helpmode_2{% endtrans %}</a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,627 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 15/12/2016
+ * Time: 19.43
+ */
+
+namespace App\Controller;
+
+
+use App\Controller\Interfaces\ModalEventController;
+use App\Entity\Invoicing\Address;
+use App\Entity\Schools\School;
+use App\Entity\Schools\SchoolName;
+use App\Entity\Schools\SchoolUnitUsesAddress;
+use App\Entity\Security\User;
+use App\Form\PhoneNumber\PhoneNumberType;
+use App\Form\School\BillingAddressType;
+use App\Form\School\SchoolAndNameWrapper;
+use App\Form\School\SchoolType;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\HttpFoundation\Request;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+
+use App\Form\School\SchoolSelectionType;
+use App\Form\SessionEntities;
+use Symfony\Component\Validator\Constraints\NotBlank;
+
+class ManagerSchoolsController extends Controller implements ModalEventController
+{
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school", name="nav.schools")
+     */
+    public function schoolAction(Request $request)
+    {
+        $options = [];
+        $options['view'] = 'school';
+
+        $session = new SessionEntities($request->getSession(),  $this->getDoctrine());
+        $em = $this->getDoctrine()->getManager();
+
+        if ($session->__get('_school')) {
+            $school = $session->__get('_school');
+
+            /** check if we are editing school or changing the name */
+            if ($session->__get('_name')) {
+                $name = $session->__get('_name');
+
+                $form = $this->createForm(
+                    SchoolType::class,
+                    null,
+                    ['data_class' => SchoolName::class]
+                );
+                $form->handleRequest($request);
+
+                if ($form->isValid() && $form->isSubmitted()) {
+                    $name = $form->getData();
+                    $em->clear();
+                    // $school = $em->getRepository('App:School')->find($session->__get('_school')->getId());
+                    $name->setSchool($school);
+                    $em->persist($name);
+                    $em->flush();
+
+                    $current = $school->getName();
+                    $current->setUntil($name->getFrom()->sub(new \DateInterval('PT10S')));
+                    $em->persist($current);
+                    $em->flush();
+
+                    $school->addName($name);
+
+                    $session->__set('_school', $school);
+                    $session->__set('_name', null);
+                }
+                if ($form->isSubmitted()) {
+                    $options['form'] = $form;
+                }
+            } else {
+                $name = $school->getName();
+                $wrapper = new SchoolAndNameWrapper($school, $name);
+
+                $form = $this->createForm(
+                    SchoolType::class,
+                    $wrapper,
+                    ['data_class' => $session->__get('_name') ? SchoolName::class : SchoolAndNameWrapper::class]
+                );
+                $form->handleRequest($request);
+
+                if ($form->isValid() && $form->isSubmitted()) {
+                    $school = $form->getData()->getSchool();
+                    if ($em->getRepository(School::class)->createQueryBuilder('s')->where('s.number = :number AND s.id != :id')
+                        ->setParameter('number', $school->getNumber())->setParameter('id', $school->getId())->getQuery()->getResult()) {
+                        $request->getSession()->getFlashBag()->add('error', 'edit_school.number_taken');
+                        $options['view'] = 'edit';
+                        $options['school'] = $school;
+                        $options['form'] = $form->createView();
+                        return $this->render('manager/school/index.html.twig', $options);
+                    } else {
+                        $name = $form->getData()->getName();
+                        $em->persist($school);
+                        $em->persist($name);
+                        $em->flush();
+                        $session->__set('_school', $school);
+                        $session->__set('_name', null);
+                    }
+                }
+                if ($form->isSubmitted()) {
+                    $options['form'] = $form;
+                }
+            }
+            /** end checking of school */
+
+            /** check if we should remove a manager */
+            $form = $this->createForm(FormType::class)
+                ->add('remove', HiddenType::class, ['data' => 'manager'])
+                ->add('id', HiddenType::class, ['data' => 0]);
+
+            $form->handleRequest($request);
+            if ($form->isValid() && $form->isSubmitted()) {
+                $data = $form->getData();
+                switch ($data['remove']) {
+                    case 'manager':
+                        $mgr = $em->getRepository('App:User')->find($data['id']);
+                        $mgr->removeSchool($school);
+                        $em->persist($mgr);
+                        $em->flush();
+                        $session->__set('_school', $school);
+                        break;
+                }
+            }
+            if ($form->isSubmitted()) {
+                $options['form'] = $form;
+            }
+            /** end remove manager */
+
+            /** check if add manager */
+            $repo = $em->getRepository(User::class);
+            $subQry = $repo->createQueryBuilder('u2')
+                ->leftJoin('u2.schools', 's')
+                ->where('s.id = :school')
+                ->andWhere('u2.id = u.id');
+
+            $qry = $repo->createQueryBuilder('u')
+                ->leftJoin('u.groups', 'r')
+                ->where('r.name = :role')
+                ->setParameter('school', $session->__get('_school'))
+                ->setParameter('role', 'managers');
+
+            $qry->andWhere($qry->expr()->not($qry->expr()->exists($subQry->getDQL())));
+
+            $managers = $qry->getQuery()->getResult();
+
+            // print_r($translator->trans('manger.registered', [], 'school', 'sv'));
+            $translator = $this->get('translator');
+
+            $form = $this->createForm(FormType::class, null, ['translation_domain' => 'school'])
+                ->add('user', EntityType::class, [
+                    'attr' => ['onchange' => 'handleSelectManager(this);'],
+                    'class' => User::class,
+                    'label' => 'label.selected_manager',
+                    'choices' => $managers,
+                    'placeholder' => 'manager.unregistered',
+                    'group_by' => function ($val, $key, $index) use ($translator) {
+                        if ($val instanceof User) return $translator->trans('manager.registered', [], 'school');
+                        return $translator->trans('manager.unregistered', [], 'school');
+                    },
+                    'choice_translation_domain' => false,
+                    'required' => false,
+                ])
+                ->add('firstname', TextType::class, ['label' => 'label.firstname', 'attr' => ['autofocus' => true]])
+                ->add('lastname', TextType::class, ['label' => 'label.lastname'])
+                ->add('username', EmailType::class, ['label' => 'label.email'])
+                ->add('phone', PhoneNumberType::class, ['label' => 'label.phone', 'defaultArea' => '+358', 'constraints' => new NotBlank(),])
+                ->add('subject', TextType::class, ['label' => 'label.subject'])
+                ->add('message', TextareaType::class, ['label' => 'label.message', 'attr' => ['rows' => 8]]);
+
+            $form->handleRequest($request);
+
+            if ($form->isValid() && $form->isSubmitted()) {
+                $trans = $this->get('translator');
+                $data = $form->getData();
+                $school = $session->__get('_school');
+
+                // check if email is registered
+                if (!$data['user']) {
+                    $data['user'] = $em->getRepository('App:User')->findOneBy(['username' => $data['email']]);
+                }
+                // a registered user, send invitation link
+                if ($data['user']) {
+                    $sms =
+                        $trans->trans('label.invitation_from_manager_to_school', [
+                            '%name%' => $data['firstname'] . ' ' . $data['lastname'],
+                            '%from%' => $this->getUser()->getFullname(),
+                            '%school%' => $school->getName()
+                        ], 'school') . "\n\n" .
+                        $trans->trans('label.invitation_link', [
+                            '%url%' => $request->getSchemeAndHttpHost() .
+                                $this->generateUrl('nav.add_manager_to_school', [
+                                    'mgr_id' => $data['user']->getId(),
+                                    'sch_nbr' => $school->getNumber(),
+                                    'sch_pwd' => $school->getPassword()
+                                ])
+                        ], 'school');
+                // not a registered user, send registration link, number and password
+                } else {
+                    $sms =
+                        $trans->trans('label.invitation_from_manager_to_school', [
+                            '%name%' => $data['firstname'] . ' ' . $data['lastname'],
+                            '%from%' => $this->getUser()->getFullname(),
+                            '%school%' => $school->getName()
+                        ], 'school') . "\n\n" .
+                        $trans->trans('label.register_link', [
+                            '%url%' => $request->getSchemeAndHttpHost() .
+                                $this->generateUrl('manager.register', [
+                                    'token' =>
+                                        base64_encode(
+                                            json_encode(
+                                                [
+                                                    'username' => $data['username'],
+                                                    'firstname' => $data['firstname'],
+                                                    'lastname' => $data['lastname'],
+                                                    'phone' => $data['phone']
+                                                ]
+                                            )
+                                        )
+                                    ]
+                                )
+                        ], 'school') . "\n\n" .
+                        $trans->trans('label.invitation_info', [
+                            '%number%' => $school->getNumber(),
+                            '%password%' => $school->getPassword()
+                        ], 'school');
+                    ;
+                }
+                $this->get('sms')
+                    ->setTo('+358505637254')
+                    ->setMessage($sms)
+                    ->send();
+
+
+
+            } else if ($form->isSubmitted()) {
+                $options['form'] = $form->createView();
+            }
+        }
+
+        $schools = $this->getUser()->getSchools()->toArray();
+        usort($schools, function ($a, $b) { return strcasecmp($a->getName(), $b->getName()); });
+
+        $school_form = $this->createForm(SchoolSelectionType::class, $session, ['schools' => $schools]);
+        $school_form->handleRequest($request);
+
+        $options['school_form'] = $school_form->createView();
+        $options['school'] = $session->__get('_school');
+        $options['add_school'] = true;
+
+        return $this->render('manager/school/index.html.twig', $options);
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/view", name="nav.view_school")
+     */
+    public function viewSchoolAction(Request $request)
+    {
+        $options = [];
+        $session = new SessionEntities($this->get('session'),  $this->getDoctrine());
+        $options['school'] = $session->__get('_school');
+
+        return $this->render('manager/school/form.html.twig', $options);
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/history", name="nav.prev_names")
+     */
+    public function previousSchoolNamesAction(Request $request)
+    {
+        $options = [];
+        $session = new SessionEntities($this->get('session'),  $this->getDoctrine());
+        $options['school'] = $session->__get('_school');
+
+        return $this->render('manager/school/prev_names.html.twig', $options);
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/revert/{name}", name="nav.revert_to_name")
+     */
+    public function revertToNameAction($name, Request $request)
+    {
+        $session = new SessionEntities($this->get('session'),  $this->getDoctrine());
+        $school = $session->__get('_school');
+        $em = $this->getDoctrine()->getManager();
+        $sname = $em->getRepository('App:SchoolName')->find($name);
+        if ($sname === null) {
+            return $this->redirectToRoute('not_found', [
+                'class' => 'SchoolName',
+                'title' => 'title.schoolname_not_found',
+                'text' => 'text.schoolname_not_found'
+            ]);
+        }
+        if ($sname->getSchool()->getId() != $school->getId()) {
+            return $this->render(
+                'error/error.html.twig',
+                array('class' => SchoolName::class, 'title' => 'title.revert_not_owner', 'text' => 'text.revert_not_owner')
+            );
+        }
+        $current = $school->getName();
+        $sname->setUntil(null);
+        $current->setUntil(new \DateTime('now'));
+        $em->persist($current);
+        $em->persist($sname);
+        $em->flush();
+
+        return $this->redirectToRoute('nav.schools');
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/edit", name="nav.edit_school")
+     */
+    public function editSchoolAction(Request $request)
+    {
+        $options = [];
+        $session = new SessionEntities($this->get('session'),  $this->getDoctrine());
+        $school = $session->__get('_school');
+        $name = $school->getName();
+
+        $session->__set('_name', null);
+
+        $wrapper = new SchoolAndNameWrapper($school, $name);
+
+        $form = $this->createForm(SchoolType::class, $wrapper, ['data_class' => SchoolAndNameWrapper::class]);
+        $form->handleRequest($request);
+
+        $options['school'] = $school;
+        $options['form'] = $form->createView();
+        return $this->render('manager/school/edit_school_dialog.html.twig', $options);
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/name", name="nav.change_school_name")
+     */
+    public function changeSchoolNameAction(Request $request)
+    {
+        $options = [];
+        $session = new SessionEntities($this->get('session'),  $this->getDoctrine());
+        $school = $session->__get('_school');
+        $name = $school->createName(null, new \DateTime('now'), null);
+
+        $session->__set('_name', $name);
+
+        $form = $this->createForm(SchoolType::class, $name, ['data_class' => SchoolName::class]);
+        $form->handleRequest($request);
+
+        $options['school'] = $school;
+        $options['form'] = $form->createView();
+        return $this->render('manager/school/change_school_name_dialog.html.twig', $options);
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/managers", name="nav.view_managers")
+     */
+    public function viewManagersAction(Request $request)
+    {
+        $options = [];
+        $session = new SessionEntities($this->get('session'),  $this->getDoctrine());
+        $options['school'] = $session->__get('_school');
+
+        return $this->render('manager/school/managers.html.twig', $options);
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/manager/remove/{id}", name="nav.remove_manager")
+     */
+    public function removeManagerAction($id, Request $request)
+    {
+        $options = [];
+        $em = $this->getDoctrine()->getManager();
+        $manager = $em->getRepository('App:User')->find($id);
+        $options['manager'] = $manager;
+
+        $form = $this->createForm(FormType::class)
+            ->add('remove', HiddenType::class, ['data' => 'manager'])
+            ->add('id', HiddenType::class, ['data' => $manager->getId()]);
+        $form->handleRequest($request);
+
+        $options['form'] = $form->createView();
+        return $this->render('manager/school/remove_manager_dialog.html.twig', $options);
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/manager/invite", name="nav.invite_manager")
+     */
+    public function inviteManagerAction(Request $request)
+    {
+        $options = [];
+        $session = new SessionEntities($this->get('session'),  $this->getDoctrine());
+        $translator= $this->get('translator');
+
+        $em = $this->getDoctrine()->getManager();
+
+        $repo = $em->getRepository('App:User');
+        $subQry = $repo->createQueryBuilder('u2')
+            ->leftJoin('u2.schools', 's')
+            ->where('s.id = :school')
+            ->andWhere('u2.id = u.id')
+            ;
+
+        $qry = $repo->createQueryBuilder('u')
+            ->leftJoin('u.groups', 'r')
+            ->where('r.name = :role')
+            ->setParameter('school', $session->__get('_school'))
+            ->setParameter('role', 'managers');
+
+        $qry->andWhere($qry->expr()->not($qry->expr()->exists($subQry->getDQL())));
+
+        $managers = $qry->getQuery()->getResult();
+
+        $form = $this->createForm(FormType::class, null, ['translation_domain' => 'school'])
+            ->add('user', EntityType::class, [
+                'attr' => ['onchange' => 'handleSelectManager(this);'],
+                'class' => 'App:User',
+                'label' => 'label.selected_manager',
+                'choices' => $managers,
+                'placeholder' => 'manager.unregistered',
+                'group_by' => function($val, $key, $index) use ($translator) { if ($val instanceof User) return $translator->trans('manager.registered', [], 'school'); return $translator->trans('manager.unregistered', [], 'school'); },
+                'choice_translation_domain' => false,
+                'required' => false,
+            ])
+            ->add('firstname', TextType::class, ['label' => 'label.firstname', 'attr' =>['autofocus' => true]])
+            ->add('lastname',  TextType::class, ['label' => 'label.lastname'])
+            ->add('username',  EmailType::class, ['label' => 'label.email'])
+            ->add('phone',  PhoneNumberType::class, ['label' => 'label.phone', 'defaultArea' => '+358', 'constraints' => new NotBlank(),])
+            ->add('subject', TextType::class, ['label' => 'label.subject'])
+            ->add('message', TextareaType::class, ['label' => 'label.message', 'attr' => ['rows' => 8]])
+        ;
+
+        $form->handleRequest($request);
+
+        $options['form'] = $form->createView();
+
+        return $this->render('manager/school/invite_manager_dialog.html.twig', $options);
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/units", name="nav.view_units")
+     */
+    public function viewUnitsAction(Request $request)
+    {
+        $options = [];
+        $session = new SessionEntities($this->get('session'),  $this->getDoctrine());
+        $options['school'] = $session->__get('_school');
+
+        return $this->render('manager/school/units.html.twig', $options);
+    }
+
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/handle_units", name="nav.handle_units")
+     */
+    public function handleUnitsAction(Request $request)
+    {
+        $options = [];
+
+        return $this->render('manager/school/handle_units_dialog.html.twig', $options);
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/billing_address/{unit}/{type}", name="nav.billing_address")
+     */
+    public function billingAddressAction($unit, $type, Request $request)
+    {
+        $options = [];
+        $session = new SessionEntities($this->get('session'),  $this->getDoctrine());
+        $school = $session->__get('_school');
+
+        $em = $this->getDoctrine()->getManager();
+        $schoolUnit = $em->getRepository('App:SchoolUnit')->find($unit);
+
+        $options['type'] = $type;
+        $options['unit'] = $schoolUnit;
+        $options['recurse'] = false;
+        $options['addressType'] = $type;
+
+        $address = $schoolUnit->getAddress($type);
+
+        if (!$address) {
+            $options['recurse'] = true;
+            $address = $schoolUnit->getAddress($type, null, true);
+            if ($address instanceof Address)
+                $options['addressType'] = 'VISITING';
+            else
+                $options['addressType'] = 'SCHOOL';
+        }
+        $options['address'] = $address;
+
+        return $this->render('manager/school/billing_address.html.twig', $options);
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/create_billing_address/{unit}/{type}", name="nav.create_billing_address")
+     */
+    public function createBillingAddressAction($unit, $type, Request $request)
+    {
+        $options = [];
+        $options['type'] = $type;
+
+        $session = new SessionEntities($this->get('session'),  $this->getDoctrine());
+        $school = $session->__get('_school');
+
+        $em = $this->getDoctrine()->getManager();
+        $schoolUnit = $em->getRepository('App:SchoolUnit')->find($unit);
+
+        $options['unit'] = $schoolUnit;
+        $options['action'] = 'create.billing_address';
+
+
+        $address = new SchoolUnitUsesAddress();
+        $address->setType($type);
+        $address->setSchoolUnit($schoolUnit);
+        if ($type == 'VISITING') {
+            $address->fill($schoolUnit->getAddress($type, null, true)->fields());
+        } else {
+            $address->fill($schoolUnit->getAddress($type, null, true)->fields());
+        }
+        $options['address'] = $address;
+
+        $form = $this->createForm(BillingAddressType::class, $address, ['data_class' => SchoolUnitUsesAddress::class]);
+        $form->handleRequest($request);
+
+        $options['school'] = $school;
+        $options['form'] = $form->createView();
+
+        return $this->render('manager/school/edit_billing_address_dialog.html.twig', $options);
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/edit_billing_address/{id}", name="nav.edit_billing_address")
+     */
+    public function editBillingAddressAction($id, Request $request)
+    {
+        $options = [];
+
+        $session = new SessionEntities($this->get('session'),  $this->getDoctrine());
+        $school = $session->__get('_school');
+
+        $em = $this->getDoctrine()->getManager();
+        $address = $em->getRepository('App:BillingAddress')->find($id);
+
+        $options['address'] = $address;
+
+        return $this->render('manager/school/edit_billing_address_dialog.html.twig', $options);
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/confirm_billing_address/{id}", name="nav.confirm_billing_address")
+     */
+    public function confirmBillingAddressAction($id, Request $request)
+    {
+        $options = [];
+
+        $session = new SessionEntities($this->get('session'),  $this->getDoctrine());
+        $school = $session->__get('_school');
+
+        $em = $this->getDoctrine()->getManager();
+        $address = $em->getRepository('App:BillingAddress')->find($id);
+
+        $options['address'] = $address;
+
+        return $this->render('manager/school/confirm_billing_address_dialog.html.twig', $options);
+    }
+
+    /**
+     *
+     *
+     * @Route("/{_locale}/manager/school/remove_billing_address/{id}", name="nav.remove_billing_address")
+     */
+    public function removeBillingAddressAction($id, Request $request)
+    {
+        $options = [];
+
+        $session = new SessionEntities($this->get('session'),  $this->getDoctrine());
+        $school = $session->__get('_school');
+
+        $em = $this->getDoctrine()->getManager();
+        $address = $em->getRepository('App:BillingAddress')->find($id);
+
+        $options['address'] = $address;
+
+        return $this->render('manager/school/remove_billing_address_dialog.html.twig', $options);
+    }
+}

@@ -1,0 +1,46 @@
+{% set page = path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params'))|e('url') %}
+{% set modules = modules(page, zone) %}
+{% set modulesCount = modules|length %}
+
+<div class="zone" id="{{ zone }}">
+    {% if is_granted('ROLE_ADMIN') %}
+    <div class="mod_main mod_hide text-right right-padding{% if profile_data('modules.tools', 0) == 0 %} hidden{% endif %}">
+        <a data-toggle="modal" data-title="{% trans from 'module' %}label.modules{% endtrans %}" data-reload="true" href="{{ path('nav.admin_modules', {'zone': zone, 'page': page}) }}" class="btn btn-xs btn-cms"><i class="fa fa-th-large"></i> {% trans from 'module' %}label.modules{% endtrans %}</a>
+        <a data-toggle="modal" data-title="{% trans from 'module' %}label.create_module{% endtrans %}" data-reload="true" href="{{ path('nav.admin_module', {'zone': zone, 'page': page, 'order': modulesCount}) }}" class="btn btn-xs btn-cms"><i class="fa fa-plus"></i></a>
+    </div>
+    {% endif %}
+    <div class="modules">
+        {% for module in modules %}
+        {% if is_granted('VIEW', module) %}
+        <div class="module all-padding{% if module.cssClass is not null %} {{ module.cssClass }}{% endif %}">
+            {% if is_granted('EDIT', module) %}
+            <div class="mod_tools mod_hide bottom-padding bottom-margin">
+                <div class="dropdown pull-right">
+                    <button class="btn btn-xs btn-cms dropdown-toggle" type="button" data-toggle="dropdown">{{ module.type|trans({}, 'module') }} <span class="caret"></span></button>
+                    <ul class="dropdown-menu">
+                        {% if is_granted('EDIT', module) %}
+                        <li><a data-toggle="modal" data-title="{% trans from 'module' %}label.edit{% endtrans %}" data-reload="true" href="{{ path('nav.admin_module_edit', {'id': module.id}) }}"><i class="fa fa-edit"></i> {% trans from 'module' %}label.edit{% endtrans %}</a></li>
+                        {% endif %}
+                        {% if is_granted('DELETE', module) %}
+                            <li><a data-toggle="confirm" data-title="{% trans from 'module' %}label.delete{% endtrans %}" data-reload="true" href="{{ path('nav.admin_module_delete', {'id': module.id }) }}"><i class="fa fa-trash"></i> {% trans from 'module' %}label.delete{% endtrans %}</a></li>
+                        {% endif %}
+                        {% if is_granted('OPERATOR', module) %}
+                            <li><a data-toggle="modal" data-title="{% trans from 'module' %}label.config{% endtrans %}" data-reload="true" href="{{ path('nav.admin_module', {'id': module.id, 'zone': zone, 'page': page, 'order': module.order}) }}"><i class="fa fa-cog"></i> {% trans from 'module' %}label.config{% endtrans %}</a></li>
+                        {% endif %}
+                        {% for btn in module.buttons %}
+                            {% if is_granted(btn.permission, module) %}
+                                <li><a data-toggle="modal" data-title="{{ btn.title|trans({}, 'module') }}" data-reload="{{ btn.reload }}" href="{{ path(btn.path, btn.args) }}"><i class="fa {{ btn.icon }}"></i>{% if btn.label is defined %} {{ btn.label|trans({}, 'module') }}{% endif %}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+            <div class="contents">
+                {% include module.view %}
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>

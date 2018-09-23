@@ -1,0 +1,8 @@
+parameters:
+    mailer_sender: 'stafapp@stafettkarnevalen.fi'
+    mailer_user: 'stafapp@stafettkarnevalen.fi'
+    mailer_name: 'StafApp'
+
+swiftmailer:
+    url: '%env(MAILER_URL)%'
+    spool: { type: 'memory' }

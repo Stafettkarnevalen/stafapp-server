@@ -1,0 +1,38 @@
+<div class="container-fluid">
+    {% if errors is defined and errors %}
+        {% for err in errors %}
+            <div class="alert alert-danger">{{ err.messageKey|trans(err.messageData, 'security') }}</div>
+        {% endfor %}
+    {% endif %}
+    {% if app.session.flashBag.has('email_login_error') %}
+        {% for msg in app.session.flashBag.get('email_login_error') %}
+            <div class="alert alert-danger">{{ msg|trans([], 'security') }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {{ form_start(form) }}
+    {{ form_row(form.phase) }}
+    {{ form_row(form.email) }}
+    {% if phase == 'hash' %}
+        <div class="alert alert-info">
+            {% trans with {'%name%': user.fullname } from "security" %}login.recovery_info {% endtrans %}
+        </div>
+        {{ form_row(form.emailhash) }}
+        {{ form_row(form.plainPassword.first) }}
+        {{ form_row(form.plainPassword.second) }}
+    {% endif %}
+
+    <div class="form-nav">
+        <div class="btn-group btn-group-justified" role="group">
+            {% if phase == 'hash' %}
+            <div class="btn-group" role="group">
+                    {{ form_widget(form.resend) }}
+            </div>
+            {% endif %}
+            <div class="btn-group" role="group">
+                {{ form_widget(form.submit) }}
+            </div>
+        </div>
+    </div>
+    {{ form_end(form) }}
+</div>

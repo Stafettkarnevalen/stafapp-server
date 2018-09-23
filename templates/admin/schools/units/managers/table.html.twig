@@ -1,0 +1,102 @@
+{% macro render_sorted_table(schoolManagers, orders, order, sort, schoolUnit) %}
+    {{ table(schoolManagers, {
+        'trans_domain': 'school',
+        'class': 'table table-bordered table-responsive table-condensed table-striped table-scrollable table-searchable table-sortable table-school-unit-managers',
+        'body': {
+            'row_attrs': {
+                'data-id':  {
+                    'type': 'twig',
+                    'path': 'id'
+                },
+            },
+            'link': {
+                'url': 'nav.admin_edit_school_unit_manager',
+                'params': {
+                    'id': {
+                        'type': 'twig',
+                        'path': 'id'
+                    }
+                },
+                'attrs': {
+                    'data-reload': 'true',
+                    'data-title': 'nav.admin_list_school_unit_managers'|trans({}, 'nav'),
+                    'data-toggle': 'modal'
+                }
+            },
+            'cols': {
+                'name': {
+                    'type': 'twig',
+                    'path': 'name'
+                },
+                'from': {
+                    'type': 'twig',
+                    'path': 'from|date("d.m.Y")'
+                },
+                'until': {
+                    'type': 'twig',
+                    'path': 'until ? until|date("d.m.Y") : ""'
+                },
+                'type text-center hidden-xs': {
+                    'type': 'twig',
+                    'path': 'type',
+                    'conditions': {
+                        'ASSIGNED': 'label.assigned'|trans({}, 'school'),
+                        'INVITATION': 'label.invitation'|trans({}, 'school'),
+                        'REQUEST': 'label.request'|trans({}, 'school')
+                    }
+                },
+                'status text-center hidden-xs': {
+                    'type': 'twig',
+                    'path': 'status',
+                    'conditions': {
+                        'ACCEPTED': '<i class="fa fa-lg text-success fa-check-circle"></i>',
+                        'DENIED': '<i class="fa fa-lg text-danger fa-times-circle"></i>',
+                        'PENDING': '<i class="fa text-warning fa-hourglass"></i>'
+                    }
+                }
+            }
+        },
+        'head': {
+            'sortable': {
+                'orders': orders,
+                'order': order,
+                'sort': sort,
+                'icons': {
+                    'ASC': 'fa-chevron-up',
+                    'DESC': 'fa-chevron-down'
+                },
+                'link': {
+                    'url': 'nav.admin_list_school_unit_managers',
+                    'params': {
+                        'schoolUnit': {
+                            'type': 'value',
+                            'value': schoolUnit.id
+                        }
+                    },
+                }
+            },
+            'cols': {
+                'name': {
+                    'label': 'field.name',
+                    'sort': 'name'
+                },
+                'from': {
+                    'label': 'field.from',
+                    'sort': 'from'
+                },
+                'until': {
+                    'label': 'field.until',
+                    'sort': 'until'
+                },
+                'type hidden-xs': {
+                    'label': 'field.type',
+                    'sort': 'type'
+                },
+                'status hidden-xs': {
+                    'label': 'field.status',
+                    'sort': 'status'
+                }
+            }
+        }
+    }) }}
+{% endmacro %}

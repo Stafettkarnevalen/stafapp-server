@@ -1,0 +1,86 @@
+{% macro render_sorted_table(schoolUnitNames, orders, order, sort) %}
+    {{ table(schoolUnitNames, {
+        'trans_domain': 'school',
+        'class': 'table table-bordered table-responsive table-condensed table-striped table-scrollable table-searchable table-sortable table-school-unit-names',
+        'body': {
+            'row_attrs': {
+                'data-id':  {
+                    'type': 'twig',
+                    'path': 'id'
+                },
+                'data-siblings': {
+                    'type': 'twig',
+                    'path': 'siblings|length',
+                }
+            },
+            'link': {
+                'url': 'nav.admin_edit_school_unit_name',
+                'params': {
+                    'id': {
+                        'type': 'twig',
+                        'path': 'id'
+                    }
+                },
+                'attrs': {
+                    'data-reload': 'true',
+                    'data-title': 'nav.admin_list_school_unit_names'|trans({}, 'nav'),
+                    'data-toggle': 'modal'
+                }
+            },
+            'cols': {
+                'name': {
+                    'type': 'twig',
+                    'path': 'name'
+                },
+                'from': {
+                    'type': 'twig',
+                    'path': 'from|date("d.m.Y")',
+                },
+                'until': {
+                    'type': 'twig',
+                    'path': 'until ? until|date("d.m.Y") : ""',
+                },
+                'isActive text-center hidden-xs': {
+                    'type': 'twig',
+                    'path': 'isActive',
+                    'conditions': {
+                        '0': '<i class="fa fa-lg fa-toggle-off"></i>',
+                        '1': '<i class="fa fa-lg text-success fa-toggle-on"></i>'
+                    }
+                }
+            }
+        },
+        'head': {
+            'sortable': {
+                'orders': orders,
+                'order': order,
+                'sort': sort,
+                'icons': {
+                    'ASC': 'fa-chevron-up',
+                    'DESC': 'fa-chevron-down'
+                },
+                'link': {
+                    'url': 'nav.admin_list_school_unit_names'
+                }
+            },
+            'cols': {
+                'name': {
+                    'label': 'field.name',
+                    'sort': 'name'
+                },
+                'from': {
+                    'label': 'field.from',
+                    'sort': 'from'
+                },
+                'until': {
+                    'label': 'field.until',
+                    'sort': 'until'
+                },
+                'isActive hidden-xs': {
+                    'label': 'field.isActive',
+                    'sort': 'isActive'
+                }
+            }
+        }
+    }) }}
+{% endmacro %}

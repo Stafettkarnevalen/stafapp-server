@@ -1,0 +1,180 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+{% set nonDel = [1, 2, 3] %}
+{% if group.id == 1 or group.id is null %}
+    {% set no_toolbar = true %}
+{% endif %}
+{% block body %}
+    <div class="side-padding">
+        <h1>{% if group.id != 0 %}{{ group.name }}{% else %}{% trans %}action.create{% endtrans %}{% endif %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        {% if group.id and group.id != 1 %}
+            <nav class="navbar navbar-default toolbar">
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                        <a class="navbar-brand" data-reload="true" data-title="{% trans from 'nav' %}nav.message{% endtrans %}" data-toggle="modal" href="{{ path('nav.message', {'action': 'compose', 'id': 0, 'rcptType': 'Group', 'rcptId': group.id, 'msgTypes': 'EMAIL,INTERNAL'}) }}"><i class="fa fa-envelope"></i> {% trans %}action.send_email{% endtrans %}</a>
+                    </div>
+                </div>
+            </nav>
+        {% endif %}
+        <div class="form bg-default all-padding">
+            {{ form_row(form.name) }}
+            {{ form_row(form.email) }}
+            {{ form_row(form.isGoogleSynced) }}
+            {{ form_row(form.googleId) }}
+            {{ form_row(form.loginRoute) }}
+            {{ form_row(form.logoutRoute) }}
+            <hr/>
+            {{ form_label(form.roles) }}
+            <style>
+                #edit_roles {
+                    max-height:400px;
+                    overflow: auto;
+                }
+                #edit_roles div {
+                    display:block;
+                    margin:0;
+                    padding:1px 0 4px 10px;
+                    border-collapse: collapse;
+                }
+                #edit_roles div:hover {
+                    background: #ccc!important;
+                }
+                #edit_roles div:nth-child(odd){
+                    background:#f9f9f9;
+                }
+            </style>
+            <table class="table well">
+                <thead>
+                <tr>
+                    <th style="width:30%;"><a href="#" id="sort">{% trans from "group" %}field.name{% endtrans %} <i class="fa fa-chevron-up"></i></a></th>
+                    <th>
+                        <div class="input-group">
+                            <span class="input-group-addon">{% trans %}action.search{% endtrans %}</span>
+                            <input id="search" class="input-sm form-control" type="text"/>
+                            <a id="clear_search" class="disabled input-group-addon btn"><i class="fa fa-times-circle-o"></i></a>
+                        </div>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td colspan="2">
+                        {{ form_widget(form.roles) }}
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <hr/>
+            {{ form_label(form.users) }}
+            <style>
+                #edit_users {
+                    max-height:400px;
+                    overflow: auto;
+                }
+                #edit_users div {
+                    display:block;
+                    margin:0;
+                    padding:1px 0 4px 10px;
+                    border-collapse: collapse;
+                }
+                #edit_users div:hover {
+                    background: #ccc!important;
+                }
+                #edit_users div:nth-child(odd){
+                    background:#f9f9f9;
+                }
+            </style>
+            <table class="table well">
+                <thead>
+                    <tr>
+                        <th style="width:30%;"><a href="#" id="sort">{% trans from "group" %}field.name{% endtrans %} <i class="fa fa-chevron-up"></i></a></th>
+                        <th>
+                            <div class="input-group">
+                                <span class="input-group-addon">{% trans %}action.search{% endtrans %}</span>
+                                <input id="search" class="input-sm form-control" type="text"/>
+                                <a id="clear_search" class="disabled input-group-addon btn"><i class="fa fa-times-circle-o"></i></a>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="2">
+                            {{ form_widget(form.users) }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            {% if modal is not defined or modal == false %}
+                <div class="form-nav">
+                    <div class="btn-group btn-group-justified" role="group">
+                        <a class="btn btn-default" href="{{ path('nav.admin_groups') }}"><i class="fa fa-chevron-left"></i> {% trans %}action.cancel{% endtrans %} <i class="fa fa-undo"></i></a>
+                        {% if group.id %}
+                            <a class="btn btn-danger{% if group.id in nonDel %} disabled{% endif %}" href="{{ path('nav.admin_group_delete', {'id': group.id}) }}"><i class="fa fa-trash"></i> {% trans %}action.delete{% endtrans %} <i class="fa fa-minus"></i></a>
+                        {% endif %}
+                        <div class="btn-group" role="group">
+                            {{ form_widget(form.submit) }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        <!--
+        $('#sort').on('click', function(e) {
+            e.preventDefault();
+            chevron = $(this).find($('i.fa'));
+            if (chevron.hasClass('fa-chevron-up')) {
+                chevron.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            } else {
+                chevron.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            }
+            var list = $('#edit_users');
+            var listItems = list.children('div');
+            list.append(listItems.get().reverse());
+        });
+        $('#clear_search').on('click', function() {
+            $('#search').val('');
+            $(this).addClass('disabled');
+            $.each($('#edit_users div'), function() {
+                $(this).css('display', '');
+            });
+        });
+        $('#search').on('input', function() {
+            if ($(this).val().length > 0) {
+                $('#clear_search').removeClass('disabled');
+                filter = $(this).val();
+                $.each($('#edit_users div'), function() {
+                    $(this).css('display', $(this).is(':icontains(' + filter + ')') ? '' : 'none');
+                });
+            } else {
+                $('#clear_search').trigger('click');
+            }
+        });
+
+        $.expr[":"].icontains = $.expr.createPseudo(function(arg) {
+            return function( elem ) {
+                return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
+            };
+        });
+        //-->
+    </script>
+{% endblock %}

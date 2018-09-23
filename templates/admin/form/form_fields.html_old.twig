@@ -1,0 +1,282 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+    <div class="side-padding">
+        <h1>{% if form.id != 0 %}{{ form.title }}{% else %}{% trans from "form" %}label.create{% endtrans %}{% endif %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <nav class="navbar navbar-default toolbar">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#" id="add-field"><i class="fa fa-plus"></i> &nbsp;{% trans from 'form' %}label.add_field{% endtrans %}</a>
+                </div>
+            </div>
+        </nav>
+        {{ form_start(pform) }}
+
+        <div id="fields_formFieldsDependsOn" data-prototype="{{ form_row(pform.formFields.vars.prototype.children['dependsOn'].vars.prototype)|e }}"></div>
+        <div data-sortable data-handle="i.fa-arrows" id="fields_formFields" data-prototype="{{ form_row(pform.formFields.vars.prototype)|e() }}">
+            {% if pform.formFields is defined %}
+                {% for field in pform.formFields %}
+                    <div data-order="{{ field.order.vars.value }}" class="form bg-default all-padding" style="margin-bottom:20px;">
+                        <div class="form-group">
+                            <label class="control-label"><i class="fa fa-arrows"></i><a class="pull-right" onclick="if (confirm('{% trans from 'form' %}field.confirm_remove{% endtrans %}')) removeField(this);"><i class="fa fa-close"></i></a></label>
+                            <div id="fields_formFields_{{ field.order.vars.value }}">
+                                {{ form_row(field.order) }}
+                                {{ form_row(field.title) }}
+                                {{ form_row(field.type) }}
+                                {{ form_row(field.required) }}
+                                {{ form_row(field.text) }}
+                                <div class="form-group{%
+                                if field.type.vars.value != 'SELECT'
+                                and field.type.vars.value != 'CHECKBOX'
+                                and field.type.vars.value != 'RADIO' %} hidden{% endif %}">
+                                    {{ form_label(field.options) }}
+                                    {{ form_widget(field.options) }}
+                                </div>
+                                <div{% if field.order.vars.value == 0 %} class="hidden"{% endif %}>
+                                    <div class="form-group">
+                                        <a href="#" class="btn btn-default add-dependency"><i class="fa fa-plus"></i> {% trans from 'form' %}label.add_dependency{% endtrans %} <i class="fa fa-sitemap"></i></a>
+                                    </div>
+                                    <div class="dependencies">
+                                        {{ form_widget(field.dependsOn) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-nav text-right">
+            {% if modal is defined and modal == true %}
+            <a class="btn btn-default" data-dismiss="modal" aria-label="Close"><i class="fa fa-chevron-left"></i> {% trans from 'form' %}label.close{% endtrans %} <i class="fa fa-close"></i></a>
+            {% else %}
+            <a class="btn btn-default" href="{{ path('nav.admin_forms') }}"><i class="fa fa-chevron-left"></i> {% trans from 'form' %}label.close{% endtrans %} <i class="fa fa-close"></i></a>
+            {% endif %}
+            {{ form_widget(pform.submit) }}
+        </div>
+        {{ form_end(pform) }}
+    </div>
+
+    <script type="text/javascript">
+
+        // keep track of how many  fields have been rendered
+        var fieldCount = '{{ pform.formFields|length }}';
+
+        var typeOperations = {{ constant('AppBundle\\Entity\\Communication\\FormField::TYPE_OPERATORS')|json_encode|raw }};
+
+        // var fixWidth = function(event, ui) { ui.children().each(function() { $(this).width($(this).width()); }); return ui; };
+
+        // console.log(fieldCount);
+
+        $(document).ready(function() {
+            $('div.dependencies').each(function() {
+                var index = 0;
+                $(this).find('.form-group').each(function() {
+                    $(this).find('.control-label').addClass('required').html('{% trans from 'form' %}label.dependency{% endtrans %} ' + (index + 1) + '<a class="pull-right" onclick="if (confirm(\'{% trans from 'form' %}dependency.confirm_remove{% endtrans %}\')) removeDependency(this);"><i class="fa fa-close"></i></a>');
+                    index++;
+                });
+            });
+
+            $('body').on('click', '.add-dependency', function() {
+                var field = $(this).closest('div.form');
+                //console.log(field);
+                var order = field.attr('data-order');
+                //console.log(order);
+                var depList = field.find('#fields_formFields_' + order + ' .dependencies');
+                //console.log(depList);
+                var depCount = depList.children('.form-group').length;
+                //console.log(depCount);
+
+                var newWidget = $('#fields_formFieldsDependsOn').attr('data-prototype');
+                newWidget = newWidget.replace(/fields_formFields___name__/g, 'fields_formFields_' + order);
+                newWidget = newWidget.replace(/\[formFields\]\[__name__\]/g, '[formFields][' + order + ']');
+                newWidget = newWidget.replace(/<label class="control-label">__name__label__<\/label>/g, '<label class="control-label dependency required">{% trans from 'form' %}label.dependency{% endtrans %} ' + (depCount + 1) + '<a class="pull-right" onclick="if (confirm(\'{% trans from 'form' %}dependency.confirm_remove{% endtrans %}\')) removeDependency(this);"><i class="fa fa-close"></i></a></label>');
+                newWidget = newWidget.replace(/__name__/g, depCount);
+
+                newWidget = $(newWidget);
+                newWidget.find('#fields_formFields_' + order + '_dependsOn_' + depCount + '_sourceByOrder').html(buildDependencyOptions(order));
+                newWidget.appendTo(depList);
+
+                // console.log(depList.html());
+                return false;
+            });
+
+            $('div[data-sortable]')
+                .sortable({ cursor:'move', axis:'y', handle:'i.fa-arrows', opacity:'0.6' })
+                .on('sortstop', function(event, ui) { reorderFields(false); });
+
+            $('#add-field').click(function(e) {
+                e.preventDefault();
+
+                var list = $('#fields_formFields');
+
+                // grab the prototype template
+                var newWidget = list.attr('data-prototype');
+
+                // console.log(newWidget);
+
+                // place inside a form div and do some basic formatting
+                newWidget = '<div data-order="__name__" class="form bg-default all-padding" style="margin-bottom:20px;">' + newWidget + '</div>';
+                newWidget = newWidget.replace(/<label class="control-label required">Name<\/label>/g,
+                    '<label class="control-label"><i class="fa fa-arrows"></i><a class="pull-right" onclick="if (confirm(\'{% trans from 'form' %}field.confirm_remove{% endtrans %}\')) removeField(this);"><i class="fa fa-close"></i></a></label>');
+                newWidget = newWidget.replace(/<div class="form-group"><label class="required control-label" for="fields_formFields___name___options">/, '<div id="fields_formFields___name___options_block" class="form-group hidden"><label class="required control-label" for="fields_formFields___name___options">');
+                newWidget = newWidget.replace(/<select/g, '<select onchange="selectedType(this, __name__);"');
+                newWidget = newWidget.replace(/<input type="hidden" id="fields_formFields___name___order"/g, '<input type="hidden" id="fields_formFields___name___order" value="' + fieldCount + '"');
+                newWidget = newWidget.replace(/<div class="form-group"><div id="fields_formFields___name___dependsOn">\n    <\/div>/g,
+                    '<div' + (fieldCount === 0 ? ' class="hidden"' : '') + '>' +
+                    '<div class="form-group">' +
+                        '<a href="#" class="btn btn-default add-dependency"><i class="fa fa-plus"></i> {% trans from 'form' %}label.add_dependency{% endtrans %} <i class="fa fa-sitemap"></i></a>' +
+                        '</div>' +
+                        '<div class="dependencies"></div>' +
+                        '</div>');
+
+                // replace the "__name__" used in the id and name of the prototype
+                // with the correct index
+                newWidget = newWidget.replace(/__name__/g, fieldCount);
+
+                console.log(newWidget);
+
+                fieldCount++;
+
+                // create a new list element and add it to the list
+                var newLi = $('<div></div>').html(newWidget);
+                newLi.appendTo(list);
+
+                return false;
+            });
+        });
+
+        function buildDependencyOptions(order) {
+            console.log('bdepopts');
+            var html = '<option value="-1">{% trans from 'form' %}label.select_dependency_source{% endtrans %}</option>';
+            var list = $('#fields_formFields');
+            list.children('div.form').each(function() {
+                if ($(this).attr('data-order') < order)
+                    html += '<option value="' + $(this).attr('data-order') + '">' +
+                        $(this).find('#fields_formFields_' + $(this).attr('data-order') + '_title').val() + '</option>';
+            });
+            console.log(html);
+            return html;
+        }
+
+        function selectedDependency(field) {
+            var select = $(field);
+            var id = select.attr('id');
+            var operators = $('#' + id.replace(/_sourceByOrder/g, '_operator'));
+            var operator = operators.val();
+
+            if (select.val() === '-1') {
+                operators.empty();
+                operators.append($('<option value="">{% trans from 'form' %}label.select_dependency_operators{% endtrans %}</option>'));
+            } else {
+                var val = $('#fields_formFields_' + select.val() + '_type').val();
+
+                operators.empty();
+                operators.append($('<option value="">{% trans from 'form' %}label.select_dependency_operators{% endtrans %}</option>'));
+                for (i = 0; i < typeOperations[val].length; i++) {
+                    var option = $('<option></option>');
+                    option.attr('value', typeOperations[val][i]).html(typeOperations[val][i]);
+                    if (option.attr('value') === operator)
+                        option.attr('selected', 'selected');
+                    operators.append(option);
+                }
+            }
+        }
+
+        function removeDependency(row) {
+            var r = $(row);
+            var list = r.closest('.dependencies');
+            list.children('.form-group').each(function() {
+                if ($(this).html() === r.closest('.form-group').html())
+                    $(this).remove();
+            });
+            reorderDependencies(list, true);
+        }
+
+        function reorderDependencies(list, removed) {
+            var index = 0;
+
+            list.children('.form-group').each(function() {
+                var label = $(this).find('label.dependency');
+                label.html('{% trans from 'form' %}label.dependency{% endtrans %} ' + (index + 1) + '<a class="pull-right" onclick="if (confirm(\'{% trans from 'form' %}dependency.confirm_remove{% endtrans %}\')) removeDependency(this);"><i class="fa fa-close"></i></a>');
+
+                if (removed) {
+
+                } else {
+
+                }
+                index++;
+            });
+        }
+
+        function removeField(row) {
+            var r = $(row);
+            r.closest('div.form.bg-default.all-padding').remove();
+            reorderFields(true);
+            fieldCount--;
+        }
+
+        function reorderFields(removed) {
+            var index = 0;
+            // reorder every form field
+            $.each($('div[id*=fields_formFields_]'), function() {
+
+                if ($(this).attr('id').match(/\d+$/) === null)
+                    return true;
+
+                if (removed) {
+                    var id = $(this).attr('id').replace(/\d+/, index);
+                    $(this).attr('id', id);
+
+                    $.each($(this).find('label[for*=fields_formFields_]'), function () {
+                        var _for = $(this).attr('for').replace(/\d+/, index);
+                        $(this).attr('for', _for);
+                    });
+                    $.each($(this).find('[id*=fields_formFields_]'), function () {
+                        var _id = $(this).attr('id').replace(/\d+/, index);
+                        $(this).attr('id', _id);
+                    });
+                    $.each($(this).find('[name*=fields]'), function () {
+                        var _name = $(this).attr('name').replace(/\d+/, index);
+                        $(this).attr('name', _name);
+                    });
+
+                    // set the order correctly
+                    $('#fields_formFields_' + index + '_order').val(index);
+
+                } else {
+                    $(this).find('input[id$=_order]').val(index);
+                }
+                index++;
+                console.log($(this).html());
+            });
+        }
+
+        function selectedType(field, row) {
+            var select = $(field);
+            var val = select.val();
+            if (val === 'SELECT' || val === 'CHECKBOX' || val === 'RADIO') {
+                select.closest('.form-group').siblings(':last-child').prev().removeClass('hidden');
+            } else {
+                select.closest('.form-group').siblings(':last-child').prev().addClass('hidden');
+            }
+        }
+    </script>
+
+{% endblock %}

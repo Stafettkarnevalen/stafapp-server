@@ -1,0 +1,74 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 17/12/2016
+ * Time: 0.21
+ */
+
+namespace App\Form\School;
+
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+
+use App\Entity\Schools\SchoolName;
+use App\Entity\Schools\School;
+use App\Form\PhoneNumber\PhoneNumberType;
+
+
+class SchoolType extends AbstractType
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        if ($options['data_class'] == SchoolName::class) {
+            $builder
+                ->add('name', TextType::class, array('label' => 'label.name'))
+                ->add('abbreviation', TextType::class, array('label' => 'label.abbreviation', 'required' => false, 'attr' => ['maxlength' => '12']))
+                ->add('streetAddress', TextType::class, array('label' => 'label.address'))
+                ->add('zipcode', TextType::class, array('label' => 'label.zipcode', 'attr' => ['pattern' => '\\d{5}']))
+                ->add('city', TextType::class, array('label' => 'label.city'))
+                ->add('pobox', TextType::class, array('label' => 'label.pobox', 'required' => false))
+                ->add('country', TextType::class, array('label' => 'label.country'))
+                ->add('phone', PhoneNumberType::class, array('label' => 'label.phone', 'defaultArea' => '+358'))
+                ->add('email', EmailType::class, array('label' => 'label.email'))
+                ->add('from', DateTimeType::class, array('label' => 'label.from'));
+        } else {
+            $builder
+                ->add(
+                    $builder->create('school', FormType::class, array('label' => false, 'by_reference' => true, 'data_class' => School::class))
+                    ->add('number', TextType::class, array('label' => 'label.number', 'attr' => ['pattern' => '\\d{5}']))
+                    ->add('password', TextType::class, array('label' => 'label.password', 'attr' => ['pattern' => '\\d{8}']))
+                )
+                ->add(
+                    $builder->create('name', FormType::class, array('label' => false, 'by_reference' => true, 'data_class' => SchoolName::class))
+                        ->add('abbreviation', TextType::class, array('label' => 'label.abbreviation', 'required' => false, 'attr' => ['maxlength' => '12']))
+                        ->add('streetAddress', TextType::class, array('label' => 'label.address'))
+                        ->add('zipcode', TextType::class, array('label' => 'label.zipcode', 'attr' => ['pattern' => '\\d{5}']))
+                        ->add('city', TextType::class, array('label' => 'label.city'))
+                        ->add('pobox', TextType::class, array('label' => 'label.pobox', 'required' => false))
+                        ->add('country', TextType::class, array('label' => 'label.country'))
+                        ->add('phone', PhoneNumberType::class, array('label' => 'label.phone', 'defaultArea' => '+358'))
+                        ->add('email', EmailType::class, array('label' => 'label.email'))
+                );
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults(array(
+            'data_class' => null,
+            'translation_domain' => 'school',
+        ));
+    }
+}

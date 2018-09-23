@@ -1,0 +1,35 @@
+{% macro render_nav(buttons) %}
+    <nav class="navbar navbar-default toolbar" data-spy="affix" data-offset-top="251">
+        <div class="container-fluid">
+
+            <div class="navbar-header">
+                <button type="button" class="navbar-btn navbar-toggle collapsed" data-toggle="collapse" data-target="#toolbar-{{ request_id()|html_id }}" aria-expanded="false">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <div class="navbar-brand dropdown">
+                    <a class="dropdown-toggle" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-pencil-square-o"></i> {% trans %}action.create{% endtrans %}
+                    </a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item side-padding" data-reload="true" data-toggle="modal" href="{{ path(Routes.nav_admin_create_user, {'discriminator': 'SchoolManager'}) }}">{% trans %}label.school_manager{% endtrans %}</a>
+                        <a class="dropdown-item side-padding" data-reload="true" data-toggle="modal" href="{{ path(Routes.nav_admin_create_user, {'discriminator': 'SystemAdministrator'}) }}">{% trans %}label.system_admin{% endtrans %}</a>
+                    </div>
+                </div>
+            </div>
+            <div class="collapse navbar-collapse" id="toolbar-{{ request_id()|html_id }}">
+                <div class="nav navbar-nav navbar-left pull-left">
+                    <span class="hidden-sm hidden-md hidden-lg left-margin-sm"></span>
+                    {% import 'toolbar/toolbarbutton.html.twig' as toolBar %}
+                    {{ toolBar.render_toolbar_buttons(buttons) }}
+                </div>
+                <div class="nav navbar-nav navbar-right pull-right text-nowrap">
+                    {% include 'table/searchbutton.html.twig' with {'domain': 'user'}%}
+                    <span class="hidden-sm hidden-md hidden-lg left-margin-sm"></span>
+                </div>
+            </div>
+        </div>
+        {% include 'table/searchtoggle.html.twig' with {'target': 'table-users', 'domain': 'user', 'fields': ['name', 'uname', 'phone']} %}
+    </nav>
+{% endmacro %}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="{{ app.request.locale }}">
+<head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}{% trans from "messages" %}title{% endtrans %}{% endblock %}</title>
+
+    {% block stylesheets %}
+        <link href="{{ absolute_url(asset('build/css/font-awesome.css')) }}" rel="stylesheet"/>
+        <link href="{{ absolute_url(asset('build/css/bootstrap.css')) }}" rel="stylesheet"/>
+        <link href="{{ absolute_url(asset('build/css/bootstrap-datepicker.css')) }}" rel="stylesheet"/>
+        <link href="{{ absolute_url(asset('build/css/bootstrap-datetimepicker.css')) }}" rel="stylesheet"/>
+        <link href="{{ absolute_url(asset('build/css/app.css')) }}" rel="stylesheet"/>
+    {% endblock %}
+
+    <link rel="icon" type="image/x-icon" href="{{ absolute_url(asset('build/images/favicon.ico')) }}" />
+
+    {% block javascripts %}
+        <script src="{{ absolute_url(asset('build/manifest.js')) }}"></script>
+        <script src="{{ absolute_url(asset('build/js/vendor.js')) }}"></script>
+        <script src="{{ absolute_url(asset('build/js/app.js')) }}"></script>
+        <script src="{{ absolute_url(asset('bundles/fosjsrouting/js/router.js')) }}"></script>
+        <script src="{{ absolute_url(path('fos_js_routing_js', { callback: 'fos.Router.setData' })) }}"></script>
+    {% endblock %}
+
+</head>
+<body style="background: url({{ asset('build/images/juoksurata.jpg') }}) bottom center; background-size: cover; background-repeat: no-repeat; background-attachment: fixed;">
+<div class="container-viewport" style="max-width:800px; margin:auto;">
+
+    <div class="bg-primary" style="background: url({{ asset('build/images/bg-primary4.jpg') }}) center center; background-size:cover; "></div>
+
+    <nav class="navbar navbar-inverse">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/{{ app.request.locale }}/">
+                    <img class="img img-responsive" src="{{ absolute_url(asset('build/images/i<3staf1-nav.png')) }}" alt=""/>
+                </a>
+            </div>
+        </div>
+    </nav>
+    {% block body %}
+    {% endblock %}
+    <div class="bg-footer">
+        <div class="container-fluid">
+            <p class="small text-center"><strong>{% trans from "messages" %}footer.powered_by{% endtrans %}</strong></p>
+            <div class="all-padding row">
+                <div class="col-xs-6 col-xs-offset-3 col-sm-2 col-sm-offset-5 text-center">
+                    <img class="img img-responsive center-block" src="{{ absolute_url(asset('build/images/gubbar-gs.png')) }}" alt=""/>
+                </div>
+            </div>
+            <div class="all-padding row">
+                <div class="col-xs-6 col-xs-offset-3 col-sm-2 col-sm-offset-5 text-center">
+                    <img class="img img-responsive center-block" src="{{ absolute_url(asset('build/images/fma-jurgens-gs.png')) }}" alt=""/>
+                </div>
+            </div>
+            <address class="small side-padding text-center">
+                <strong>&copy; {{ "now"|date("Y") }} Skolornas Stafettkarneval</strong><br/>
+                <a href="http://www.stafettkarnevalen.fi/">http://www.stafettkarnevalen.fi/</a>
+            </address>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,205 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 17.06
+ */
+
+namespace App\Entity\Services;
+
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Invoicing\InvoiceLine;
+use App\Entity\Schools\SchoolUnit;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\LoggableTrait;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Traits\DataTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use App\Entity\Traits\PriceTrait;
+
+/**
+ * @ORM\Table(name="order_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @UniqueEntity(fields="service,schoolUnit", message="order.exists")
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Services
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class Order implements Serializable, CreatedByUserInterface, LoggableEntity
+{
+    /** Use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use data attributes */
+    use DataTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /** Use price field */
+    use PriceTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="amount_fld", type="integer")
+     * @Assert\NotBlank()
+     * @var integer $amount The amount of units ordered
+     */
+    protected $amount;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Service", inversedBy="orders")
+     * @ORM\JoinColumn(name="service_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var Service $service The service ordered
+     */
+    protected $service;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Schools\SchoolUnit", inversedBy="orders")
+     * @ORM\JoinColumn(name="school_unit_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var SchoolUnit $schoolUnit The school unit placing the order
+     */
+    protected $schoolUnit;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="ContactPerson")
+     * @ORM\JoinColumn(name="contact_person_fld", referencedColumnName="id_fld", nullable=true)
+     * @var ContactPerson $contactPerson The person placing the order
+     */
+    protected $contactPerson;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Invoicing\InvoiceLine")
+     * @ORM\JoinColumn(name="invoice_line_fld", referencedColumnName="id_fld", nullable=true)
+     * @var InvoiceLine $invoiceLine The invoice line created by this order
+     */
+    protected $invoiceLine;
+
+    /**
+     * Gets the amount.
+     *
+     * @return integer
+     */
+    public function getAmount()
+    {
+        return $this->amount;
+    }
+
+    /**
+     * Sets the amount.
+     *
+     * @param integer $amount
+     * @return $this
+     */
+    public function setAmount($amount)
+    {
+        $this->amount = $amount;
+
+        return $this;
+    }
+
+    /**
+     * Gets the Service.
+     *
+     * @return Service
+     */
+    public function getService()
+    {
+        return $this->service;
+    }
+
+    /**
+     * Sets the Service.
+     *
+     * @param Service $service
+     * @return $this
+     */
+    public function setService($service)
+    {
+        $this->service = $service;
+
+        return $this;
+    }
+
+    /**
+     * Gets the ContactPerson.
+     *
+     * @return ContactPerson
+     */
+    public function getContactPerson()
+    {
+        return $this->contactPerson;
+    }
+
+    /**
+     * Sets the ContactPerson.
+     *
+     * @param ContactPerson $contactPerson
+     * @return $this
+     */
+    public function setContactPerson($contactPerson)
+    {
+        $this->contactPerson = $contactPerson;
+
+        return $this;
+    }
+
+    /**
+     * Gets the schoolUnit.
+     *
+     * @return SchoolUnit
+     */
+    public function getSchoolUnit()
+    {
+        return $this->schoolUnit;
+    }
+
+    /**
+     * Sets the schoolUnit.
+     *
+     * @param SchoolUnit $schoolUnit
+     * @return $this
+     */
+    public function setSchoolUnit($schoolUnit)
+    {
+        $this->schoolUnit = $schoolUnit;
+
+        return $this;
+    }
+
+    /**
+     * Gets the invoiceLine.
+     *
+     * @return InvoiceLine|null
+     */
+    public function getInvoiceLine()
+    {
+        return $this->invoiceLine;
+    }
+
+    /**
+     * Sets the invoiceLine.
+     *
+     * @param InvoiceLine|null $invoiceLine
+     * @return $this
+     */
+    public function setInvoiceLine($invoiceLine)
+    {
+        $this->invoiceLine = $invoiceLine;
+
+        return $this;
+    }
+}

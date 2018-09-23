@@ -1,0 +1,198 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 04/06/2017
+ * Time: 13.35
+ */
+
+namespace App\Entity\Relays;
+
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Traits\LoggableTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Schools\SchoolUnit;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\FieldsTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use App\Entity\Traits\VersionedPersonTrait;
+use App\Entity\Traits\SeasonTrait;
+
+/**
+ * @ORM\Table(name="competitor_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Relays
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class Competitor implements Serializable, CreatedByUserInterface, LoggableEntity
+{
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** use fields trait */
+    use FieldsTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /** Use person trait */
+    use VersionedPersonTrait;
+
+    /** Use season field */
+    use SeasonTrait;
+
+    /**
+     * @const GENDER_MALE The competitor is a male
+     */
+    const GENDER_MALE            = "MALE";
+
+    /**
+     * @const GENDER_FEMALE The competitor is a female
+     */
+    const GENDER_FEMALE          = "FEMALE";
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="class_of_fld", type="integer", columnDefinition="INT(11)", nullable=false)
+     * @Assert\NotBlank()
+     * @var integer $classOf The class of the competitor
+     */
+    protected $classOf;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="gender_fld", type="string", columnDefinition="ENUM('MALE', 'FEMALE')", nullable=false)
+     * @Assert\NotBlank()
+     * @Assert\Choice({"MALE", "FEMALE"})
+     * @var string $gender The gender of the competitor
+     */
+    protected $gender;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Schools\SchoolUnit", inversedBy="competitors")
+     * @ORM\JoinColumn(name="school_unit_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var SchoolUnit $schoolUnit The SchoolUnit that this competitor belongs to
+     */
+    protected $schoolUnit;
+
+    /**
+     * @ORM\OneToMany(targetEntity="MemberOfTeam", mappedBy="competitor", cascade={"persist", "remove"})
+     * @var ArrayCollection $teams The team meberships of this competitor
+     */
+    protected $teams;
+
+    /**
+     * Gets class of.
+     *
+     * @return integer
+     */
+    public function getClassOf()
+    {
+        return $this->classOf;
+    }
+
+    /**
+     * Sets class of.
+     *
+     * @param integer $classOf
+     * @return $this
+     */
+    public function setClassOf($classOf)
+    {
+        $this->classOf = $classOf;
+
+        return $this;
+    }
+
+    /**
+     * Gets the gender.
+     *
+     * @return string
+     */
+    public function getGender()
+    {
+        return $this->gender;
+    }
+
+    /**
+     * Sets the Gender.
+     *
+     * @param string $gender
+     * @return $this
+     */
+    public function setGender($gender)
+    {
+        $this->gender = $gender;
+
+        return $this;
+    }
+
+    /**
+     * Gets the SchoolUnit
+     *
+     * @return SchoolUnit
+     */
+    public function getSchoolUnit()
+    {
+        return $this->schoolUnit;
+    }
+
+    /**
+     * Sets the SchoolUnit.
+     *
+     * @param SchoolUnit $schoolUnit
+     * @return $this
+     */
+    public function setSchoolUnit($schoolUnit)
+    {
+        $this->schoolUnit = $schoolUnit;
+
+        return $this;
+    }
+
+    /**
+     * Gets the Teams.
+     *
+     * @return ArrayCollection
+     */
+    public function getTeams()
+    {
+        return $this->teams;
+    }
+
+    /**
+     * Sets the Teams.
+     *
+     * @param ArrayCollection $teams
+     * @return $this
+     */
+    public function setTeams($teams)
+    {
+        $this->teams = $teams;
+
+        return $this;
+    }
+
+
+    /**
+     * Gets a string representation of this object.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->getFullname();
+    }
+}

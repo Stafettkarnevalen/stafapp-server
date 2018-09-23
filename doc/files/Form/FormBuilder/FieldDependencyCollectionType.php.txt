@@ -1,0 +1,117 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 11/09/2017
+ * Time: 9.05
+ */
+
+namespace App\Form\FormBuilder;
+
+use App\Entity\Forms\FormField;
+use App\Entity\Forms\FormFieldDependency;
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\EventListener\ResizeFormListener;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormInterface;
+use Symfony\Component\Form\FormView;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+
+class FieldDependencyCollectionType extends AbstractType
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        /** @var FormField $field */
+        $field = $options['target'];
+
+        $sources = $field ? $field->getSiblingsBefore() : [];
+        //$operators = $field ? $field->getDependencyOperators() : [];
+
+        //print_r($options['items'][0]->getLogic());
+        //print_r($options['items'][0]->getOperator());
+        //print_r($sources->count());
+
+        //print_r($operators);
+
+        // print_r('coll...');
+
+        /**
+         * @var integer $index
+         * @var FormFieldDependency $dep
+         */
+        foreach ($options['items'] as $index => $dep) {
+            if (!$dep)
+                continue;
+
+            //print_r('add: ');
+            //print_r($sources->count());
+            //print_r($operators);
+            //print_r('target => ' . $dep->getTarget()->getId());
+            //print_r('source => ' . $dep->getSource()->getId());
+            //print_r($dep->getLogic());
+            // print_r($dep->get);
+            $builder->add($index, FieldDependencyType::class, [
+                //'data' => $dep,
+                'order' => $index,
+                'label' => $index + 1,
+                'target' => $field,
+                'sources' => $sources,
+                'operators' => $dep->getSource()->getDependencyOperators(),
+            ]);
+        }
+
+        $prototype = $builder->create('__name__', FieldDependencyType::class, []);
+        $builder->setAttribute('prototype', $prototype->getForm());
+
+        $resizeListener = new ResizeFormListener(
+            FieldDependencyType::class,
+            [
+                'target' => $field,
+                'sources' => $sources,
+                //'operators' => $operators,
+            ],
+            true,
+            true,
+            true
+        );
+
+        $builder->addEventSubscriber($resizeListener);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults([
+            'validation_groups' => false,
+            'translation_domain' => 'form',
+            'items' => [],
+            'target' => null,
+        ]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function buildView(FormView $view, FormInterface $form, array $options)
+    {
+        if ($form->getConfig()->hasAttribute('prototype')) {
+            $prototype = $form->getConfig()->getAttribute('prototype');
+            $view->vars['prototype'] = $prototype->setParent($form)->createView($view);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function finishView(FormView $view, FormInterface $form, array $options)
+    {
+        if ($form->getConfig()->hasAttribute('prototype') && $view->vars['prototype']->vars['multipart']) {
+            $view->vars['multipart'] = true;
+        }
+    }
+}

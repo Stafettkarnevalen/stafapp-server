@@ -1,0 +1,21 @@
+{% set use_heading = false %}
+{% set no_toolbar = true %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+    <div class="all-padding">
+        {{ form_row(form.type) }}
+        {{ form_row(form.title) }}
+        {{ form_row(form.cssClass) }}
+        {{ form_row(form.isActive) }}
+        {{ form_label(form.objectAces) }}
+        <div class="well">
+            {{ form_widget(form.objectAces) }}
+        </div>
+    </div>
+{% endblock %}

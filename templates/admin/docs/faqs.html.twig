@@ -1,0 +1,114 @@
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <nav class="navbar navbar-default toolbar">
+            <div class="container-fluid">
+                <div class="navbar-header pull-left">
+                    <a class="navbar-brand" data-title="{% trans from 'nav' %}nav.admin_faqs{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_faq') }}">
+                        <i class="fa fa-pencil-square-o"></i> {% trans from 'documentation' %}label.create_faq{% endtrans %}
+                    </a>
+                </div>
+                <div class="pull-right top-padding-sm col-xs-8 col-sm-8">
+                    <div class="input-group">
+                        <span class="input-group-addon">{% trans from "documentation" %}label.search{% endtrans %}</span>
+                        <input title="{% trans from "documentation" %}label.search{% endtrans %}" id="search" class="input-sm form-control" type="text"/>
+                        <a id="clear_search" class="disabled input-group-addon btn"><i class="fa fa-times-circle-o"></i></a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        {% set icons = {'ASC': 'fa-chevron-up', 'DESC': 'fa-chevron-down'} %}
+        <table class="table table-bordered table-responsive table-condensed table-striped table-scrollable">
+            <thead>
+            <tr>
+                <th class="title">{% trans from "documentation" %}label.title{% endtrans %}</th>
+                <th class="date">{% trans from "documentation" %}label.date{% endtrans %}</th>
+                <th class="isActive">{% trans from "documentation" %}label.isActive{% endtrans %}</th>
+            </tr>
+            </thead>
+            <tbody data-sortable data-handle="td">
+            {% for faq in faqs %}
+                <tr data-id="{{ faq.id }}">
+                    <td class="title"><a data-title="{% trans from 'nav' %}nav.admin_faqs{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_faq', {'id' : faq.id}) }}">{{ faq.title }}</a></td>
+                    <td class="date"><a data-title="{% trans from 'nav' %}nav.admin_faqs{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_faq', {'id' : faq.id}) }}">{{ faq.createdAt|date('d.m.Y H:i:s') }}</a></td>
+                    <td class="isActive">
+                        {% if faq.isActive %}
+                            <a data-title="{% trans from 'nav' %}nav.admin_faqs{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_faqs', {'id': faq.id, 'state': 0}) }}"><i class="text-success fa fa-check-circle"></i></a>
+                        {% else %}
+                            <a data-title="{% trans from 'nav' %}nav.admin_faqs{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_faqs', {'id': faq.id, 'state': 1}) }}"><i class="text-danger fa fa-times-circle"></i></a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script type="text/javascript">
+        <!--
+
+        $(document).ready(function() {
+            $('tbody[data-sortable]')
+                .sortable({cursor: 'move', axis: 'y', handle: 'td', opacity: '0.6'})
+                .on('sortstart', function(event, ui) {
+                    $(this).attr('data-oldindex', ui.item.index());
+                })
+                .on('sortstop', function (event, ui) {
+                    var oldIndex = $(this).attr('data-oldindex');
+                    $(this).removeAttr('data-oldindex');
+                    var move = ui.item.index() - oldIndex;
+                    var id = ui.item.attr('data-id');
+                    console.log('move ' + id + ' ' + move);
+                    if (move !== 0) {
+                        showSpinner();
+                        $.ajax({
+                            'url': Routing.generate('nav.admin_toc_doc', {'_locale': '{{ app.request.locale }}', 'id': id, 'move': move}),
+                            'success': function (data) {
+                                console.log('moved');
+                                hideSpinner();
+                            },
+                            'error': function (xhr) {
+                                console.log('error');
+                                hideSpinner();
+                            }
+                        });
+                    }
+                });
+        });
+
+        $('#clear_search').on('click', function() {
+            $('#search').val('');
+            $(this).addClass('disabled');
+            $.each($('.table-docs tbody tr'), function() {
+                $(this).css('display', '');
+            });
+        });
+        $('#search').on('input', function() {
+            if ($(this).val().length > 0) {
+                $('#clear_search').removeClass('disabled');
+                filter = $(this).val();
+                $.each($('.table-docs tbody tr'), function() {
+                    $(this).css('display', $(this).find('td a').is(':icontains(' + filter + ')') ? '' : 'none');
+                });
+            } else {
+                $('#clear_search').trigger('click');
+            }
+        });
+
+        $.expr[":"].icontains = $.expr.createPseudo(function(arg) {
+            return function( elem ) {
+                return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
+            };
+        });
+        //-->
+    </script>
+{% endblock %}

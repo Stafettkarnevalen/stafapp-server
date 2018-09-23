@@ -1,0 +1,57 @@
+{% set use_heading = true %}
+{% set body_class = 'body-medium' %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="all-padding">
+    <table class="stepper">
+        <tbody>
+        <tr>
+            <td class="bg-primary"></td>
+        </tr>
+        </tbody>
+    </table>
+    <nav class="navbar navbar-default toolbar">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <div class="dropdown pull-left">
+                    <a id="section" class="dropdown-toggle navbar-brand" aria-haspopup="true" role="button" aria-expanded="false" data-toggle="dropdown" ><i class="fa fa-list"></i> &nbsp; {{ section|trans({}, 'yearly') }}<span class="caret"></span></a>
+                    <ul class="dropdown-menu scrollable-menu" role="menu" aria-labelledby="section">
+                        {% for key, s in sections %}
+                            <li{% if section == key %} class="active"{% endif %}><a href="{{ path('nav.admin_yearly', { 'year': year, 'section': key }) }}">{{ key|trans({}, 'yearly') }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="dropdown pull-left">
+                    <a id="year" class="navbar-brand dropdown-toggle" aria-haspopup="true" role="button" aria-expanded="false" data-toggle="dropdown"><i class="fa fa-calendar"></i> &nbsp; {{ year }}<span class="caret"></span></a>
+                    <ul class="dropdown-menu scrollable-menu" role="menu" aria-labelledby="year">
+                        {% for y in years %}
+                            <li{% if year == y %} class="active"{% endif %}><a href="{{ path('nav.admin_yearly', { year: y }) }}">{{ y }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% if form != null %}
+                    <a class="navbar-brand" data-title="{% trans from 'nav' %}nav.admin_copy{% endtrans %}" data-reload="true" data-toggle="modal" href="{{ path('nav.admin_yearly_copy', {'year': year}) }}"><i class="fa fa-copy"></i> {% trans from 'yearly' %}label.copy{% endtrans %}</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    {% for key, s in sections %}
+        {% if section == key %}
+            <div>
+                <h2>{% autoescape false %}{{ s[1]|trans({}, "yearly") }}{% endautoescape %}</h2>
+                <p class="top-padding">{% autoescape false %}{{ s[2]|trans({}, "yearly") }}{% endautoescape %}</p>
+                {% include s[4] %}
+            </div>
+        {% endif %}
+    {% endfor %}
+
+</div>
+<script type="text/javascript">
+    $(".dropdown").on("shown.bs.dropdown", function() {
+        $(this).find(".dropdown-menu li.active a").focus();
+    });
+</script>
+
+{% endblock %}

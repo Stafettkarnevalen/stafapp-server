@@ -1,0 +1,16 @@
+<a name="part_{{ doc.id }}" class="doc-anchor"></a>
+{% if doc.parent is not null and pdf is defined %}
+    {% set bm = [doc.titleNumbering ~ ' ' ~ doc.title, doc.getTitleLevel - 1] %}
+    <tcpdf method="Bookmark" params="{{ bm|json_encode }}"/>
+{% endif %}
+<h{{ doc.getTitleLevel }}>{% if doc.parent is null %}{% trans from 'documentation' %}label.introduction{% endtrans %}{% else %}{{ doc.titleNumbering }} {{ doc.title }}{% endif %}</h{{ doc.getTitleLevel }}>
+{{ doc.text|raw }}
+{% if doc.parent is null %}
+    <br style="page-break-before: always;"/>
+{% endif %}
+{% for child in doc.children %}
+    {% include 'docs/doc_part.html.twig' with {'doc':child} %}
+{% endfor %}
+{% if doc.getTitleLevel == 1 and doc.parent is not null %}
+    <br style="page-break-before: always;"/>
+{% endif %}

@@ -1,0 +1,60 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+{% set no_toolbar = true %}
+{% block body %}
+    {% if modal is not defined or modal == false %}
+        {{ form_start(form) }}
+    {% endif %}
+    <div class="side-padding">
+        <h1>{% if address.id != 0 %}{{ address.name }}{% else %}{% trans %}action.create{% endtrans %}{% endif %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="form bg-default all-padding">
+            {{ form_errors(form) }}
+
+            {{ form_row(form.name) }}
+            {{ form_row(form.streetAddress) }}
+            {{ form_row(form.zipcode) }}
+            {{ form_row(form.pobox) }}
+            {{ form_row(form.city) }}
+            {{ form_row(form.country) }}
+            {{ form_row(form.businessId) }}
+            {{ form_row(form.recipientEDI) }}
+            {{ form_row(form.operator) }}
+            {{ form_row(form.operatorEDI) }}
+            {{ form_row(form.operatorBIC) }}
+            {{ form_row(form.phone) }}
+            {{ form_row(form.email) }}
+            {{ form_row(form.isActive) }}
+        </div>
+
+        {% if modal is not defined or modal == false %}
+            <div class="form-nav">
+                <div class="btn-group btn-group-justified" role="group">
+                    <a class="btn btn-default" href="{{ path('nav.admin_invoice_recipients') }}"><i class="fa fa-chevron-left"></i> {% trans %}action.close{% endtrans %} <i class="fa fa-undo"></i></a>
+                    {% if address.id %}
+                        <a class="btn btn-danger" href="{{ path('nav.admin_invoice_recipient_delete', {'id': address.id}) }}"><i class="fa fa-trash"></i> {% trans %}action.delete{% endtrans %} <i class="fa fa-minus"></i></a>
+                    {% endif %}
+                    <div class="btn-group" role="group">
+                        {{ form_widget(form.submit) }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    {% if modal is not defined or modal == false %}
+        {{ form_end(form) }}
+    {% endif %}
+{% endblock %}

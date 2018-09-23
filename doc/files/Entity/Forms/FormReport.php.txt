@@ -1,0 +1,237 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 08/09/2017
+ * Time: 12.40
+ */
+
+namespace App\Entity\Forms;
+
+use App\Entity\Interfaces\LoggableEntity;
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Traits\LoggableTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\CloneableTrait;
+use App\Entity\Traits\PersistencyDataTrait;
+use App\Entity\Traits\TitleTrait;
+
+/**
+ * @ORM\Table(name="form_report_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @Gedmo\Loggable
+ * @package App\Entity\Forms
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class FormReport implements Serializable, CreatedByUserInterface, LoggableEntity
+{
+
+    /** use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use cloning functions */
+    use CloneableTrait;
+
+    /** Use loggable trait */
+    use LoggableTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /** Use title and text fields */
+    use TitleTrait;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="fields_fld", type="json_array", nullable=false)
+     * @Assert\NotBlank()
+     * @var array $fields The fields included in this report
+     */
+    protected $fields;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="public_fld", type="boolean", nullable=false)
+     * @Assert\NotBlank()
+     * @var boolean $isPublic A flag determining if this report is public or hidden
+     */
+    protected $isPublic;
+
+    /**
+     * @Gedmo\Versioned
+     * @ORM\Column(name="password_fld", type="string", length=64, nullable=true)
+     * @var string $password An optional password for this report
+     */
+    protected $password;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Form", inversedBy="reports"))
+     * @ORM\JoinColumn(name="form_fld", referencedColumnName="id_fld", nullable=false)
+     * @var Form $form The form this report is bound to
+     */
+    protected $form;
+
+    /**
+     * FormField constructor.
+     */
+    public function __construct()
+    {
+        $this->fields = [];
+    }
+
+    /**
+     * Gets the fields.
+     *
+     * @return array
+     */
+    public function getFields()
+    {
+        return $this->fields;
+    }
+
+    /**
+     * Sets the fields.
+     *
+     * @param array $fields
+     * @return $this
+     */
+    public function setFields($fields)
+    {
+        $this->fields = $fields;
+
+        return $this;
+    }
+
+    /**
+     * Adds a form field to the report.
+     *
+     * @param integer|FormField $field
+     * @return $this
+     */
+    public function addField($field)
+    {
+        if ($field instanceof FormField)
+            $field = $field->getId();
+        if (!in_array($field, $this->fields))
+            $this->fields[] = $field;
+        return $this;
+    }
+
+    public function hasField($field)
+    {
+        if ($field instanceof FormField)
+            $field = $field->getId();
+        return in_array($field, $this->fields);
+    }
+
+    /**
+     * Return all the form fields based on the ids stored in the fields variable.
+     *
+     * @param bool $array
+     * @return array|ArrayCollection
+     */
+    public function getFormFields($array = false)
+    {
+        $fields = [];
+        /** @var FormField $field */
+        foreach ($this->form->getFormFields() as $field) {
+            if (in_array($field->getId(), $this->fields))
+                $fields[] = $field;
+        }
+        return ($array ? $fields : new ArrayCollection($fields));
+    }
+
+    /**
+     * Gets the answers for this report.
+     *
+     * @param bool $array
+     * @return array|ArrayCollection
+     */
+    public function getSubmissions($array = false)
+    {
+        $submissions = new ArrayCollection();
+
+        /** @var FormSubmission $submission */
+        foreach ($this->form->getSubmissions() as $submission) {
+            $submissions->add($submission->setFilter($this->getFields()));
+        }
+        return ($array ? $submissions->toArray() : $submissions);
+    }
+
+    /**
+     * Gets the password.
+     *
+     * @return string|null
+     */
+    public function getPassword()
+    {
+        return $this->password;
+    }
+
+    /**
+     * Sets the password.
+     *
+     * @param string|null $password
+     * @return $this
+     */
+    public function setPassword($password)
+    {
+        $this->password = $password;
+
+        return $this;
+    }
+
+    /**
+     * Gets the form.
+     *
+     * @return Form
+     */
+    public function getForm()
+    {
+        return $this->form;
+    }
+
+    /**
+     * Sets the form.
+     *
+     * @param Form $form
+     * @return $this
+     */
+    public function setForm($form)
+    {
+        $this->form = $form;
+
+        return $this;
+    }
+
+    /**
+     * Gets the isPublic.
+     *
+     * @return boolean
+     */
+    public function getisPublic()
+    {
+        return $this->isPublic;
+    }
+
+    /**
+     * Sets the isPublic.
+     *
+     * @param boolean $isPublic
+     * @return $this
+     */
+    public function setIsPublic($isPublic)
+    {
+        $this->isPublic = $isPublic;
+
+        return $this;
+    }
+
+}

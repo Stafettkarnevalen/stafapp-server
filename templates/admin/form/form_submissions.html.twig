@@ -1,0 +1,109 @@
+{% set use_heading = false %}
+{% set body_class = 'body-medium' %}
+{% set extends = 'base.html.twig' %}
+{% if modal is defined and modal == true %}
+    {% set extends = 'modal.html.twig' %}
+{% endif %}
+{% extends extends %}
+
+{% block body %}
+    <div class="side-padding">
+        <h1>{% if formEntity.id != 0 %}{{ formEntity.title }}{% endif %}</h1>
+    </div>
+    <div class="all-padding">
+        <table class="stepper">
+            <tbody>
+            <tr>
+                <td class="bg-primary"></td>
+            </tr>
+            </tbody>
+        </table>
+        <nav class="navbar navbar-default toolbar">
+            <div class="container-fluid">
+                <div class="navbar-header pull-left">
+                    <a class="navbar-brand" data-title="{% trans from 'nav' %}nav.admin_form_reports{% endtrans %}" data-toggle="modal" href="{{ path('nav.admin_form_report', {'form': formEntity.id}) }}"><i class="fa fa-list"></i> &nbsp;{% trans from 'form' %}label.create_report{% endtrans %}</a>
+                </div>
+                <div class="pull-right top-padding-sm col-xs-8 col-sm-8">
+                    <div class="input-group">
+                        <span class="input-group-addon">{% trans from "form" %}label.search{% endtrans %}</span>
+                        <input title="{% trans from "form" %}label.search{% endtrans %}" id="search" class="input-sm form-control" type="text"/>
+                        <a id="clear_search" class="disabled input-group-addon btn"><i class="fa fa-times-circle-o"></i></a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <h2>{% trans with {'%amount%': reports.count + 1} from "form" %}label.reports{% endtrans %}</h2>
+        <table class="table table-bordered table-responsive table-condensed table-striped table-scrollable table-form-reports">
+            <thead>
+            <tr>
+                <th class="title">{% trans from "form" %}label.title{% endtrans %}</th>
+                <th class="description">{% trans from "form" %}label.description{% endtrans %}</th>
+                <th class="date">{% trans from "form" %}label.date{% endtrans %}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td class="title"><a href="{{ path('nav.admin_view_form_report', {'form': formEntity.id}) }}">{% trans from "form" %}label.builtin_report_title{% endtrans %}</a></td>
+                <td class="description"><a href="{{ path('nav.admin_view_form_report', {'form': formEntity.id}) }}">{% trans from "form" %}label.builtin_report_description{% endtrans %}</a></td>
+                <td class="date"><a href="{{ path('nav.admin_view_form_report', {'form': formEntity.id}) }}">{% trans from "form" %}label.builtin_report_date{% endtrans %}</a></td>
+            </tr>
+            </tbody>
+        </table>
+        <h2>{% trans with {'%amount%': submissions.count} from "form" %}label.submitted_data{% endtrans %}</h2>
+        {% set icons = {'ASC': 'fa-chevron-up', 'DESC': 'fa-chevron-down'} %}
+        <table class="table table-bordered table-responsive table-condensed table-striped table-scrollable table-form-submissions">
+            <thead>
+            <tr>
+                <th class="name"><a href="{{ path('nav.admin_form_submissions', {'id': formEntity.id, 'sort': 'name', 'order': orders['name']}) }}">{% trans from "form" %}label.name{% endtrans %} {% if sort == 'name' %}<span class="fa {{ icons[order] }}"></span>{% endif %}</a></th>
+                <th class="by"><a href="{{ path('nav.admin_form_submissions', {'id': formEntity.id, 'sort': 'by', 'order': orders['by']}) }}">{% trans from "form" %}label.by{% endtrans %} {% if sort == 'by' %}<span class="fa {{ icons[order] }}"></span>{% endif %}</a></th>
+                <th class="date"><a href="{{ path('nav.admin_form_submissions', {'id': formEntity.id, 'sort': 'date', 'order': orders['date']}) }}">{% trans from "form" %}label.date{% endtrans %} {% if sort == 'date' %}<span class="fa {{ icons[order] }}"></span>{% endif %}</a></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for submission in submissions %}
+                <tr>
+                    <td class="title"><a data-title="{% trans from 'nav' %}nav.admin_form_submission{% endtrans %}" data-toggle="modal" href="{{ path('nav.admin_form_submission', {'id' : submission.id}) }}">{{ submission.name }}</a></td>
+                    <td class="by"><a data-title="{% trans from 'nav' %}nav.admin_form_submission{% endtrans %}" data-toggle="modal" href="{{ path('nav.admin_form_submission', {'id' : submission.id}) }}">{{ submission.createdBy.fullName }}</a></td>
+                    <td class="date"><a data-title="{% trans from 'nav' %}nav.admin_form_submission{% endtrans %}" data-toggle="modal" href="{{ path('nav.admin_form_submission', {'id' : submission.id}) }}">{{ submission.createdAt|date('d.m.Y H:i:s') }}</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% if modal is not defined or modal == false %}
+            <div class="form-nav">
+                <div class="btn-group btn-group-justified" role="group">
+                    <a class="btn btn-default" href="{{ path('nav.admin_form', {'id': formEntity.id}) }}"><i class="fa fa-chevron-left"></i> {% trans from 'form' %}label.close{% endtrans %} <i class="fa fa-close"></i></a>
+
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    <script type="text/javascript">
+        <!--
+        $('#clear_search').on('click', function() {
+            $('#search').val('');
+            $(this).addClass('disabled');
+            $.each($('.table-form-submissions tbody tr'), function() {
+                $(this).css('display', '');
+            });
+        });
+        $('#search').on('input', function() {
+            if ($(this).val().length > 0) {
+                $('#clear_search').removeClass('disabled');
+                filter = $(this).val();
+                $.each($('.table-form-submissions tbody tr'), function() {
+                    $(this).css('display', $(this).find('td a').is(':icontains(' + filter + ')') ? '' : 'none');
+                });
+            } else {
+                $('#clear_search').trigger('click');
+            }
+        });
+
+        $.expr[":"].icontains = $.expr.createPseudo(function(arg) {
+            return function( elem ) {
+                return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
+            };
+        });
+        //-->
+    </script>
+{% endblock %}

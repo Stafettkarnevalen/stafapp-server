@@ -1,0 +1,201 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 05/06/2017
+ * Time: 12.19
+ */
+
+namespace App\Entity\Communication;
+
+use App\Entity\Interfaces\CreatedByUserInterface;
+use App\Entity\Interfaces\Serializable;
+use App\Entity\Traits\CreatedByUserTrait;
+use App\Entity\Traits\FieldsTrait;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Validator\Constraints as Assert;
+
+use App\Entity\Traits\PersistencyDataTrait;
+
+/**
+ * @ORM\Table(name="message_attachment_table", options={"collate"="utf8_swedish_ci"})
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @package App\Entity\Communication
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class MessageAttachment implements Serializable, CreatedByUserInterface
+{
+    /** Use created by user trait */
+    use CreatedByUserTrait;
+
+    /** Use fields functions */
+    use FieldsTrait;
+
+    /** Use persistency data such as id and timestamps */
+    use PersistencyDataTrait;
+
+    /**
+     * @ORM\Column(name="type_fld", type="string", nullable=false)
+     * @Assert\NotBlank()
+     * @var string $type The MIME type of the attachment
+     */
+    protected $type;
+
+    /**
+     * @ORM\Column(name="name_fld", type="string", nullable=false)
+     * @Assert\NotBlank()
+     * @var string $name The name of the attachment
+     */
+    protected $name;
+
+    /**
+     * @ORM\Column(name="path_fld", type="string", nullable=false)
+     * @var string $path The file path of the attachment
+     */
+    protected $path;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Message", inversedBy="attachments", cascade={"persist", "merge", "remove"})
+     * @ORM\JoinColumn(name="message_fld", referencedColumnName="id_fld", nullable=false)
+     * @Assert\NotBlank()
+     * @var Message $message The owning message of this attachment
+     */
+    protected $message;
+
+    /**
+     * Sets the file of this attachment.
+     *
+     * @param UploadedFile $file
+     * @return $this
+     */
+    public function setFile(UploadedFile $file)
+    {
+        if ($file) {
+            $this->type = $file->getMimeType();
+            $this->name = $file->getClientOriginalName();
+            $this->path = $file->getPathname();
+        }
+        return $this;
+    }
+
+    /**
+     * Gets the file of this attachment.
+     *
+     * @return null
+     */
+    public function getFile()
+    {
+        return null;
+    }
+
+    /**
+     * Gets the MIME type.
+     *
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * Sets the MIME type.
+     *
+     * @param string $type
+     * @return $this
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
+    /**
+     * Gets the name.
+     *
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    /**
+     * Sets the name.
+     *
+     * @param string $name
+     * @return $this
+     */
+    public function setName($name)
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    /**
+     * Gets the file path.
+     *
+     * @return string
+     */
+    public function getPath()
+    {
+        return $this->path;
+    }
+
+    /**
+     * Sets the file path.
+     *
+     * @param string $path
+     * @return $this
+     */
+    public function setPath($path)
+    {
+        $this->path = $path;
+
+        return $this;
+    }
+
+    /**
+     * Gets the message.
+     *
+     * @return Message
+     */
+    public function getMessage()
+    {
+        return $this->message;
+    }
+
+    /**
+     * Sets the message.
+     *
+     * @param Message $message
+     * @return $this
+     */
+    public function setMessage(Message $message)
+    {
+        $this->message = $message;
+
+        return $this;
+    }
+
+    /**
+     * Moves the attachment to a directory.
+     *
+     * @param string $dir
+     * @return $this
+     */
+    public function moveToDir($dir)
+    {
+        $newDir = $dir . DIRECTORY_SEPARATOR . basename($this->path);
+        @mkdir($newDir);
+        @rename($this->path, $newDir . DIRECTORY_SEPARATOR . $this->name);
+        $this->path = $newDir . DIRECTORY_SEPARATOR . $this->name;
+
+        return $this;
+    }
+}

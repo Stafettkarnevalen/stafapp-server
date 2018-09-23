@@ -1,0 +1,67 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 26/11/2016
+ * Time: 10.33
+ */
+
+namespace App\Util;
+
+class CSVReader extends \SplFileObject
+{
+    private $options = null;
+
+    public static $repositories = __DIR__ . '/csv/';
+
+    public static function countryCodes() {
+        $self = new self(self::$repositories . 'country-codes.csv', ['firstRowIsKeys' => 1]);
+        $data = $self->getData(['ISO3166-1-Alpha-3', 'Dial']);
+        $codes = array_combine(
+            array_map(function($a) { $str = str_replace(' ', '-', $a['Dial']); return '+' . ((($i = strpos($str, '-')) !== false) ? substr($str, 0, $i) : $str); }, $data),
+            array_map(function($a) { $str = str_replace(' ', '-', $a['Dial']); return '+' . ((($i = strpos($str, '-')) !== false) ? substr($str, 0, $i) : $str); }, $data)
+        );
+        unset($codes['+']);
+        ksort($codes);
+        return $codes;
+    }
+
+    public function __construct($fname, array $options = []) {
+        parent::__construct($fname);
+        $this->options = $options;
+        $this->setFlags(\SplFileObject::SKIP_EMPTY);
+    }
+
+    public function getData(array $useCols = [], $delimiter = ",", $enclosure = "\"", $escape = "\\") {
+        $keys = null;
+        $indeces = null;
+        $data = [];
+        $this->rewind();
+        if ($this->options['firstRowIsKeys']) {
+            if (!empty($useCols)) {
+                $keys = $useCols;
+                $indeces = array_keys(array_intersect($this->fgetcsv($delimiter, $enclosure, $escape), $useCols));
+            } else {
+                $keys = $this->fgetcsv($delimiter, $enclosure, $escape);
+            }
+        } else if (!empty($useCols)) {
+            $indeces = $useCols;
+        }
+        while (!$this->eof()) {
+            $line = $this->fgetcsv($delimiter, $enclosure, $escape);
+
+            if (!empty($indeces))
+                $line = array_values(array_intersect_key($line, array_combine($indeces, $indeces)));
+
+            if (trim(implode('', $line)) == '')
+                continue;
+
+            if ($keys) {
+                $data[] = array_combine($keys, $line);
+            } else {
+                $data[] = $line;
+            }
+        }
+        return $data;
+    }
+}

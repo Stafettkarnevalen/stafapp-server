@@ -1,0 +1,65 @@
+{% extends 'manager/index.html.twig' %}
+
+{% block body %}
+    <div class="side-padding">
+        {% set step = 1 %}
+        {% set title = 'add_to_school.number_step' %}
+        {% set info = 'add_to_school.number_info' %}
+        {% if number is defined %}
+            {% set step = 2 %}
+            {% set title = 'add_to_school.password_step' %}
+            {% set info = 'add_to_school.password_info' %}
+        {% endif %}
+        {% if password is defined %}
+            {% set step = 3 %}
+            {% set title = 'add_to_school.summary_step' %}
+            {% set info = 'add_to_school.summary_info' %}
+        {% endif %}
+        {% include 'step/step.html.twig' with { 'step':step, 'steps':3, 'title':title } %}
+        <div class="form bg-default">
+            {% if step > 1 %}
+                <h2 class="alert">{{ school.name }}</h2>
+            {% endif %}
+            <p class="alert">{{ info|trans() }}</p>
+            <div class="container-fluid">
+                {{ form_start(form) }}
+                <div class="form-group row">
+                    <label class="control-label col-xs-12">{{ form_label(form.number) }}</label>
+                    <div class="col-xs-12">
+                        {% if step > 1 %}
+                            <div class="input-group">
+                                {{ form_widget(form.number) }}
+                                <span class="input-group-addon"><h3 class="no-margin"><i class="fa fa-check-circle text-success"></i></h3></span>
+                            </div>
+                        {% else %}
+                            {{ form_widget(form.number) }}
+                        {% endif %}
+                    </div>
+                </div>
+                {% if step > 1 %}
+                <div class="form-group row">
+                    <label class="control-label col-xs-12">{{ form_label(form.password) }}</label>
+                    <div class="col-xs-12">
+                        {% if step > 2 %}
+                            <div class="input-group">
+                                {{ form_widget(form.password) }}
+                                <span class="input-group-addon"><h3 class="no-margin"><i class="fa fa-check-circle text-success"></i></h3></span>
+                            </div>
+                        {% else %}
+                            {{ form_widget(form.password) }}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                <div class="form-nav text-right">
+                    <a href="{{ app.session.get('_referer') }}" class="btn btn-default"><i class="fa fa-undo"></i> {{ 'cancel'|trans() }}</a>
+                    {% if prev is defined %}
+                        <a href="{{ prev }}" class="btn btn-default"><i class="fa fa-chevron-left"></i> {{ 'prev'|trans() }}</a>
+                    {% endif %}
+                    {{ form_widget(form.submit) }}
+                </div>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

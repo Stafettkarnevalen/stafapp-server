@@ -1,0 +1,77 @@
+# Fields in forms
+field:
+    username: "E-postadress (till ditt arbete, blir ditt användarnamn)"
+    firstname: "Förnamn"
+    lastname: "Efternamn"
+    phone: "Mobiltelefon"
+    password1: "Lösenord (minst 4 tecken)"
+    password2: "Bekräfta lösenord"
+    register: "Registrera dig"
+    emailhash: "Bekräftelsekod"
+    verify_email: 'Bekräfta<span class="hidden-xs"> e-postadressen</span>'
+    phonehash: "Bekräftelsekod"
+    verify_phone: 'Bekräfta<span class="hidden-xs"> mobiltelefonnumret</span>'
+    isActive: "Aktiv"
+    email: "E-postadress (privat, används ifall man glömt lösenordet)"
+    new_password1: "Nytt lösenord (minst 4 tecken)"
+    new_password2: "Bekräfta nytt lösenord"
+    current_password: "Nuvarande lösenord"
+    invalid_password: "Fel lösenord"
+    name: "Namn"
+    uname: "Användarnamn"
+    locale: "Språk"
+    status: "Kontot är"
+    roles: "Roller"
+    message: "Meddleande"
+    title: "Ämne"
+    text: "Text"
+    type: "Sänd som"
+
+# Actions in forms
+action:
+    resend_code: "Skicka koden på nytt"
+    block_account: "Spärra kontot"
+    chpwd: "Byt lösenrodet"
+    sendcode: "Skicka koden"
+    create: 'Ny användare...'
+    send_email: "E-post"
+    send_sms: "SMS"
+    login_as: "Logga in som"
+    test_push: "Skicka en testnotis"
+
+# Labels
+label:
+    link: "Direktlänk"
+    unverified: "Obekräftad"
+    verified: "Bekräftad"
+    phonehash_sms: "Koden skickad via SMS till angivet nummer då kontot skapades"
+    confirm_delete: 'Är du säker att du vill radera denna användare?'
+
+message:
+    title: 'Skriv ett meddelande till användaren'
+    text: '<p><i class="fa fa-info-circle fa-lg"></i> &nbsp; Du kan skriva ett meddelande till användaren och berätta vilka ändringar du gjort i dennes profil.</p>'
+
+email: "e-post"
+sms: "textmeddelande"
+internal: "internt meddelande"
+profile:
+    choices: 'Övriga inställningar'
+    notifications: 'Notiser'
+    notifications_sub: 'Notiser till din webbläsare eller app'
+    info_notifications: 'Notiser skickas till din webbläsare eller till din app, beroende på dina inställningar. Du kan definiera hurdana notiser du vill motta.'
+    tooltips: 'Verktygstips'
+    tooltips_sub: 'Aktivera användargränssnittets verktygstips'
+    info_tooltips: 'Verktygstips hjälper dig att välja rätt knappar i verktygsfältet på sidan. Verktygstips visas då du för musen över respektive knapp.<br/><br/>Det finns två olika nivåer: enkel och detaljerad. Med enkla verktygstips visas endast en rubrik för verktyget. Med det detaljerade alternativet visas rubrik samt en ingress över verktygets funktion.'
+    helpmode_2: 'Detaljerade verktygstips med en rubrik och ingress.'
+    modules: 'Modulredigering'
+    modules_sub: 'Visa verktyg för modulredigering'
+    info_modules: 'Varje sida har zoner i vilka man kan lägga moduler med skräddarsytt innehåll. Modulerna är avsedda för innehåll som ändras. Du kan välja att visa zonernas modulverktyg eller att dölja dem.'
+    current_browser: 'Du använder webbläsaren <em>%browser% (%os%)</em>'
+    apns_denied: '<div class="alert alert-danger"><h4><i class="fa fa-exclamation-triangle"></i> Du har förbjudit notiser i Safaris inställningar</h4><p>Öppna <em><strong>Inställningar</strong></em> för Safari (&#8984;,), välj fliken <em><strong>Webbplatser</strong></em> och välj <em><strong>Notiser</strong></em> i listan. Tillåt notiser för <em><strong>StafApp</strong></em>.</p></div>'
+    apns_allowed: '<div class="alert alert-success"><h4><i class="fa fa-info-circle"></i> Du har godkänt notiser i Safaris inställningar</h4><p>Du kan skräddarsy hurdana notiser du vill motta med formuläret nedan.</p><p>För att förbjuda notiser, gå till <em><strong>Inställningar</strong></em> för Safari (&#8984;,), välj fliken <em><strong>Webbplatser</strong></em> och välj <em><strong>Notiser</strong></em> i listan. Förbjud notiser för <em><strong>StafApp</strong></em>.</p></div>'
+    ask_push_permission: 'Aktivera notiser i webbläsaren'
+    notification_types:
+        system: 'Systemnotiser (viktiga ärenden från arrangörerna)'
+        reminders: 'Påminnelser (viktiga datum etc.)'
+        news: 'Nyheter'
+        messages: 'Meddelanden'

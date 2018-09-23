@@ -1,0 +1,103 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 07/09/2017
+ * Time: 8.39
+ */
+
+namespace App\Controller;
+
+
+use App\Controller\Interfaces\ModalEventController;
+use App\Entity\Security\SystemUser;
+use App\Entity\Services\ServiceCategory;
+use App\Form\User\EditType;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Form\Extension\Core\Type\ButtonType;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
+
+class SetupController extends Controller implements ModalEventController
+{
+    const ANON_ID  = 1;
+    const ADMIN_ID = 2;
+
+    /**
+     * Controller for handling yearly schedule
+     *
+     * @Route("/{_locale}/setup", name="nav.setup")
+     * @param Request $request
+     * @return mixed
+     */
+    public function setupAction(Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $guest = $em->getRepository(SystemUser::class)->find(self::ANON_ID);
+        if (!$guest) {
+            $guest = new SystemUser();
+            $guest
+                ->setId(1)
+                ->setUsername('noreply@stafettkarnevalen.fi')
+                ->setPhone('0')
+                ->setFirstname('Anonym')
+                ->setLastname('Användare')
+                ->setRoles(['ROLE_GUEST'])
+                ->setLocale('sv')
+                ->setEnabled(true);
+        }
+
+        $admin = $em->getRepository(SystemUser::class)->find(self::ADMIN_ID);
+        if (!$admin) {
+            $admin = new SystemUser();
+            $admin
+                ->setId(1)
+                ->setUsername('stafapp@stafettkarnevalen.fi')
+                ->setPhone('+358456096933')
+                ->setFirstname('StafApp')
+                ->setLastname('Administratör')
+                ->setRoles(['ROLE_SUPER_ADMIN'])
+                ->setLocale('sv')
+                ->setPlainPassword('1234')
+                ->setEnabled(true);
+        }
+
+        $fb = $this->createFormBuilder([], [
+            'translation_domain' => 'security',
+            'attr' => ['action' => $request->getPathInfo()]
+        ]);
+        $fb
+            ->add('guest', EditType::class, [
+                'label' => 'label.guest',
+                'data' => $guest,
+                'available_roles' => ['ROLE_GUEST'],
+                'show_actions_part' => false,
+                'show_message_part' => false,
+                ])
+            ->add('admin', EditType::class, [
+                'label' => 'label.admin',
+                'data' => $admin,
+                'available_roles' => ['ROLE_SUPER_ADMIN'],
+                'show_actions_part' => false,
+                'show_message_part' => false,
+            ])
+        ;
+
+            //->add('yes', SubmitType::class, ['left_icon' => 'fa-trash', 'right_icon' => 'fa-check', 'attr' => ['class' => 'btn-danger'], 'label' => 'label.yes']);
+
+        $form = $fb->getForm();
+        $form->handleRequest($request);
+        if ($form->isSubmitted()) {
+            // TODO
+            $form = null;
+
+        }
+
+        return $this->render('setup/setup.html.twig', [
+            'guest' => $guest,
+            'admin' => $admin,
+            'form' => $form->createView()
+        ]);
+    }
+}

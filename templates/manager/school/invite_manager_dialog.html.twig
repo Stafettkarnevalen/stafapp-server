@@ -1,0 +1,76 @@
+{{ form_start(form) }}
+<div class="panel panel-primary">
+    <div class="panel-heading">{% trans from "school" %}school.add_manager{% endtrans %}</div>
+    <div class="panel-body form bg-default">
+        {{ form_row(form.user) }}
+        {{ form_row(form.firstname) }}
+        {{ form_row(form.lastname) }}
+        {{ form_row(form.username) }}
+        {{ form_row(form.phone) }}
+        {{ form_row(form.subject) }}
+        {{ form_row(form.message) }}
+    </div>
+    <div class="panel-footer text-right">
+        <a onclick="$('#manager_panel').load('{{ path('nav.view_managers') }}'); scrollToAnchor('manager_panel'); return false;" class="btn btn-default"><i class="fa fa-undo"></i> {% trans from "messages" %}cancel{% endtrans %}</a>
+        <button type="submit" class="btn btn-primary"><i class="fa fa-send"></i> {% trans from "messages" %}invite{% endtrans %}</button>
+    </div>
+</div>
+<script type="text/javascript">
+    function handleSelectManager(field)
+    {
+        if (field.selectedIndex > 0) {
+            // populate
+            val = field.options[field.selectedIndex];
+            var path = '{{ path('json', {'entity':'User', 'id':'ID'}) }}';
+            $.getJSON(path.replace('ID', val.value),
+                    function(data) {
+                        $.each( data, function( key, val ) {
+                            if (key == 'phone') {
+                                code = '#form_' + key + '_areaCode';
+                                $(code).attr('readonly', 'readonly');
+
+                                number = '#form_' + key + '_number';
+                                $(number).attr('readonly', 'readonly');
+
+                                options = $(code + ' option');
+                                $.map(options, function(option) {
+                                    if (
+                                            option.value == val.substr(0, 4) ||
+                                            option.value == val.substr(0, 3) ||
+                                            option.value == val.substr(0, 2) ||
+                                            option.value == val.substr(0, 1)
+                                    ) {
+                                        $(code).val(option.value);
+                                        $(number).val(val.substr(option.value.length));
+                                    }
+                                });
+
+
+                            } else {
+                                key = '#form_' + key;
+                                if ($(key).length) {
+                                    $(key).attr('readonly', 'readonly');
+                                    $(key).val(val);
+                                }
+                            }
+                        });
+                        // console.log(data);
+            }).fail(function(error) {
+                console.log(error);
+            });
+            $('#form_subject').focus();
+        } else {
+            // unpopulate
+            var fields = ['#form_firstname', '#form_lastname', '#form_username', '#form_phone_areaCode', '#form_phone_number'];
+            $.each( fields, function( key, value ) {
+                $(value).removeAttr('readonly');
+                if (value == '#form_phone_areaCode')
+                    $(value).val('+358');
+                else
+                    $(value).val('');
+            });
+            $('#form_firstname').focus();
+        }
+    }
+</script>
+{{ form_end(form) }}

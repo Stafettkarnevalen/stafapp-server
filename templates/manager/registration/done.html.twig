@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="side-padding">
+        <h1 class="">{% trans from "messages" %}register.manager_heading{% endtrans %}</h1>
+        {% include 'step/step.html.twig' with { 'step':4, 'steps':3, 'title':'register.done_step' } %}
+        <div class="all-padding">
+            <div class="alert alert-success">
+                <h2><i class="fa fa-check-circle-o"></i> {% trans from "messages" %}register.welcome_title{% endtrans %}</h2>
+                <p>{% trans with {'%name%': app.user.fullname } from "messages" %}register.welcome_message{% endtrans %}</p>
+            </div>
+        </div>
+        {% include 'manager/verification/form.html.twig' %}
+    </div>
+{% endblock %}

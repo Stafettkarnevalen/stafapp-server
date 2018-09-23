@@ -1,0 +1,71 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: rjurgens
+ * Date: 05/11/2017
+ * Time: 18.30
+ */
+
+namespace App\EventListener;
+
+use App\Entity\Communication\Message;
+use App\Entity\Communication\Recipient;
+use App\Util\SMS;
+use Doctrine\ORM\Event\LifecycleEventArgs;
+use Symfony\Component\HttpKernel\Kernel;
+
+/**
+ * Class MessageSendingListener
+ * @package AppBundle\EventListener
+ * @author Robert Jürgens <robert@jurgens.fi>
+ * @copyright Fma Jürgens 2017, All rights reserved.
+ */
+class MessageSendingListener
+{
+    /** @var SMS $smsService The sms service */
+    private $smsService;
+
+    /** @var \Swift_Mailer $emailService the swift mailer */
+    private $emailService;
+
+    /**
+     * MessageSendingListener constructor.
+     *
+     * @param Kernel $kernel
+     */
+    public function __construct(Kernel $kernel)
+    {
+        $this->smsService = $kernel->getContainer()->get('sms');
+        $this->emailService = $kernel->getContainer()->get('mailer');
+    }
+
+    /**
+     * Performs operations on entities after they are stored for the first time.
+     *
+     * @param LifecycleEventArgs $event
+     */
+    public function postPersist(LifecycleEventArgs $event)
+    {
+        $entity = $event->getEntity();
+
+        // when a recipient is stored, check if email or SMS needs to be sent
+        if ($entity instanceof Recipient) {
+            $msg = $entity->getMessage();
+            foreach ($msg->getType() as $type) {
+                if ($type == Message::TYPE_EMAIL) {
+                    $message = $this->emailService->createMessage() //\Swift_Message::newInstance()
+                    ->setSubject($msg->getTitle())
+                        ->setFrom($msg->getCreatedBy()->getUsername())
+                        ->setTo($entity->getUser()->getUsername())
+                        ->setBody($msg->getText(), 'text/plain'
+                        );
+                    $this->emailService->send($message);
+                } else if ($type == Message::TYPE_SMS) {
+                    $this->smsService->setTo($entity->getUser()->getPhone())
+                        ->setMessage($msg->getTitle() . "\n" . $msg->getText())
+                        ->send();
+                }
+            }
+        }
+    }
+}
