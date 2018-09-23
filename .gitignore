@@ -24,3 +24,4 @@ composer.lock
 temp
 *~
 yarn-error.log
+/src/Google/client_*.json
